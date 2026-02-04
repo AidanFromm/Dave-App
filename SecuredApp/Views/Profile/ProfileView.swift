@@ -21,18 +21,18 @@ struct ProfileView: View {
         if let fullName = authViewModel.customer?.fullName, !fullName.isEmpty {
             return fullName
         }
-        return authViewModel.currentUser?.email?.components(separatedBy: "@").first?.capitalized ?? "User"
+        return authViewModel.userEmail?.components(separatedBy: "@").first?.capitalized ?? "User"
     }
 
     private var displayEmail: String {
-        authViewModel.customer?.email ?? authViewModel.currentUser?.email ?? ""
+        authViewModel.customer?.email ?? authViewModel.userEmail ?? ""
     }
 
     private var avatarInitial: String {
         if let firstName = authViewModel.customer?.firstName, !firstName.isEmpty {
             return String(firstName.prefix(1)).uppercased()
         }
-        if let email = authViewModel.currentUser?.email, !email.isEmpty {
+        if let email = authViewModel.userEmail, !email.isEmpty {
             return String(email.prefix(1)).uppercased()
         }
         return "U"

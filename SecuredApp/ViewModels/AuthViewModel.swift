@@ -28,6 +28,11 @@ class AuthViewModel: ObservableObject {
     @Published var showPasswordResetForm = false
     @Published var resetToken: String?
 
+    // Computed property for user email (avoids needing Auth import in views)
+    var userEmail: String? {
+        currentUser?.email
+    }
+
     private let supabase = SupabaseService.shared
 
     init() {
