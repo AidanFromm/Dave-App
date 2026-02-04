@@ -62,7 +62,13 @@ See individual files in `/Config` for full credentials and documentation.
 - [x] All Swift source files added
 - [x] Fixed Swift 6 / iOS 26 compatibility issues
 - [x] App builds and runs in simulator
-- [~] **Admin Inventory Scanner** - Kyle working on this
+- [x] StockX OAuth 2.0 authentication system
+- [x] Keychain storage for secure tokens
+- [x] StockX API service (search, product lookup, barcode)
+- [x] Admin tab and dashboard UI
+- [~] **Barcode Scanner** - Kyle continuing next session
+- [ ] Register URL scheme for OAuth callback (securedapp://)
+- [ ] Test StockX OAuth flow end-to-end
 - [ ] Connect to Supabase (test product fetch)
 - [ ] Implement Stripe checkout
 - [ ] Test full purchase flow
@@ -97,19 +103,23 @@ Admin-only inventory scanner accessible via hidden tab in the iOS app.
 7. Product added to inventory → Logged in inventory_logs
 ```
 
-### Files to Create
+### Files Created (Feb 4)
 ```
 SecuredApp/
+├── Utilities/
+│   └── KeychainHelper.swift        ✅ Secure token storage
 ├── Views/Admin/
-│   ├── AdminTabView.swift          # Admin-only tab container
-│   ├── InventoryScannerView.swift  # Barcode scanner UI
-│   ├── ProductEntryView.swift      # Form after scan
-│   └── InventoryListView.swift     # View/edit existing inventory
+│   ├── AdminTabView.swift          ✅ Admin dashboard
+│   ├── StockXLoginView.swift       ✅ StockX OAuth login UI
+│   ├── BarcodeScannerView.swift    (placeholder, next session)
+│   ├── ManualEntryView.swift       (placeholder, next session)
+│   └── InventoryListView.swift     (placeholder, next session)
 ├── Services/
-│   ├── StockXService.swift         # StockX API integration
-│   └── BarcodeScannerService.swift # Camera/scanner handling
+│   ├── StockXAuthManager.swift     ✅ OAuth 2.0 + PKCE
+│   ├── StockXService.swift         ✅ StockX API client
+│   └── BarcodeScannerService.swift (next session)
 └── ViewModels/
-    └── InventoryViewModel.swift    # Inventory management logic
+    └── InventoryViewModel.swift    (next session)
 ```
 
 ### StockX API Integration
@@ -145,18 +155,22 @@ SecuredApp/
 ├── SecuredApp/                  # iOS source code
 │   ├── App/
 │   │   ├── SecuredAppApp.swift
-│   │   └── ContentView.swift
+│   │   └── ContentView.swift    # Updated - includes Admin tab
 │   ├── Models/
 │   ├── Views/
 │   │   ├── Shop/                # Customer-facing shop
 │   │   ├── Cart/                # Shopping cart
 │   │   ├── Profile/             # User profile
 │   │   └── Admin/               # Admin inventory (Kyle building)
+│   │       ├── AdminTabView.swift     ✅ Dashboard
+│   │       └── StockXLoginView.swift  ✅ StockX connection
 │   ├── ViewModels/
 │   ├── Services/
 │   │   ├── SupabaseService.swift
-│   │   ├── StockXService.swift      # (Kyle building)
-│   │   └── BarcodeScannerService.swift  # (Kyle building)
+│   │   ├── StockXAuthManager.swift  ✅ OAuth 2.0 + PKCE
+│   │   └── StockXService.swift      ✅ API client
+│   ├── Utilities/
+│   │   └── KeychainHelper.swift     ✅ Secure token storage
 │   └── Assets.xcassets
 └── database/                    # SQL migration files
 ```

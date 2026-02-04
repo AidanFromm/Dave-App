@@ -50,12 +50,15 @@ Audience: gateway.stockx.com
 | `GET /catalog/products/{id}/variants` | Get sizes with UPC/GTIN |
 
 ### Implementation Status
-- [ ] OAuth login flow
-- [ ] Token storage in Keychain
-- [ ] Token refresh logic
-- [ ] Product search
-- [ ] Barcode-to-variant matching
-- [ ] Image fetching
+- [x] OAuth login flow (`StockXAuthManager.swift`)
+- [x] Token storage in Keychain (`KeychainHelper.swift`)
+- [x] Token refresh logic (`StockXAuthManager.refreshTokenIfNeeded()`)
+- [x] Product search (`StockXService.searchProducts()`)
+- [x] Get product details (`StockXService.getProduct()`)
+- [x] Get variants with UPC (`StockXService.getProductVariants()`)
+- [x] Barcode-to-variant matching (`StockXService.lookupByBarcode()`)
+- [ ] Test OAuth flow end-to-end (need to register URL scheme)
+- [ ] Image fetching (display in product entry form)
 
 ---
 

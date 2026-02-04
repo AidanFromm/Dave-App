@@ -11,6 +11,7 @@
 
 ### Kyle is currently working on: ADMIN INVENTORY SYSTEM
 **Started:** February 4, 2026
+**Last Update:** February 4, 2026 (late night)
 
 **What I'm building:**
 - Admin-only inventory scanner in the iOS app (hidden tab for admins)
@@ -21,12 +22,32 @@
 - For USED items: Upload custom photos
 - All inventory changes logged for audit trail
 
-**Files I'm creating/modifying:**
-- Views/Admin/ (new folder for admin views)
-- Services/StockXService.swift (new - API integration)
-- Services/BarcodeScannerService.swift (new - camera/scanner handling)
-- ViewModels/InventoryViewModel.swift (new)
-- Models/ (may need updates for admin fields)
+**COMPLETED TODAY:**
+- ✅ StockX OAuth 2.0 authentication system (with PKCE)
+- ✅ Keychain storage for secure token management
+- ✅ StockX API service for product/barcode lookup
+- ✅ Admin tab added to the app (visible during development)
+- ✅ StockX login UI
+
+**Files I created:**
+- `Utilities/KeychainHelper.swift` - Secure token storage in iOS Keychain
+- `Services/StockXAuthManager.swift` - OAuth 2.0 with PKCE, handles login/logout/token refresh
+- `Services/StockXService.swift` - StockX API client (search, get product, barcode lookup)
+- `Views/Admin/StockXLoginView.swift` - UI for connecting StockX account
+- `Views/Admin/AdminTabView.swift` - Main admin dashboard with navigation
+- Updated `App/ContentView.swift` - Added Admin tab
+
+**NEXT UP (tomorrow):**
+- Register URL scheme in Xcode for OAuth callback (securedapp://)
+- Test StockX OAuth flow end-to-end
+- Build the barcode scanner using AVFoundation
+- Create product entry form after successful barcode scan
+
+**Files still to create:**
+- Services/BarcodeScannerService.swift (camera/scanner handling)
+- Views/Admin/BarcodeScannerView.swift (camera UI - placeholder exists)
+- Views/Admin/ProductEntryView.swift (form after scan)
+- ViewModels/InventoryViewModel.swift
 
 **Partner can work on:**
 - Pokemon item entry system (TCGPlayer API integration)
@@ -44,9 +65,15 @@
 - [x] Fixed all Swift 6 compatibility issues - @Kyle
 
 ### Admin Inventory System - @Kyle (IN PROGRESS)
-- [~] Design admin inventory scanner UI - @Kyle
+- [x] Design admin inventory scanner UI - @Kyle
+- [x] StockX OAuth 2.0 authentication - @Kyle
+- [x] Secure token storage (Keychain) - @Kyle
+- [x] StockX API client (search, product lookup, barcode) - @Kyle
+- [x] Admin tab and dashboard UI - @Kyle
+- [~] Register URL scheme for OAuth callback - @Kyle (next session)
+- [~] Test StockX OAuth flow end-to-end - @Kyle (next session)
 - [ ] Implement barcode scanning (camera + bluetooth)
-- [ ] StockX API integration for product lookup
+- [ ] Product entry form after scan
 - [ ] New vs Used item workflow
 - [ ] Image upload for used items
 - [ ] Inventory logging system
@@ -79,7 +106,16 @@
 
 ## Completed Tasks
 
-### February 4, 2026
+### February 4, 2026 (Evening Session)
+- [x] StockX OAuth 2.0 authentication system - @Kyle
+- [x] KeychainHelper for secure token storage - @Kyle
+- [x] StockXAuthManager (login, logout, token refresh) - @Kyle
+- [x] StockXService API client (search, products, variants, barcode lookup) - @Kyle
+- [x] Admin tab added to app - @Kyle
+- [x] StockXLoginView UI - @Kyle
+- [x] AdminTabView dashboard - @Kyle
+
+### February 4, 2026 (Earlier)
 - [x] Set up Xcode project - @Kyle
 - [x] Added Supabase Swift SDK - @Kyle
 - [x] Added Stripe iOS SDK - @Kyle
@@ -87,6 +123,7 @@
 - [x] App successfully runs in simulator - @Kyle
 - [x] Set up Git collaboration system - @Kyle
 - [x] Created TASKS.md and COLLABORATION.md - @Kyle
+- [x] Organized Config folder with API credentials - @Kyle
 
 ---
 
@@ -103,6 +140,41 @@
 ---
 
 ## Notes
+- 2026-02-04 (late): Kyle completed StockX authentication system. All OAuth + API code is done. Next: register URL scheme in Xcode and test.
 - 2026-02-04: Kyle starting admin inventory system. Partner will handle Pokemon items.
 - 2026-02-04: Using StockX API for sneaker barcode lookups (Kyle has API key)
 - 2026-02-04: App is now building and running successfully after fixing Swift 6 issues
+
+---
+
+## FOR PARTNER (Morning Update)
+
+Hey! I made good progress on the admin inventory system last night. Here's what's done:
+
+**StockX Integration (Complete):**
+- OAuth 2.0 authentication with PKCE (industry standard secure auth)
+- Tokens stored securely in iOS Keychain
+- API service ready to search products and lookup barcodes
+- Login UI for connecting the StockX account
+- Admin tab added to the app
+
+**Files I Created:**
+- `Utilities/KeychainHelper.swift` - Handles secure storage
+- `Services/StockXAuthManager.swift` - Manages login/logout/tokens
+- `Services/StockXService.swift` - Calls StockX API
+- `Views/Admin/StockXLoginView.swift` - Login button UI
+- `Views/Admin/AdminTabView.swift` - Admin dashboard
+
+**What I'll Do Next:**
+1. Register URL scheme in Xcode (needed for OAuth redirect)
+2. Test the full StockX login flow
+3. Build the barcode scanner
+4. Create the product entry form
+
+**You Can Work On:**
+- Pokemon system (see Config/Pokemon.md)
+- Website
+- Customer-facing app features
+- Stripe payment setup
+
+To run the app: Open Xcode (double-click SecuredApp.xcodeproj), select iPhone simulator, Cmd+R to run.
