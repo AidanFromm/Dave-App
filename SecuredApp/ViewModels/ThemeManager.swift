@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import Combine
 
 /// Manages the app's color scheme preference
 class ThemeManager: ObservableObject {
