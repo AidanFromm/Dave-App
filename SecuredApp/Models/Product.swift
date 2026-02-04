@@ -107,13 +107,13 @@ struct Product: Identifiable, Codable, Hashable {
         return formatter.string(from: price as NSDecimalNumber) ?? "$0.00"
     }
 
-    /// Returns true if this is a new drop (isDrop is true and created within last 7 days)
+    /// Returns true if this is a new drop (isDrop is true and created within last 5 days)
     var isNewDrop: Bool {
         guard isDrop else { return false }
 
-        // Check if created within the last 7 days
-        let sevenDaysAgo = Calendar.current.date(byAdding: .day, value: -7, to: Date()) ?? Date()
-        return createdAt >= sevenDaysAgo
+        // Check if created within the last 5 days
+        let fiveDaysAgo = Calendar.current.date(byAdding: .day, value: -5, to: Date()) ?? Date()
+        return createdAt >= fiveDaysAgo
     }
 
     /// Formatted compare-at price for display

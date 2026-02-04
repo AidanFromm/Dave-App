@@ -2,11 +2,21 @@
 //  ShopView.swift
 //  SecuredApp
 //
-//  Main shopping view with hero banner, category tabs, and product grid
+//  Main shopping view with filter tabs and product grid
 //  Premium Nike/Adidas-inspired design with smooth animations
 //
 
 import SwiftUI
+
+// MARK: - Shop Filter Enum
+
+enum ShopFilter: String, CaseIterable {
+    case all = "All"
+    case drops = "Drops"
+    case new = "New"
+    case used = "Used"
+    case pokemon = "Pokemon"
+}
 
 struct ShopView: View {
     @StateObject private var viewModel = ProductViewModel()
@@ -15,23 +25,24 @@ struct ShopView: View {
     @State private var showFilterSheet = false
     @State private var sortOption: SortOption = .newest
     @State private var filterOptions = FilterOptions()
+    @State private var selectedFilter: ShopFilter = .all
     @Namespace private var animation
 
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 0) {
-                    // Hero Banner (Featured Drops)
-                    if !viewModel.featuredProducts.isEmpty && searchText.isEmpty {
-                        HeroBannerView(
-                            products: viewModel.featuredProducts,
-                            onProductTap: { product in
-                                // Navigation handled by NavigationLink
-                            }
-                        )
-                        .padding(.top, SecuredSpacing.sm)
-                        .padding(.bottom, SecuredSpacing.md)
+                    // Custom Title
+                    HStack {
+                        Text("Secured")
+                            .font(.largeTitle)
+                            .fontWeight(.bold)
+                            .foregroundStyle(Color.securedTextPrimary)
+                        Spacer()
                     }
+                    .padding(.horizontal, SecuredSpacing.md)
+                    .padding(.top, SecuredSpacing.xs)
+                    .padding(.bottom, SecuredSpacing.sm)
 
                     // Search Bar
                     EnhancedSearchBar(
@@ -44,12 +55,12 @@ struct ShopView: View {
                     .padding(.horizontal, SecuredSpacing.md)
                     .padding(.bottom, SecuredSpacing.sm)
 
-                    // Category Tabs
-                    CategoryTabsView(
-                        categories: viewModel.categories,
-                        selectedCategory: $viewModel.selectedCategory,
+                    // Filter Tabs (2 rows)
+                    FilterTabsView(
+                        selectedFilter: $selectedFilter,
                         animation: animation
                     )
+                    .padding(.bottom, SecuredSpacing.sm)
 
                     // Product Grid or States
                     if viewModel.isLoading {
@@ -68,8 +79,7 @@ struct ShopView: View {
                 .padding(.bottom, SecuredSpacing.xxl)
             }
             .background(Color.securedBackground)
-            .navigationTitle("Secured")
-            .navigationBarTitleDisplayMode(.large)
+            .navigationBarHidden(true)
             .onChange(of: searchText) { _, newValue in
                 viewModel.searchQuery = newValue
             }
@@ -93,7 +103,37 @@ struct ShopView: View {
     private var sortedAndFilteredProducts: [Product] {
         var products = viewModel.filteredProducts
 
-        // Apply filter options
+        // Apply shop filter based on selected tab
+        switch selectedFilter {
+        case .all:
+            // Show all products
+            break
+        case .drops:
+            // Products created within last 5 days
+            products = products.filter { $0.isNewDrop }
+        case .new:
+            // Products with condition == .new AND older than 5 days
+            let fiveDaysAgo = Calendar.current.date(byAdding: .day, value: -5, to: Date()) ?? Date()
+            products = products.filter { $0.condition == .new && $0.createdAt < fiveDaysAgo }
+        case .used:
+            // Products with used conditions
+            let usedConditions: Set<ProductCondition> = [.usedLikeNew, .usedGood, .usedFair]
+            products = products.filter { usedConditions.contains($0.condition) }
+        case .pokemon:
+            // Products in Pokemon category (filter by category name since we don't have fixed UUID)
+            let pokemonCategory = viewModel.categories.first { $0.slug == "pokemon" || $0.name.lowercased() == "pokemon" }
+            if let categoryId = pokemonCategory?.id {
+                products = products.filter { $0.categoryId == categoryId }
+            } else {
+                // Fallback: filter by name/tags if no category found
+                products = products.filter {
+                    $0.name.lowercased().contains("pokemon") ||
+                    $0.tags.contains { $0.lowercased().contains("pokemon") }
+                }
+            }
+        }
+
+        // Apply additional filter options from sheet
         if !filterOptions.conditions.isEmpty {
             products = products.filter { filterOptions.conditions.contains($0.condition) }
         }
@@ -149,10 +189,11 @@ struct ShopView: View {
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, SecuredSpacing.xl)
 
-            if filterOptions.hasActiveFilters {
+            if filterOptions.hasActiveFilters || selectedFilter != .all {
                 Button {
                     withAnimation {
                         filterOptions.reset()
+                        selectedFilter = .all
                     }
                 } label: {
                     Text("Clear Filters")
@@ -212,50 +253,89 @@ struct EnhancedSearchBar: View {
     }
 }
 
-// MARK: - Category Tabs View
+// MARK: - Filter Tabs View (2 Rows)
 
-struct CategoryTabsView: View {
-    let categories: [Category]
-    @Binding var selectedCategory: Category?
+struct FilterTabsView: View {
+    @Binding var selectedFilter: ShopFilter
     var animation: Namespace.ID
 
     var body: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
+        VStack(spacing: SecuredSpacing.sm) {
+            // Row 1: All (small) + Drops (large accent)
             HStack(spacing: SecuredSpacing.sm) {
-                CategoryTab(
+                // All button - compact
+                FilterTabButton(
                     title: "All",
-                    isSelected: selectedCategory == nil,
+                    isSelected: selectedFilter == .all,
+                    animation: animation,
+                    matchId: "filterTab"
+                ) {
+                    withAnimation(SecuredAnimation.tabSelection) {
+                        selectedFilter = .all
+                    }
+                }
+                .frame(width: 60)
+
+                // Drops button - prominent, fills remaining space
+                DropsFilterButton(
+                    isSelected: selectedFilter == .drops,
                     animation: animation
                 ) {
                     withAnimation(SecuredAnimation.tabSelection) {
-                        selectedCategory = nil
-                    }
-                }
-
-                ForEach(categories) { category in
-                    CategoryTab(
-                        title: category.name,
-                        isSelected: selectedCategory?.id == category.id,
-                        animation: animation
-                    ) {
-                        withAnimation(SecuredAnimation.tabSelection) {
-                            selectedCategory = category
-                        }
+                        selectedFilter = .drops
                     }
                 }
             }
             .padding(.horizontal, SecuredSpacing.md)
-            .padding(.vertical, SecuredSpacing.sm)
+
+            // Row 2: New, Used, Pokemon - equal width
+            HStack(spacing: SecuredSpacing.sm) {
+                FilterTabButton(
+                    title: "New",
+                    isSelected: selectedFilter == .new,
+                    animation: animation,
+                    matchId: "filterTab"
+                ) {
+                    withAnimation(SecuredAnimation.tabSelection) {
+                        selectedFilter = .new
+                    }
+                }
+
+                FilterTabButton(
+                    title: "Used",
+                    isSelected: selectedFilter == .used,
+                    animation: animation,
+                    matchId: "filterTab"
+                ) {
+                    withAnimation(SecuredAnimation.tabSelection) {
+                        selectedFilter = .used
+                    }
+                }
+
+                FilterTabButton(
+                    title: "Pokemon",
+                    isSelected: selectedFilter == .pokemon,
+                    animation: animation,
+                    matchId: "filterTab"
+                ) {
+                    withAnimation(SecuredAnimation.tabSelection) {
+                        selectedFilter = .pokemon
+                    }
+                }
+            }
+            .padding(.horizontal, SecuredSpacing.md)
         }
+        .padding(.vertical, SecuredSpacing.xs)
     }
 }
 
-// MARK: - Category Tab
+// MARK: - Filter Tab Button
 
-struct CategoryTab: View {
+struct FilterTabButton: View {
     let title: String
     let isSelected: Bool
     var animation: Namespace.ID
+    let matchId: String
     let action: () -> Void
 
     var body: some View {
@@ -264,18 +344,57 @@ struct CategoryTab: View {
                 .font(.subheadline)
                 .fontWeight(isSelected ? .semibold : .medium)
                 .foregroundStyle(isSelected ? .white : Color.securedTextPrimary)
-                .padding(.horizontal, SecuredSpacing.md)
+                .frame(maxWidth: .infinity)
                 .padding(.vertical, SecuredSpacing.sm)
                 .background {
                     if isSelected {
-                        Capsule()
+                        RoundedRectangle(cornerRadius: SecuredRadius.small)
                             .fill(Color.securedAccent)
-                            .matchedGeometryEffect(id: "categoryTab", in: animation)
                     } else {
-                        Capsule()
+                        RoundedRectangle(cornerRadius: SecuredRadius.small)
                             .fill(Color.securedCardBackground)
                     }
                 }
+        }
+        .buttonStyle(.plain)
+        .sensoryFeedback(.selection, trigger: isSelected)
+    }
+}
+
+// MARK: - Drops Filter Button (Prominent)
+
+struct DropsFilterButton: View {
+    let isSelected: Bool
+    var animation: Namespace.ID
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: SecuredSpacing.xs) {
+                Image(systemName: "flame.fill")
+                    .font(.system(size: 14, weight: .semibold))
+
+                Text("DROPS")
+                    .font(.subheadline)
+                    .fontWeight(.bold)
+                    .tracking(0.5)
+            }
+            .foregroundStyle(isSelected ? .white : Color.securedAccent)
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, SecuredSpacing.sm)
+            .background {
+                if isSelected {
+                    RoundedRectangle(cornerRadius: SecuredRadius.small)
+                        .fill(Color.securedAccent)
+                } else {
+                    RoundedRectangle(cornerRadius: SecuredRadius.small)
+                        .fill(Color.securedAccent.opacity(0.15))
+                        .overlay {
+                            RoundedRectangle(cornerRadius: SecuredRadius.small)
+                                .strokeBorder(Color.securedAccent, lineWidth: 1.5)
+                        }
+                }
+            }
         }
         .buttonStyle(.plain)
         .sensoryFeedback(.selection, trigger: isSelected)
