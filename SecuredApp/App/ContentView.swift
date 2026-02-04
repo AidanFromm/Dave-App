@@ -2,13 +2,14 @@
 //  ContentView.swift
 //  SecuredApp
 //
-//  Main tab navigation view
+//  Main tab navigation view with premium styling
 //
 
 import SwiftUI
 
 struct ContentView: View {
     @EnvironmentObject var cartViewModel: CartViewModel
+    @EnvironmentObject var wishlistViewModel: WishlistViewModel
 
     // TODO: Check if user is admin before showing Admin tab
     // For now, showing to all users during development
@@ -40,7 +41,7 @@ struct ContentView: View {
                     }
             }
         }
-        .tint(.primary)
+        .tint(Color.securedAccent)
     }
 }
 
@@ -48,4 +49,5 @@ struct ContentView: View {
     ContentView()
         .environmentObject(CartViewModel())
         .environmentObject(AuthViewModel())
+        .environmentObject(WishlistViewModel())
 }

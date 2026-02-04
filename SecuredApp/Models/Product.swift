@@ -106,6 +106,43 @@ struct Product: Identifiable, Codable, Hashable {
         formatter.currencyCode = "USD"
         return formatter.string(from: price as NSDecimalNumber) ?? "$0.00"
     }
+
+    /// Returns true if this is a new drop (isDrop is true and created within last 7 days)
+    var isNewDrop: Bool {
+        guard isDrop else { return false }
+
+        // Check if created within the last 7 days
+        let sevenDaysAgo = Calendar.current.date(byAdding: .day, value: -7, to: Date()) ?? Date()
+        return createdAt >= sevenDaysAgo
+    }
+
+    /// Formatted compare-at price for display
+    var formattedCompareAtPrice: String? {
+        guard let compareAt = compareAtPrice else { return nil }
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .currency
+        formatter.currencyCode = "USD"
+        return formatter.string(from: compareAt as NSDecimalNumber)
+    }
+
+    /// Discount percentage from compare-at price
+    var discountPercentage: Int? {
+        guard let compareAt = compareAtPrice,
+              compareAt > price else { return nil }
+        let discount = ((compareAt - price) / compareAt) * 100
+        return Int(truncating: discount as NSDecimalNumber)
+    }
+
+    /// Stock status for badge display
+    var stockStatus: StockBadge.StockStatus {
+        if quantity <= 0 {
+            return .soldOut
+        } else if isLowStock {
+            return .lowStock
+        } else {
+            return .inStock
+        }
+    }
 }
 
 // Preview data
