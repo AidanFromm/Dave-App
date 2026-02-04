@@ -9,8 +9,12 @@ import SwiftUI
 
 struct ProfileView: View {
     @EnvironmentObject var authViewModel: AuthViewModel
-    @State private var showingSignIn = false
-    @State private var showingSignUp = false
+    @State private var activeSheet: AuthSheet?
+
+    enum AuthSheet: Identifiable {
+        case signIn, signUp
+        var id: Self { self }
+    }
 
     var body: some View {
         NavigationStack {
@@ -106,7 +110,7 @@ struct ProfileView: View {
                                 .multilineTextAlignment(.center)
 
                             Button {
-                                showingSignIn = true
+                                activeSheet = .signIn
                             } label: {
                                 Text("Sign In")
                                     .font(.headline)
@@ -118,7 +122,7 @@ struct ProfileView: View {
                             }
 
                             Button {
-                                showingSignUp = true
+                                activeSheet = .signUp
                             } label: {
                                 Text("Create Account")
                                     .font(.headline)
@@ -161,16 +165,17 @@ struct ProfileView: View {
                 }
             }
             .navigationTitle("Profile")
-            .sheet(isPresented: $showingSignIn) {
-                SignInView()
-            }
-            .sheet(isPresented: $showingSignUp) {
-                SignUpView()
+            .sheet(item: $activeSheet) { sheet in
+                switch sheet {
+                case .signIn:
+                    SignInView()
+                case .signUp:
+                    SignUpView()
+                }
             }
             .onChange(of: authViewModel.isAuthenticated) { _, isAuthenticated in
                 if isAuthenticated {
-                    showingSignIn = false
-                    showingSignUp = false
+                    activeSheet = nil
                 }
             }
         }
