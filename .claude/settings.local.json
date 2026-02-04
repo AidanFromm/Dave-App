@@ -4,7 +4,9 @@
       "Bash(git add:*)",
       "Bash(git commit:*)",
       "Bash(git push)",
-      "WebSearch"
+      "WebSearch",
+      "WebFetch(domain:developer.stockx.com)",
+      "WebFetch(domain:www.npmjs.com)"
     ]
   }
 }

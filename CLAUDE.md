@@ -27,24 +27,17 @@ Multi-channel e-commerce platform for a Tampa-based sneaker/Pokemon retail store
 | Push Notifications | Firebase Cloud Messaging |
 
 ## API Keys & Credentials
-```
-# Supabase
-SUPABASE_URL=https://wupfvvwypyvzkznekksw.supabase.co
-SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind1cGZ2dnd5cHl2emt6bmVra3N3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAxNjkzMjIsImV4cCI6MjA4NTc0NTMyMn0.zDSY9wgurlBCEskYvihLmZYqbrt6ovtGj6ntk4WsYDY
-SUPABASE_SERVICE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind1cGZ2dnd5cHl2emt6bmVra3N3Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MDE2OTMyMiwiZXhwIjoyMDg1NzQ1MzIyfQ.0dzNEm4ygSQUEUWuXQqXXzmsslvayB7xpXBWB1BTUVg
 
-# Stripe (TO BE CREATED)
-STRIPE_PUBLISHABLE_KEY=
-STRIPE_SECRET_KEY=
-STRIPE_WEBHOOK_SECRET=
+**All credentials are now organized in the `/Config` folder:**
 
-# Clover (TO BE CONFIGURED)
-CLOVER_MERCHANT_ID=
-CLOVER_API_KEY=
+| Config File | Service | Owner | Status |
+|-------------|---------|-------|--------|
+| `Config/Sneakers.md` | StockX API | Kyle | Ready |
+| `Config/Pokemon.md` | TCGPlayer API | Partner | Not Started |
+| `Config/Backend.md` | Supabase | Shared | Complete |
+| `Config/Payments.md` | Stripe, Clover | TBD | Not Started |
 
-# Firebase (TO BE CREATED)
-FIREBASE_PROJECT_ID=
-```
+See individual files in `/Config` for full credentials and documentation.
 
 ---
 
@@ -140,38 +133,32 @@ SecuredApp/
 ```
 /Applications/Secured App/
 ├── CLAUDE.md                    # This file - project memory
+├── TASKS.md                     # Task tracking for team collaboration
+├── COLLABORATION.md             # Git workflow guide
+├── Config/                      # API keys organized by service
+│   ├── README.md                # Config folder guide
+│   ├── Sneakers.md              # StockX API (Kyle)
+│   ├── Pokemon.md               # TCGPlayer API (Partner)
+│   ├── Backend.md               # Supabase credentials
+│   └── Payments.md              # Stripe, Clover
 ├── SecuredApp.xcodeproj         # Xcode project (double-click to open)
 ├── SecuredApp/                  # iOS source code
 │   ├── App/
-│   │   ├── SecuredAppApp.swift      # App entry point
-│   │   └── ContentView.swift        # Tab navigation
+│   │   ├── SecuredAppApp.swift
+│   │   └── ContentView.swift
 │   ├── Models/
-│   │   ├── Product.swift
-│   │   ├── Category.swift
-│   │   ├── Customer.swift
-│   │   ├── Order.swift
-│   │   └── Cart.swift
 │   ├── Views/
-│   │   ├── Shop/
-│   │   │   ├── ShopView.swift
-│   │   │   ├── ProductGridView.swift
-│   │   │   └── ProductDetailView.swift
-│   │   ├── Cart/
-│   │   │   ├── CartView.swift
-│   │   │   └── CheckoutView.swift
-│   │   └── Profile/
-│   │       └── ProfileView.swift
+│   │   ├── Shop/                # Customer-facing shop
+│   │   ├── Cart/                # Shopping cart
+│   │   ├── Profile/             # User profile
+│   │   └── Admin/               # Admin inventory (Kyle building)
 │   ├── ViewModels/
-│   │   ├── ProductViewModel.swift
-│   │   ├── CartViewModel.swift
-│   │   └── AuthViewModel.swift
 │   ├── Services/
-│   │   └── SupabaseService.swift
+│   │   ├── SupabaseService.swift
+│   │   ├── StockXService.swift      # (Kyle building)
+│   │   └── BarcodeScannerService.swift  # (Kyle building)
 │   └── Assets.xcassets
 └── database/                    # SQL migration files
-    ├── 001_initial_schema.sql
-    ├── 002_row_level_security.sql
-    └── 003_realtime_and_storage.sql
 ```
 
 ---
