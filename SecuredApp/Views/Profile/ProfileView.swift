@@ -16,6 +16,13 @@ struct ProfileView: View {
         NavigationStack {
             List {
                 if authViewModel.isAuthenticated {
+                    // Email verification banner (non-blocking)
+                    if authViewModel.showEmailVerificationPrompt && !authViewModel.isEmailVerified {
+                        Section {
+                            EmailVerificationBanner()
+                        }
+                    }
+
                     // User info section
                     Section {
                         HStack(spacing: 16) {
@@ -123,6 +130,15 @@ struct ProfileView: View {
                         }
                         .padding(.vertical)
                     }
+
+                    // Guest order lookup
+                    Section("Guest Orders") {
+                        NavigationLink {
+                            GuestOrderLookupView()
+                        } label: {
+                            Label("Look Up Order", systemImage: "magnifyingglass")
+                        }
+                    }
                 }
 
                 // App info
@@ -155,12 +171,76 @@ struct ProfileView: View {
     }
 }
 
+// MARK: - Email Verification Banner
+
+struct EmailVerificationBanner: View {
+    @EnvironmentObject var authViewModel: AuthViewModel
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Image(systemName: "envelope.badge")
+                    .foregroundStyle(.orange)
+                Text("Verify your email")
+                    .font(.headline)
+                Spacer()
+                Button {
+                    authViewModel.dismissEmailVerificationPrompt()
+                } label: {
+                    Image(systemName: "xmark")
+                        .foregroundStyle(.secondary)
+                }
+            }
+
+            Text("Verify your email address to secure your account and receive order updates.")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+
+            if authViewModel.emailVerificationSent {
+                HStack {
+                    Image(systemName: "checkmark.circle.fill")
+                        .foregroundStyle(.green)
+                    Text("Verification email sent!")
+                        .font(.subheadline)
+                }
+            } else {
+                Button {
+                    Task {
+                        await authViewModel.resendVerificationEmail()
+                    }
+                } label: {
+                    HStack {
+                        if authViewModel.isLoading {
+                            ProgressView()
+                                .scaleEffect(0.8)
+                        } else {
+                            Text("Send Verification Email")
+                        }
+                    }
+                    .font(.subheadline)
+                    .fontWeight(.medium)
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 8)
+                    .background(Color.securedAccent)
+                    .clipShape(Capsule())
+                }
+                .disabled(authViewModel.isLoading)
+            }
+        }
+        .padding(.vertical, 8)
+    }
+}
+
+// MARK: - Sign In View
+
 struct SignInView: View {
     @EnvironmentObject var authViewModel: AuthViewModel
     @Environment(\.dismiss) private var dismiss
 
     @State private var email = ""
     @State private var password = ""
+    @State private var showingForgotPassword = false
 
     var body: some View {
         NavigationStack {
@@ -184,6 +264,17 @@ struct SignInView: View {
                     SecureField("Password", text: $password)
                         .textContentType(.password)
                         .textFieldStyle(.roundedBorder)
+
+                    HStack {
+                        Spacer()
+                        Button {
+                            showingForgotPassword = true
+                        } label: {
+                            Text("Forgot password?")
+                                .font(.subheadline)
+                                .foregroundStyle(Color.securedAccent)
+                        }
+                    }
                 }
 
                 if let error = authViewModel.error {
@@ -228,9 +319,322 @@ struct SignInView: View {
                     }
                 }
             }
+            .sheet(isPresented: $showingForgotPassword) {
+                ForgotPasswordView()
+            }
         }
     }
 }
+
+// MARK: - Forgot Password View
+
+struct ForgotPasswordView: View {
+    @EnvironmentObject var authViewModel: AuthViewModel
+    @Environment(\.dismiss) private var dismiss
+
+    @State private var email = ""
+
+    var body: some View {
+        NavigationStack {
+            VStack(spacing: 24) {
+                VStack(spacing: 8) {
+                    Image(systemName: "lock.rotation")
+                        .font(.system(size: 50))
+                        .foregroundStyle(Color.securedAccent)
+
+                    Text("Reset Password")
+                        .font(.title)
+                        .fontWeight(.bold)
+
+                    Text("Enter your email address and we'll send you a link to reset your password.")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                }
+
+                TextField("Email", text: $email)
+                    .textContentType(.emailAddress)
+                    .keyboardType(.emailAddress)
+                    .autocapitalization(.none)
+                    .textFieldStyle(.roundedBorder)
+
+                if authViewModel.passwordResetSent {
+                    VStack(spacing: 12) {
+                        Image(systemName: "checkmark.circle.fill")
+                            .font(.system(size: 40))
+                            .foregroundStyle(.green)
+
+                        Text("Reset link sent!")
+                            .font(.headline)
+
+                        Text("Check your email for a link to reset your password. The link will expire in 1 hour.")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.center)
+
+                        Button("Done") {
+                            authViewModel.passwordResetSent = false
+                            dismiss()
+                        }
+                        .font(.headline)
+                        .foregroundStyle(.white)
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                        .background(Color.securedAccent)
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                    }
+                } else {
+                    if let error = authViewModel.error {
+                        Text(error)
+                            .font(.caption)
+                            .foregroundStyle(.red)
+                    }
+
+                    Button {
+                        Task {
+                            await authViewModel.sendPasswordResetEmail(email: email)
+                        }
+                    } label: {
+                        HStack {
+                            if authViewModel.isLoading {
+                                ProgressView()
+                                    .tint(.white)
+                            } else {
+                                Text("Send Reset Link")
+                            }
+                        }
+                        .font(.headline)
+                        .foregroundStyle(.white)
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                        .background(email.contains("@") ? Color.securedAccent : Color.gray)
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                    }
+                    .disabled(!email.contains("@") || authViewModel.isLoading)
+                }
+
+                Spacer()
+            }
+            .padding()
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") {
+                        authViewModel.passwordResetSent = false
+                        authViewModel.error = nil
+                        dismiss()
+                    }
+                }
+            }
+        }
+    }
+}
+
+// MARK: - Reset Password Form
+
+struct ResetPasswordFormView: View {
+    @EnvironmentObject var authViewModel: AuthViewModel
+    @Environment(\.dismiss) private var dismiss
+
+    @State private var newPassword = ""
+    @State private var confirmPassword = ""
+
+    private var passwordsMatch: Bool {
+        !newPassword.isEmpty && newPassword == confirmPassword
+    }
+
+    private var isValidPassword: Bool {
+        newPassword.count >= 6
+    }
+
+    var body: some View {
+        NavigationStack {
+            VStack(spacing: 24) {
+                VStack(spacing: 8) {
+                    Image(systemName: "lock.shield")
+                        .font(.system(size: 50))
+                        .foregroundStyle(Color.securedAccent)
+
+                    Text("Create New Password")
+                        .font(.title)
+                        .fontWeight(.bold)
+
+                    Text("Enter a new password for your account.")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                }
+
+                VStack(spacing: 16) {
+                    SecureField("New Password", text: $newPassword)
+                        .textContentType(.newPassword)
+                        .textFieldStyle(.roundedBorder)
+
+                    SecureField("Confirm Password", text: $confirmPassword)
+                        .textContentType(.newPassword)
+                        .textFieldStyle(.roundedBorder)
+
+                    if !newPassword.isEmpty && !isValidPassword {
+                        Text("Password must be at least 6 characters")
+                            .font(.caption)
+                            .foregroundStyle(.orange)
+                    }
+
+                    if !confirmPassword.isEmpty && !passwordsMatch {
+                        Text("Passwords don't match")
+                            .font(.caption)
+                            .foregroundStyle(.red)
+                    }
+                }
+
+                if let error = authViewModel.error {
+                    Text(error)
+                        .font(.caption)
+                        .foregroundStyle(.red)
+                }
+
+                Button {
+                    Task {
+                        let success = await authViewModel.resetPassword(newPassword: newPassword)
+                        if success {
+                            dismiss()
+                        }
+                    }
+                } label: {
+                    HStack {
+                        if authViewModel.isLoading {
+                            ProgressView()
+                                .tint(.white)
+                        } else {
+                            Text("Reset Password")
+                        }
+                    }
+                    .font(.headline)
+                    .foregroundStyle(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding()
+                    .background((passwordsMatch && isValidPassword) ? Color.securedAccent : Color.gray)
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                }
+                .disabled(!passwordsMatch || !isValidPassword || authViewModel.isLoading)
+
+                Spacer()
+            }
+            .padding()
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") {
+                        authViewModel.showPasswordResetForm = false
+                        authViewModel.error = nil
+                        dismiss()
+                    }
+                }
+            }
+        }
+    }
+}
+
+// MARK: - Guest Order Lookup View
+
+struct GuestOrderLookupView: View {
+    @State private var email = ""
+    @State private var orders: [Order] = []
+    @State private var isLoading = false
+    @State private var hasSearched = false
+    @State private var error: String?
+
+    var body: some View {
+        List {
+            Section {
+                VStack(alignment: .leading, spacing: 12) {
+                    Text("Find your orders by email")
+                        .font(.headline)
+
+                    Text("Enter the email address you used during checkout.")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+
+                    TextField("Email", text: $email)
+                        .textContentType(.emailAddress)
+                        .keyboardType(.emailAddress)
+                        .autocapitalization(.none)
+                        .textFieldStyle(.roundedBorder)
+
+                    Button {
+                        Task {
+                            await lookupOrders()
+                        }
+                    } label: {
+                        HStack {
+                            if isLoading {
+                                ProgressView()
+                                    .tint(.white)
+                            } else {
+                                Text("Look Up Orders")
+                            }
+                        }
+                        .font(.headline)
+                        .foregroundStyle(.white)
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                        .background(email.contains("@") ? Color.securedAccent : Color.gray)
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                    }
+                    .disabled(!email.contains("@") || isLoading)
+                }
+                .padding(.vertical, 8)
+            }
+
+            if let error = error {
+                Section {
+                    Text(error)
+                        .foregroundStyle(.red)
+                }
+            }
+
+            if hasSearched {
+                if orders.isEmpty {
+                    Section {
+                        ContentUnavailableView(
+                            "No Orders Found",
+                            systemImage: "bag",
+                            description: Text("No orders found for this email address.")
+                        )
+                    }
+                } else {
+                    Section("Your Orders") {
+                        ForEach(orders) { order in
+                            NavigationLink {
+                                OrderDetailView(order: order)
+                            } label: {
+                                OrderRow(order: order)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        .navigationTitle("Order Lookup")
+    }
+
+    private func lookupOrders() async {
+        isLoading = true
+        error = nil
+        hasSearched = false
+
+        do {
+            orders = try await SupabaseService.shared.fetchOrdersByEmail(email: email)
+            hasSearched = true
+        } catch {
+            self.error = "Failed to look up orders: \(error.localizedDescription)"
+        }
+
+        isLoading = false
+    }
+}
+
+// MARK: - Sign Up View
 
 struct SignUpView: View {
     @EnvironmentObject var authViewModel: AuthViewModel

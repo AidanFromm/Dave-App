@@ -141,6 +141,16 @@ final class SupabaseService: Sendable {
             .value
     }
 
+    func fetchOrdersByEmail(email: String) async throws -> [Order] {
+        try await client
+            .from("orders")
+            .select()
+            .eq("customer_email", value: email)
+            .order("created_at", ascending: false)
+            .execute()
+            .value
+    }
+
     // MARK: - Inventory
 
     func deductInventory(productId: UUID, quantity: Int, orderId: UUID?) async throws -> Bool {

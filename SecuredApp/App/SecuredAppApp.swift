@@ -19,6 +19,11 @@ struct SecuredAppApp: App {
                 .environmentObject(cartViewModel)
                 .environmentObject(authViewModel)
                 .environmentObject(wishlistViewModel)
+                .onOpenURL { url in
+                    Task {
+                        await authViewModel.handleAuthCallback(url: url)
+                    }
+                }
         }
     }
 }

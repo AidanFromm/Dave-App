@@ -9,6 +9,7 @@ import SwiftUI
 
 struct ContentView: View {
     @EnvironmentObject var cartViewModel: CartViewModel
+    @EnvironmentObject var authViewModel: AuthViewModel
     @EnvironmentObject var wishlistViewModel: WishlistViewModel
 
     // TODO: Check if user is admin before showing Admin tab
@@ -42,6 +43,9 @@ struct ContentView: View {
             }
         }
         .tint(Color.securedAccent)
+        .sheet(isPresented: $authViewModel.showPasswordResetForm) {
+            ResetPasswordFormView()
+        }
     }
 }
 
