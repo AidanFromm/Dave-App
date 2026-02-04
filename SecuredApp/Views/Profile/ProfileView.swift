@@ -16,6 +16,28 @@ struct ProfileView: View {
         var id: Self { self }
     }
 
+    // Computed properties for user display
+    private var displayName: String {
+        if let fullName = authViewModel.customer?.fullName, !fullName.isEmpty {
+            return fullName
+        }
+        return authViewModel.currentUser?.email?.components(separatedBy: "@").first?.capitalized ?? "User"
+    }
+
+    private var displayEmail: String {
+        authViewModel.customer?.email ?? authViewModel.currentUser?.email ?? ""
+    }
+
+    private var avatarInitial: String {
+        if let firstName = authViewModel.customer?.firstName, !firstName.isEmpty {
+            return String(firstName.prefix(1)).uppercased()
+        }
+        if let email = authViewModel.currentUser?.email, !email.isEmpty {
+            return String(email.prefix(1)).uppercased()
+        }
+        return "U"
+    }
+
     var body: some View {
         NavigationStack {
             List {
@@ -30,22 +52,34 @@ struct ProfileView: View {
                     // User info section
                     Section {
                         HStack(spacing: 16) {
+                            // Avatar with gradient
                             Circle()
-                                .fill(Color.primary.opacity(0.1))
-                                .frame(width: 60, height: 60)
+                                .fill(
+                                    LinearGradient(
+                                        colors: [Color.securedAccent, Color.securedAccent.opacity(0.7)],
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
+                                    )
+                                )
+                                .frame(width: 64, height: 64)
                                 .overlay {
-                                    Text(authViewModel.customer?.firstName?.prefix(1).uppercased() ?? "U")
+                                    Text(avatarInitial)
                                         .font(.title)
-                                        .fontWeight(.semibold)
+                                        .fontWeight(.bold)
+                                        .foregroundStyle(.white)
                                 }
+                                .shadow(color: Color.securedAccent.opacity(0.3), radius: 4, y: 2)
 
-                            VStack(alignment: .leading) {
-                                Text(authViewModel.customer?.fullName ?? "User")
-                                    .font(.headline)
-                                Text(authViewModel.customer?.email ?? "")
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text(displayName)
+                                    .font(.title3)
+                                    .fontWeight(.semibold)
+                                Text(displayEmail)
                                     .font(.subheadline)
                                     .foregroundStyle(.secondary)
                             }
+
+                            Spacer()
                         }
                         .padding(.vertical, 8)
                     }
@@ -59,7 +93,6 @@ struct ProfileView: View {
                         }
 
                         NavigationLink {
-                            // Tracking view
                             Text("Track Order")
                         } label: {
                             Label("Track Order", systemImage: "shippingbox")
@@ -69,14 +102,12 @@ struct ProfileView: View {
                     // Preferences
                     Section("Preferences") {
                         NavigationLink {
-                            // Size alerts view
                             Text("Size Alerts")
                         } label: {
                             Label("Size Alerts", systemImage: "bell")
                         }
 
                         NavigationLink {
-                            // Addresses view
                             Text("Saved Addresses")
                         } label: {
                             Label("Saved Addresses", systemImage: "map")
@@ -96,45 +127,62 @@ struct ProfileView: View {
                 } else {
                     // Guest view
                     Section {
-                        VStack(spacing: 16) {
-                            Image(systemName: "person.circle")
-                                .font(.system(size: 60))
-                                .foregroundStyle(.secondary)
+                        VStack(spacing: 20) {
+                            // Icon
+                            ZStack {
+                                Circle()
+                                    .fill(Color.securedAccent.opacity(0.1))
+                                    .frame(width: 80, height: 80)
 
-                            Text("Sign in for the best experience")
-                                .font(.headline)
-
-                            Text("Track orders, save addresses, and get notified about drops")
-                                .font(.subheadline)
-                                .foregroundStyle(.secondary)
-                                .multilineTextAlignment(.center)
-
-                            Button {
-                                activeSheet = .signIn
-                            } label: {
-                                Text("Sign In")
-                                    .font(.headline)
-                                    .foregroundStyle(.white)
-                                    .frame(maxWidth: .infinity)
-                                    .padding()
-                                    .background(.primary)
-                                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                                Image(systemName: "person.fill")
+                                    .font(.system(size: 36))
+                                    .foregroundStyle(Color.securedAccent)
                             }
-                            .buttonStyle(.borderless)
+                            .padding(.top, 8)
 
-                            Button {
-                                activeSheet = .signUp
-                            } label: {
-                                Text("Create Account")
-                                    .font(.headline)
-                                    .frame(maxWidth: .infinity)
-                                    .padding()
-                                    .background(Color(.systemGray6))
-                                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                            // Text
+                            VStack(spacing: 8) {
+                                Text("Sign in for the best experience")
+                                    .font(.title3)
+                                    .fontWeight(.semibold)
+
+                                Text("Track orders, save addresses, and get notified about drops")
+                                    .font(.subheadline)
+                                    .foregroundStyle(.secondary)
+                                    .multilineTextAlignment(.center)
                             }
-                            .buttonStyle(.borderless)
+
+                            // Buttons
+                            VStack(spacing: 12) {
+                                Button {
+                                    activeSheet = .signIn
+                                } label: {
+                                    Text("Sign In")
+                                        .font(.headline)
+                                        .foregroundStyle(.white)
+                                        .frame(maxWidth: .infinity)
+                                        .padding(.vertical, 14)
+                                        .background(Color.securedAccent)
+                                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                                }
+                                .buttonStyle(.borderless)
+
+                                Button {
+                                    activeSheet = .signUp
+                                } label: {
+                                    Text("Create Account")
+                                        .font(.headline)
+                                        .foregroundStyle(Color.securedAccent)
+                                        .frame(maxWidth: .infinity)
+                                        .padding(.vertical, 14)
+                                        .background(Color.securedAccent.opacity(0.1))
+                                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                                }
+                                .buttonStyle(.borderless)
+                            }
+                            .padding(.bottom, 8)
                         }
-                        .padding(.vertical)
+                        .padding(.vertical, 8)
                     }
 
                     // Guest order lookup
@@ -181,6 +229,38 @@ struct ProfileView: View {
                 }
             }
         }
+    }
+}
+
+// MARK: - Styled Text Field
+
+struct StyledTextField: View {
+    let icon: String
+    let placeholder: String
+    @Binding var text: String
+    var isSecure: Bool = false
+    var keyboardType: UIKeyboardType = .default
+    var textContentType: UITextContentType?
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Image(systemName: icon)
+                .foregroundStyle(.secondary)
+                .frame(width: 20)
+
+            if isSecure {
+                SecureField(placeholder, text: $text)
+                    .textContentType(textContentType)
+            } else {
+                TextField(placeholder, text: $text)
+                    .keyboardType(keyboardType)
+                    .autocapitalization(keyboardType == .emailAddress ? .none : .words)
+                    .textContentType(textContentType)
+            }
+        }
+        .padding()
+        .background(Color(.systemGray6))
+        .clipShape(RoundedRectangle(cornerRadius: 12))
     }
 }
 
@@ -257,83 +337,247 @@ struct SignInView: View {
 
     var body: some View {
         NavigationStack {
-            VStack(spacing: 24) {
-                VStack(spacing: 8) {
-                    Text("Welcome Back")
-                        .font(.title)
-                        .fontWeight(.bold)
+            ScrollView {
+                VStack(spacing: 32) {
+                    // Header
+                    VStack(spacing: 12) {
+                        ZStack {
+                            Circle()
+                                .fill(Color.securedAccent.opacity(0.1))
+                                .frame(width: 80, height: 80)
 
-                    Text("Sign in to your account")
-                        .foregroundStyle(.secondary)
-                }
-
-                VStack(spacing: 16) {
-                    TextField("Email", text: $email)
-                        .textContentType(.emailAddress)
-                        .keyboardType(.emailAddress)
-                        .autocapitalization(.none)
-                        .textFieldStyle(.roundedBorder)
-
-                    SecureField("Password", text: $password)
-                        .textContentType(.password)
-                        .textFieldStyle(.roundedBorder)
-
-                    HStack {
-                        Spacer()
-                        Button {
-                            showingForgotPassword = true
-                        } label: {
-                            Text("Forgot password?")
-                                .font(.subheadline)
+                            Image(systemName: "person.fill")
+                                .font(.system(size: 36))
                                 .foregroundStyle(Color.securedAccent)
                         }
+
+                        Text("Welcome Back")
+                            .font(.title)
+                            .fontWeight(.bold)
+
+                        Text("Sign in to your account")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
                     }
-                }
+                    .padding(.top, 20)
 
-                if let error = authViewModel.error {
-                    Text(error)
-                        .font(.caption)
-                        .foregroundStyle(.red)
-                }
+                    // Form
+                    VStack(spacing: 16) {
+                        StyledTextField(
+                            icon: "envelope",
+                            placeholder: "Email",
+                            text: $email,
+                            keyboardType: .emailAddress,
+                            textContentType: .emailAddress
+                        )
 
-                Button {
-                    Task {
-                        let success = await authViewModel.signIn(email: email, password: password)
-                        if success {
-                            dismiss()
+                        StyledTextField(
+                            icon: "lock",
+                            placeholder: "Password",
+                            text: $password,
+                            isSecure: true,
+                            textContentType: .password
+                        )
+
+                        HStack {
+                            Spacer()
+                            Button {
+                                showingForgotPassword = true
+                            } label: {
+                                Text("Forgot password?")
+                                    .font(.subheadline)
+                                    .fontWeight(.medium)
+                                    .foregroundStyle(Color.securedAccent)
+                            }
                         }
                     }
-                } label: {
-                    HStack {
-                        if authViewModel.isLoading {
-                            ProgressView()
-                                .tint(.white)
-                        } else {
-                            Text("Sign In")
-                        }
-                    }
-                    .font(.headline)
-                    .foregroundStyle(.white)
-                    .frame(maxWidth: .infinity)
-                    .padding()
-                    .background(.primary)
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
-                }
-                .disabled(email.isEmpty || password.isEmpty || authViewModel.isLoading)
 
-                Spacer()
+                    // Error
+                    if let error = authViewModel.error {
+                        Text(error)
+                            .font(.caption)
+                            .foregroundStyle(.red)
+                            .multilineTextAlignment(.center)
+                    }
+
+                    // Sign In Button
+                    Button {
+                        Task {
+                            let success = await authViewModel.signIn(email: email, password: password)
+                            if success {
+                                dismiss()
+                            }
+                        }
+                    } label: {
+                        HStack {
+                            if authViewModel.isLoading {
+                                ProgressView()
+                                    .tint(.white)
+                            } else {
+                                Text("Sign In")
+                            }
+                        }
+                        .font(.headline)
+                        .foregroundStyle(.white)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 16)
+                        .background(
+                            (email.isEmpty || password.isEmpty) ? Color.gray : Color.securedAccent
+                        )
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                    }
+                    .disabled(email.isEmpty || password.isEmpty || authViewModel.isLoading)
+
+                    Spacer()
+                }
+                .padding(.horizontal, 24)
             }
-            .padding()
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") {
+                        authViewModel.error = nil
                         dismiss()
                     }
                 }
             }
             .sheet(isPresented: $showingForgotPassword) {
                 ForgotPasswordView()
+            }
+        }
+    }
+}
+
+// MARK: - Sign Up View
+
+struct SignUpView: View {
+    @EnvironmentObject var authViewModel: AuthViewModel
+    @Environment(\.dismiss) private var dismiss
+
+    @State private var email = ""
+    @State private var password = ""
+    @State private var firstName = ""
+    @State private var lastName = ""
+
+    private var isValid: Bool {
+        !firstName.isEmpty &&
+        !lastName.isEmpty &&
+        email.contains("@") &&
+        password.count >= 6
+    }
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(spacing: 32) {
+                    // Header
+                    VStack(spacing: 12) {
+                        ZStack {
+                            Circle()
+                                .fill(Color.securedAccent.opacity(0.1))
+                                .frame(width: 80, height: 80)
+
+                            Image(systemName: "person.badge.plus")
+                                .font(.system(size: 36))
+                                .foregroundStyle(Color.securedAccent)
+                        }
+
+                        Text("Create Account")
+                            .font(.title)
+                            .fontWeight(.bold)
+
+                        Text("Join Secured for exclusive drops")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                    }
+                    .padding(.top, 20)
+
+                    // Form
+                    VStack(spacing: 16) {
+                        HStack(spacing: 12) {
+                            StyledTextField(
+                                icon: "person",
+                                placeholder: "First Name",
+                                text: $firstName,
+                                textContentType: .givenName
+                            )
+
+                            StyledTextField(
+                                icon: "person",
+                                placeholder: "Last Name",
+                                text: $lastName,
+                                textContentType: .familyName
+                            )
+                        }
+
+                        StyledTextField(
+                            icon: "envelope",
+                            placeholder: "Email",
+                            text: $email,
+                            keyboardType: .emailAddress,
+                            textContentType: .emailAddress
+                        )
+
+                        StyledTextField(
+                            icon: "lock",
+                            placeholder: "Password (min 6 characters)",
+                            text: $password,
+                            isSecure: true,
+                            textContentType: .newPassword
+                        )
+                    }
+
+                    // Error
+                    if let error = authViewModel.error {
+                        Text(error)
+                            .font(.caption)
+                            .foregroundStyle(.red)
+                            .multilineTextAlignment(.center)
+                    }
+
+                    // Create Account Button
+                    Button {
+                        Task {
+                            let success = await authViewModel.signUp(
+                                email: email,
+                                password: password,
+                                firstName: firstName,
+                                lastName: lastName
+                            )
+                            if success {
+                                dismiss()
+                            }
+                        }
+                    } label: {
+                        HStack {
+                            if authViewModel.isLoading {
+                                ProgressView()
+                                    .tint(.white)
+                            } else {
+                                Text("Create Account")
+                            }
+                        }
+                        .font(.headline)
+                        .foregroundStyle(.white)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 16)
+                        .background(isValid ? Color.securedAccent : Color.gray)
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                    }
+                    .disabled(!isValid || authViewModel.isLoading)
+
+                    Spacer()
+                }
+                .padding(.horizontal, 24)
+            }
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") {
+                        authViewModel.error = nil
+                        dismiss()
+                    }
+                }
             }
         }
     }
@@ -349,86 +593,99 @@ struct ForgotPasswordView: View {
 
     var body: some View {
         NavigationStack {
-            VStack(spacing: 24) {
-                VStack(spacing: 8) {
-                    Image(systemName: "lock.rotation")
-                        .font(.system(size: 50))
-                        .foregroundStyle(Color.securedAccent)
-
-                    Text("Reset Password")
-                        .font(.title)
-                        .fontWeight(.bold)
-
-                    Text("Enter your email address and we'll send you a link to reset your password.")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                        .multilineTextAlignment(.center)
-                }
-
-                TextField("Email", text: $email)
-                    .textContentType(.emailAddress)
-                    .keyboardType(.emailAddress)
-                    .autocapitalization(.none)
-                    .textFieldStyle(.roundedBorder)
-
-                if authViewModel.passwordResetSent {
+            ScrollView {
+                VStack(spacing: 32) {
+                    // Header
                     VStack(spacing: 12) {
-                        Image(systemName: "checkmark.circle.fill")
-                            .font(.system(size: 40))
-                            .foregroundStyle(.green)
+                        ZStack {
+                            Circle()
+                                .fill(Color.securedAccent.opacity(0.1))
+                                .frame(width: 80, height: 80)
 
-                        Text("Reset link sent!")
-                            .font(.headline)
+                            Image(systemName: "lock.rotation")
+                                .font(.system(size: 36))
+                                .foregroundStyle(Color.securedAccent)
+                        }
 
-                        Text("Check your email for a link to reset your password. The link will expire in 1 hour.")
+                        Text("Reset Password")
+                            .font(.title)
+                            .fontWeight(.bold)
+
+                        Text("Enter your email address and we'll send you a link to reset your password.")
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
                             .multilineTextAlignment(.center)
-
-                        Button("Done") {
-                            authViewModel.passwordResetSent = false
-                            dismiss()
-                        }
-                        .font(.headline)
-                        .foregroundStyle(.white)
-                        .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(Color.securedAccent)
-                        .clipShape(RoundedRectangle(cornerRadius: 12))
                     }
-                } else {
-                    if let error = authViewModel.error {
-                        Text(error)
-                            .font(.caption)
-                            .foregroundStyle(.red)
-                    }
+                    .padding(.top, 20)
 
-                    Button {
-                        Task {
-                            await authViewModel.sendPasswordResetEmail(email: email)
-                        }
-                    } label: {
-                        HStack {
-                            if authViewModel.isLoading {
-                                ProgressView()
-                                    .tint(.white)
-                            } else {
-                                Text("Send Reset Link")
+                    // Form
+                    StyledTextField(
+                        icon: "envelope",
+                        placeholder: "Email",
+                        text: $email,
+                        keyboardType: .emailAddress,
+                        textContentType: .emailAddress
+                    )
+
+                    if authViewModel.passwordResetSent {
+                        VStack(spacing: 16) {
+                            Image(systemName: "checkmark.circle.fill")
+                                .font(.system(size: 50))
+                                .foregroundStyle(.green)
+
+                            Text("Reset link sent!")
+                                .font(.headline)
+
+                            Text("Check your email for a link to reset your password.")
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                                .multilineTextAlignment(.center)
+
+                            Button("Done") {
+                                authViewModel.passwordResetSent = false
+                                dismiss()
                             }
+                            .font(.headline)
+                            .foregroundStyle(.white)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 16)
+                            .background(Color.securedAccent)
+                            .clipShape(RoundedRectangle(cornerRadius: 12))
                         }
-                        .font(.headline)
-                        .foregroundStyle(.white)
-                        .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(email.contains("@") ? Color.securedAccent : Color.gray)
-                        .clipShape(RoundedRectangle(cornerRadius: 12))
-                    }
-                    .disabled(!email.contains("@") || authViewModel.isLoading)
-                }
+                    } else {
+                        if let error = authViewModel.error {
+                            Text(error)
+                                .font(.caption)
+                                .foregroundStyle(.red)
+                        }
 
-                Spacer()
+                        Button {
+                            Task {
+                                await authViewModel.sendPasswordResetEmail(email: email)
+                            }
+                        } label: {
+                            HStack {
+                                if authViewModel.isLoading {
+                                    ProgressView()
+                                        .tint(.white)
+                                } else {
+                                    Text("Send Reset Link")
+                                }
+                            }
+                            .font(.headline)
+                            .foregroundStyle(.white)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 16)
+                            .background(email.contains("@") ? Color.securedAccent : Color.gray)
+                            .clipShape(RoundedRectangle(cornerRadius: 12))
+                        }
+                        .disabled(!email.contains("@") || authViewModel.isLoading)
+                    }
+
+                    Spacer()
+                }
+                .padding(.horizontal, 24)
             }
-            .padding()
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -462,78 +719,97 @@ struct ResetPasswordFormView: View {
 
     var body: some View {
         NavigationStack {
-            VStack(spacing: 24) {
-                VStack(spacing: 8) {
-                    Image(systemName: "lock.shield")
-                        .font(.system(size: 50))
-                        .foregroundStyle(Color.securedAccent)
+            ScrollView {
+                VStack(spacing: 32) {
+                    // Header
+                    VStack(spacing: 12) {
+                        ZStack {
+                            Circle()
+                                .fill(Color.securedAccent.opacity(0.1))
+                                .frame(width: 80, height: 80)
 
-                    Text("Create New Password")
-                        .font(.title)
-                        .fontWeight(.bold)
+                            Image(systemName: "lock.shield")
+                                .font(.system(size: 36))
+                                .foregroundStyle(Color.securedAccent)
+                        }
 
-                    Text("Enter a new password for your account.")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                        .multilineTextAlignment(.center)
-                }
+                        Text("Create New Password")
+                            .font(.title)
+                            .fontWeight(.bold)
 
-                VStack(spacing: 16) {
-                    SecureField("New Password", text: $newPassword)
-                        .textContentType(.newPassword)
-                        .textFieldStyle(.roundedBorder)
+                        Text("Enter a new password for your account.")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.center)
+                    }
+                    .padding(.top, 20)
 
-                    SecureField("Confirm Password", text: $confirmPassword)
-                        .textContentType(.newPassword)
-                        .textFieldStyle(.roundedBorder)
+                    // Form
+                    VStack(spacing: 16) {
+                        StyledTextField(
+                            icon: "lock",
+                            placeholder: "New Password",
+                            text: $newPassword,
+                            isSecure: true,
+                            textContentType: .newPassword
+                        )
 
-                    if !newPassword.isEmpty && !isValidPassword {
-                        Text("Password must be at least 6 characters")
-                            .font(.caption)
-                            .foregroundStyle(.orange)
+                        StyledTextField(
+                            icon: "lock.fill",
+                            placeholder: "Confirm Password",
+                            text: $confirmPassword,
+                            isSecure: true,
+                            textContentType: .newPassword
+                        )
+
+                        if !newPassword.isEmpty && !isValidPassword {
+                            Text("Password must be at least 6 characters")
+                                .font(.caption)
+                                .foregroundStyle(.orange)
+                        }
+
+                        if !confirmPassword.isEmpty && !passwordsMatch {
+                            Text("Passwords don't match")
+                                .font(.caption)
+                                .foregroundStyle(.red)
+                        }
                     }
 
-                    if !confirmPassword.isEmpty && !passwordsMatch {
-                        Text("Passwords don't match")
+                    if let error = authViewModel.error {
+                        Text(error)
                             .font(.caption)
                             .foregroundStyle(.red)
                     }
-                }
 
-                if let error = authViewModel.error {
-                    Text(error)
-                        .font(.caption)
-                        .foregroundStyle(.red)
-                }
-
-                Button {
-                    Task {
-                        let success = await authViewModel.resetPassword(newPassword: newPassword)
-                        if success {
-                            dismiss()
+                    Button {
+                        Task {
+                            let success = await authViewModel.resetPassword(newPassword: newPassword)
+                            if success {
+                                dismiss()
+                            }
                         }
-                    }
-                } label: {
-                    HStack {
-                        if authViewModel.isLoading {
-                            ProgressView()
-                                .tint(.white)
-                        } else {
-                            Text("Reset Password")
+                    } label: {
+                        HStack {
+                            if authViewModel.isLoading {
+                                ProgressView()
+                                    .tint(.white)
+                            } else {
+                                Text("Reset Password")
+                            }
                         }
+                        .font(.headline)
+                        .foregroundStyle(.white)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 16)
+                        .background((passwordsMatch && isValidPassword) ? Color.securedAccent : Color.gray)
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
                     }
-                    .font(.headline)
-                    .foregroundStyle(.white)
-                    .frame(maxWidth: .infinity)
-                    .padding()
-                    .background((passwordsMatch && isValidPassword) ? Color.securedAccent : Color.gray)
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
-                }
-                .disabled(!passwordsMatch || !isValidPassword || authViewModel.isLoading)
+                    .disabled(!passwordsMatch || !isValidPassword || authViewModel.isLoading)
 
-                Spacer()
+                    Spacer()
+                }
+                .padding(.horizontal, 24)
             }
-            .padding()
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -560,7 +836,7 @@ struct GuestOrderLookupView: View {
     var body: some View {
         List {
             Section {
-                VStack(alignment: .leading, spacing: 12) {
+                VStack(alignment: .leading, spacing: 16) {
                     Text("Find your orders by email")
                         .font(.headline)
 
@@ -568,11 +844,13 @@ struct GuestOrderLookupView: View {
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
 
-                    TextField("Email", text: $email)
-                        .textContentType(.emailAddress)
-                        .keyboardType(.emailAddress)
-                        .autocapitalization(.none)
-                        .textFieldStyle(.roundedBorder)
+                    StyledTextField(
+                        icon: "envelope",
+                        placeholder: "Email",
+                        text: $email,
+                        keyboardType: .emailAddress,
+                        textContentType: .emailAddress
+                    )
 
                     Button {
                         Task {
@@ -590,7 +868,7 @@ struct GuestOrderLookupView: View {
                         .font(.headline)
                         .foregroundStyle(.white)
                         .frame(maxWidth: .infinity)
-                        .padding()
+                        .padding(.vertical, 14)
                         .background(email.contains("@") ? Color.securedAccent : Color.gray)
                         .clipShape(RoundedRectangle(cornerRadius: 12))
                     }
@@ -647,106 +925,7 @@ struct GuestOrderLookupView: View {
     }
 }
 
-// MARK: - Sign Up View
-
-struct SignUpView: View {
-    @EnvironmentObject var authViewModel: AuthViewModel
-    @Environment(\.dismiss) private var dismiss
-
-    @State private var email = ""
-    @State private var password = ""
-    @State private var firstName = ""
-    @State private var lastName = ""
-
-    var body: some View {
-        NavigationStack {
-            VStack(spacing: 24) {
-                VStack(spacing: 8) {
-                    Text("Create Account")
-                        .font(.title)
-                        .fontWeight(.bold)
-
-                    Text("Join Secured for exclusive drops")
-                        .foregroundStyle(.secondary)
-                }
-
-                VStack(spacing: 16) {
-                    HStack {
-                        TextField("First Name", text: $firstName)
-                            .textContentType(.givenName)
-                        TextField("Last Name", text: $lastName)
-                            .textContentType(.familyName)
-                    }
-                    .textFieldStyle(.roundedBorder)
-
-                    TextField("Email", text: $email)
-                        .textContentType(.emailAddress)
-                        .keyboardType(.emailAddress)
-                        .autocapitalization(.none)
-                        .textFieldStyle(.roundedBorder)
-
-                    SecureField("Password", text: $password)
-                        .textContentType(.newPassword)
-                        .textFieldStyle(.roundedBorder)
-                }
-
-                if let error = authViewModel.error {
-                    Text(error)
-                        .font(.caption)
-                        .foregroundStyle(.red)
-                }
-
-                Button {
-                    Task {
-                        let success = await authViewModel.signUp(
-                            email: email,
-                            password: password,
-                            firstName: firstName,
-                            lastName: lastName
-                        )
-                        if success {
-                            dismiss()
-                        }
-                    }
-                } label: {
-                    HStack {
-                        if authViewModel.isLoading {
-                            ProgressView()
-                                .tint(.white)
-                        } else {
-                            Text("Create Account")
-                        }
-                    }
-                    .font(.headline)
-                    .foregroundStyle(.white)
-                    .frame(maxWidth: .infinity)
-                    .padding()
-                    .background(.primary)
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
-                }
-                .disabled(!isValid || authViewModel.isLoading)
-
-                Spacer()
-            }
-            .padding()
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") {
-                        dismiss()
-                    }
-                }
-            }
-        }
-    }
-
-    private var isValid: Bool {
-        !firstName.isEmpty &&
-        !lastName.isEmpty &&
-        email.contains("@") &&
-        password.count >= 6
-    }
-}
+// MARK: - Order Views
 
 struct OrderHistoryView: View {
     @EnvironmentObject var authViewModel: AuthViewModel
@@ -806,9 +985,11 @@ struct OrderRow: View {
                 Spacer()
                 Text(order.status.displayName)
                     .font(.caption)
+                    .fontWeight(.medium)
                     .padding(.horizontal, 8)
                     .padding(.vertical, 4)
                     .background(Color.green.opacity(0.2))
+                    .foregroundStyle(.green)
                     .clipShape(Capsule())
             }
 
