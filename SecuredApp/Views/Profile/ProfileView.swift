@@ -167,6 +167,12 @@ struct ProfileView: View {
             .sheet(isPresented: $showingSignUp) {
                 SignUpView()
             }
+            .onChange(of: authViewModel.isAuthenticated) { _, isAuthenticated in
+                if isAuthenticated {
+                    showingSignIn = false
+                    showingSignUp = false
+                }
+            }
         }
     }
 }
