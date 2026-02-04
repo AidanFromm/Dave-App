@@ -1,56 +1,95 @@
 import SwiftUI
 
 // MARK: - Secured App Color System
-// Premium Nike/Adidas-inspired color palette with automatic light/dark mode support
+// Brand color palette with automatic light/dark mode support
 
 extension Color {
 
-    // MARK: - Accent Colors
+    // MARK: - Primary Colors
 
-    /// Primary accent color - Red/Orange for CTAs, badges, selected states
-    /// Light: #FF4D00, Dark: #FF6B2C
+    /// Primary accent color - Main CTAs, buttons, badges
+    /// Light: #FB4F14, Dark: #FF6B3D
     static let securedAccent = Color("AccentPrimary")
 
-    /// Secondary accent - slightly lighter variant
-    static let securedAccentSecondary = Color("AccentSecondary")
+    /// Primary hover/pressed state
+    /// Light: #E54510, Dark: #FF8A5C
+    static let securedAccentHover = Color("PrimaryHover")
+
+    /// Secondary accent color
+    /// Light: #002244, Dark: #4A7DB8
+    static let securedSecondary = Color("AccentSecondary")
 
     // MARK: - Background Colors
 
-    /// Main background - Light: White, Dark: Black
+    /// Main background
+    /// Light: #FFFFFF, Dark: #0D0D0D
     static let securedBackground = Color("BackgroundPrimary")
 
-    /// Card/Surface background - Light: #F5F5F5, Dark: #1C1C1E
+    /// Card/Surface background
+    /// Light: #F5F5F7, Dark: #1A1A1A
     static let securedCardBackground = Color("BackgroundSecondary")
 
+    /// Surface alias for semantic clarity
+    static let securedSurface = Color("BackgroundSecondary")
+
     /// Elevated surface for modals/sheets
+    /// Light: #EAEAEC, Dark: #252525
     static let securedElevated = Color("BackgroundElevated")
+
+    /// Surface secondary alias
+    static let securedSurfaceSecondary = Color("BackgroundElevated")
 
     // MARK: - Text Colors
 
-    /// Primary text - Headlines - Light: #111111, Dark: #FFFFFF
+    /// Primary text - Headlines
+    /// Light: #1A1A1A, Dark: #FFFFFF
     static let securedTextPrimary = Color("TextPrimary")
 
-    /// Secondary text - Captions - Light: #757575, Dark: #8E8E93
+    /// Secondary text - Body text
+    /// Light: #6B6B6B, Dark: #A0A0A0
     static let securedTextSecondary = Color("TextSecondary")
+
+    /// Muted text - Captions, placeholders
+    /// Light: #9A9A9A, Dark: #666666
+    static let securedTextMuted = Color("TextMuted")
+
+    // MARK: - Border Colors
+
+    /// Dividers and borders
+    /// Light: #E5E5E5, Dark: #2A2A2A
+    static let securedBorder = Color("Border")
 
     // MARK: - Condition Badge Colors
 
-    /// New condition badge - Light: #00A86B, Dark: #34C759
+    /// New condition badge
+    /// Light: #34C759, Dark: #30D158
     static let securedConditionNew = Color("ConditionNew")
 
-    /// Used condition badge - Light: #007AFF, Dark: #0A84FF
+    /// Used condition badge
+    /// Light: #007AFF, Dark: #0A84FF
     static let securedConditionUsed = Color("ConditionUsed")
 
     // MARK: - Status Colors
 
     /// Success state
+    /// Light: #34C759, Dark: #30D158
     static let securedSuccess = Color("StatusSuccess")
 
     /// Warning state
+    /// Light: #FF9500, Dark: #FFA726
     static let securedWarning = Color("StatusWarning")
 
     /// Error state
+    /// Light: #FF3B30, Dark: #FF453A
     static let securedError = Color("StatusError")
+
+    /// Info state
+    /// Light: #007AFF, Dark: #0A84FF
+    static let securedInfo = Color("Info")
+
+    // MARK: - Legacy Aliases (for backward compatibility)
+
+    static let securedAccentSecondary = securedSecondary
 
     // MARK: - Semantic Helpers
 
@@ -82,7 +121,7 @@ extension ColorScheme {
 extension LinearGradient {
     /// Premium accent gradient for CTAs
     static let securedAccentGradient = LinearGradient(
-        colors: [Color.securedAccent, Color.securedAccentSecondary],
+        colors: [Color.securedAccent, Color.securedAccentHover],
         startPoint: .topLeading,
         endPoint: .bottomTrailing
     )

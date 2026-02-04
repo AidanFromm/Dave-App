@@ -9,6 +9,7 @@ import SwiftUI
 
 struct ProfileView: View {
     @EnvironmentObject var authViewModel: AuthViewModel
+    @EnvironmentObject var themeManager: ThemeManager
     @State private var activeSheet: AuthSheet?
 
     enum AuthSheet: Identifiable {
@@ -101,6 +102,12 @@ struct ProfileView: View {
 
                     // Preferences
                     Section("Preferences") {
+                        NavigationLink {
+                            AppearanceSettingsView()
+                        } label: {
+                            Label("Appearance", systemImage: "moon.circle")
+                        }
+
                         NavigationLink {
                             Text("Size Alerts")
                         } label: {
@@ -197,6 +204,14 @@ struct ProfileView: View {
 
                 // App info
                 Section("App") {
+                    if !authViewModel.isAuthenticated {
+                        NavigationLink {
+                            AppearanceSettingsView()
+                        } label: {
+                            Label("Appearance", systemImage: "moon.circle")
+                        }
+                    }
+
                     NavigationLink {
                         Text("About")
                     } label: {
@@ -1051,7 +1066,65 @@ struct OrderDetailView: View {
     }
 }
 
+// MARK: - Appearance Settings View
+
+struct AppearanceSettingsView: View {
+    @EnvironmentObject var themeManager: ThemeManager
+
+    var body: some View {
+        List {
+            Section {
+                ForEach(ThemeManager.AppColorScheme.allCases) { scheme in
+                    Button {
+                        withAnimation(SecuredAnimation.smooth) {
+                            themeManager.colorSchemePreference = scheme
+                        }
+                    } label: {
+                        HStack(spacing: 16) {
+                            Image(systemName: scheme.icon)
+                                .font(.title2)
+                                .foregroundStyle(
+                                    themeManager.colorSchemePreference == scheme
+                                        ? Color.securedAccent
+                                        : .secondary
+                                )
+                                .frame(width: 32)
+
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text(scheme.rawValue)
+                                    .font(.headline)
+                                    .foregroundStyle(Color.securedTextPrimary)
+
+                                Text(scheme.description)
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+
+                            Spacer()
+
+                            if themeManager.colorSchemePreference == scheme {
+                                Image(systemName: "checkmark.circle.fill")
+                                    .foregroundStyle(Color.securedAccent)
+                                    .font(.title2)
+                            }
+                        }
+                        .padding(.vertical, 8)
+                    }
+                    .buttonStyle(.plain)
+                }
+            } header: {
+                Text("Color Scheme")
+            } footer: {
+                Text("Choose your preferred appearance. System will automatically switch between light and dark mode based on your device settings.")
+            }
+        }
+        .navigationTitle("Appearance")
+        .navigationBarTitleDisplayMode(.inline)
+    }
+}
+
 #Preview {
     ProfileView()
         .environmentObject(AuthViewModel())
+        .environmentObject(ThemeManager())
 }
