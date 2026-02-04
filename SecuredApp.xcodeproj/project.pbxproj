@@ -6,6 +6,11 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		A3D8D5F42F3367080033AF6B /* Supabase in Frameworks */ = {isa = PBXBuildFile; productRef = A3D8D5F32F3367080033AF6B /* Supabase */; };
+		A3D8D5F62F3367080033AF6B /* Stripe in Frameworks */ = {isa = PBXBuildFile; productRef = A3D8D5F52F3367080033AF6B /* Stripe */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXFileReference section */
 		A3555BB32F33562900106F5C /* SecuredApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SecuredApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -23,6 +28,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A3D8D5F42F3367080033AF6B /* Supabase in Frameworks */,
+				A3D8D5F62F3367080033AF6B /* Stripe in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -33,6 +40,7 @@
 			isa = PBXGroup;
 			children = (
 				A3555BB52F33562900106F5C /* SecuredApp */,
+				A3D8D5F22F3367080033AF6B /* Frameworks */,
 				A3555BB42F33562900106F5C /* Products */,
 			);
 			sourceTree = "<group>";
@@ -43,6 +51,13 @@
 				A3555BB32F33562900106F5C /* SecuredApp.app */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		A3D8D5F22F3367080033AF6B /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -65,6 +80,8 @@
 			);
 			name = SecuredApp;
 			packageProductDependencies = (
+				A3D8D5F32F3367080033AF6B /* Supabase */,
+				A3D8D5F52F3367080033AF6B /* Stripe */,
 			);
 			productName = SecuredApp;
 			productReference = A3555BB32F33562900106F5C /* SecuredApp.app */;
@@ -355,6 +372,19 @@
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		A3D8D5F32F3367080033AF6B /* Supabase */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A3555BC12F335B9500106F5C /* XCRemoteSwiftPackageReference "supabase-swift" */;
+			productName = Supabase;
+		};
+		A3D8D5F52F3367080033AF6B /* Stripe */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A3555BC22F335C6E00106F5C /* XCRemoteSwiftPackageReference "stripe-ios" */;
+			productName = Stripe;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = A3555BAB2F33562900106F5C /* Project object */;
 }

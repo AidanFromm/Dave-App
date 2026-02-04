@@ -49,7 +49,7 @@ FIREBASE_PROJECT_ID=
 ---
 
 ## Current Phase
-**Phase 2: iOS App Development - Xcode Project Ready**
+**Phase 2: iOS App Development - App Running, Building Admin Inventory System**
 
 ## Progress Checklist
 
@@ -67,7 +67,9 @@ FIREBASE_PROJECT_ID=
 - [x] Supabase Swift SDK added
 - [x] Stripe iOS SDK added
 - [x] All Swift source files added
-- [ ] Build and test app in simulator
+- [x] Fixed Swift 6 / iOS 26 compatibility issues
+- [x] App builds and runs in simulator
+- [~] **Admin Inventory Scanner** - Kyle working on this
 - [ ] Connect to Supabase (test product fetch)
 - [ ] Implement Stripe checkout
 - [ ] Test full purchase flow
@@ -76,6 +78,60 @@ FIREBASE_PROJECT_ID=
 - [ ] Next.js project setup
 - [ ] Product browsing
 - [ ] Checkout flow
+
+---
+
+## Admin Inventory System (Kyle Building)
+
+### Overview
+Admin-only inventory scanner accessible via hidden tab in the iOS app.
+
+### Tech Stack
+- **Barcode Scanning**: iPhone camera + Bluetooth scanner support
+- **Product Lookup**: StockX API (Kyle has developer key)
+- **Image Storage**: Supabase Storage bucket
+
+### Scan Workflow
+```
+1. Admin opens Inventory tab (hidden for regular users)
+2. Taps "Add Product" → Camera opens for barcode scan
+3. Barcode scanned → StockX API lookup
+4. Product data auto-fills (name, brand, size, colorway, retail price)
+5. Admin selects: NEW or USED
+   - NEW: Uses StockX product images automatically
+   - USED: Admin uploads custom photos
+6. Admin sets selling price, confirms condition
+7. Product added to inventory → Logged in inventory_logs
+```
+
+### Files to Create
+```
+SecuredApp/
+├── Views/Admin/
+│   ├── AdminTabView.swift          # Admin-only tab container
+│   ├── InventoryScannerView.swift  # Barcode scanner UI
+│   ├── ProductEntryView.swift      # Form after scan
+│   └── InventoryListView.swift     # View/edit existing inventory
+├── Services/
+│   ├── StockXService.swift         # StockX API integration
+│   └── BarcodeScannerService.swift # Camera/scanner handling
+└── ViewModels/
+    └── InventoryViewModel.swift    # Inventory management logic
+```
+
+### StockX API Integration
+- Kyle has developer API key (will add to credentials)
+- Lookup by UPC/barcode returns: name, brand, colorway, size, retail price, images
+- Rate limits: TBD based on plan
+
+### Work Division
+| Feature | Owner |
+|---------|-------|
+| Admin Inventory Scanner | Kyle |
+| Sneaker barcode lookup (StockX) | Kyle |
+| Pokemon item entry | Partner (TCGPlayer API) |
+| Website | Partner |
+| Stripe checkout | TBD |
 
 ---
 

@@ -82,12 +82,12 @@ struct ProductDetailView: View {
                     // Stock status
                     HStack {
                         Circle()
-                            .fill(product.isInStock ? .green : .red)
+                            .fill(product.isInStock ? Color.green : Color.red)
                             .frame(width: 8, height: 8)
 
                         Text(product.isInStock ? "In Stock (\(product.quantity) available)" : "Out of Stock")
                             .font(.subheadline)
-                            .foregroundStyle(product.isInStock ? .primary : .red)
+                            .foregroundColor(product.isInStock ? .primary : .red)
                     }
 
                     // Description

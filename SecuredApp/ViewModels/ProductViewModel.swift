@@ -7,6 +7,7 @@
 
 import Foundation
 import SwiftUI
+import Combine
 
 @MainActor
 class ProductViewModel: ObservableObject {
@@ -103,11 +104,9 @@ class ProductViewModel: ObservableObject {
     }
 
     private func startRealtimeSubscription() {
-        Task {
-            await supabase.subscribeToProducts { [weak self] updatedProduct in
-                Task { @MainActor in
-                    self?.handleProductUpdate(updatedProduct)
-                }
+        supabase.subscribeToProducts { updatedProduct in
+            Task { @MainActor [weak self] in
+                self?.handleProductUpdate(updatedProduct)
             }
         }
     }
