@@ -120,6 +120,7 @@ struct ProfileView: View {
                                     .background(.primary)
                                     .clipShape(RoundedRectangle(cornerRadius: 12))
                             }
+                            .buttonStyle(.borderless)
 
                             Button {
                                 activeSheet = .signUp
@@ -131,6 +132,7 @@ struct ProfileView: View {
                                     .background(Color(.systemGray6))
                                     .clipShape(RoundedRectangle(cornerRadius: 12))
                             }
+                            .buttonStyle(.borderless)
                         }
                         .padding(.vertical)
                     }
