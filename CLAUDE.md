@@ -46,21 +46,14 @@ CLOVER_API_KEY=
 FIREBASE_PROJECT_ID=
 ```
 
-## Database Tables
-- categories
-- products
-- customers
-- orders
-- inventory_logs
-- scheduled_drops
-
-## Priority #1: Real-Time Inventory Sync
-All channels must see instant stock updates to prevent overselling.
+---
 
 ## Current Phase
-Phase 2: iOS App Development - Core Structure Complete
+**Phase 2: iOS App Development - Xcode Project Ready**
 
-## Completed Setup
+## Progress Checklist
+
+### Phase 1: Backend (COMPLETE)
 - [x] Supabase project created
 - [x] Database tables: categories, products, customers, orders, inventory_logs, scheduled_drops
 - [x] Row Level Security (RLS) policies applied
@@ -69,116 +62,102 @@ Phase 2: iOS App Development - Core Structure Complete
 - [x] Functions: deduct_inventory, restore_inventory, generate_order_number
 - [x] Default categories inserted: New Sneakers, Used Sneakers, Pokemon
 
-## File Structure (Created)
+### Phase 2: iOS App (IN PROGRESS)
+- [x] Xcode project created
+- [x] Supabase Swift SDK added
+- [x] Stripe iOS SDK added
+- [x] All Swift source files added
+- [ ] Build and test app in simulator
+- [ ] Connect to Supabase (test product fetch)
+- [ ] Implement Stripe checkout
+- [ ] Test full purchase flow
 
-### iOS App
+### Phase 3: Website (NOT STARTED)
+- [ ] Next.js project setup
+- [ ] Product browsing
+- [ ] Checkout flow
+
+---
+
+## Project Structure
+
 ```
-/SecuredApp/SecuredApp/
-├── App/
-│   ├── SecuredAppApp.swift      # App entry point
-│   └── ContentView.swift        # Tab navigation
-├── Models/
-│   ├── Product.swift            # Product model
-│   ├── Category.swift           # Category model
-│   ├── Customer.swift           # Customer + Address
-│   ├── Order.swift              # Order model
-│   └── Cart.swift               # Shopping cart
-├── Views/
-│   ├── Shop/
-│   │   ├── ShopView.swift       # Main shop + categories
-│   │   ├── ProductGridView.swift # Product grid
-│   │   └── ProductDetailView.swift # Product detail
-│   ├── Cart/
-│   │   ├── CartView.swift       # Cart view
-│   │   └── CheckoutView.swift   # Checkout flow
-│   └── Profile/
-│       └── ProfileView.swift    # Profile + Auth
-├── ViewModels/
-│   ├── ProductViewModel.swift   # Product data + real-time
-│   ├── CartViewModel.swift      # Cart state
-│   └── AuthViewModel.swift      # Auth state
-└── Services/
-    └── SupabaseService.swift    # Supabase client
+/Applications/Secured App/
+├── CLAUDE.md                    # This file - project memory
+├── SecuredApp.xcodeproj         # Xcode project (double-click to open)
+├── SecuredApp/                  # iOS source code
+│   ├── App/
+│   │   ├── SecuredAppApp.swift      # App entry point
+│   │   └── ContentView.swift        # Tab navigation
+│   ├── Models/
+│   │   ├── Product.swift
+│   │   ├── Category.swift
+│   │   ├── Customer.swift
+│   │   ├── Order.swift
+│   │   └── Cart.swift
+│   ├── Views/
+│   │   ├── Shop/
+│   │   │   ├── ShopView.swift
+│   │   │   ├── ProductGridView.swift
+│   │   │   └── ProductDetailView.swift
+│   │   ├── Cart/
+│   │   │   ├── CartView.swift
+│   │   │   └── CheckoutView.swift
+│   │   └── Profile/
+│   │       └── ProfileView.swift
+│   ├── ViewModels/
+│   │   ├── ProductViewModel.swift
+│   │   ├── CartViewModel.swift
+│   │   └── AuthViewModel.swift
+│   ├── Services/
+│   │   └── SupabaseService.swift
+│   └── Assets.xcassets
+└── database/                    # SQL migration files
+    ├── 001_initial_schema.sql
+    ├── 002_row_level_security.sql
+    └── 003_realtime_and_storage.sql
 ```
 
-### Website
-```
-/secured-app-web
-  /app
-  /components
-  /lib
-```
+---
 
-## How to Open iOS App in Xcode
+## How to Open the Project
 
-### Step 1: Open Xcode
-1. Open **Xcode** from Applications folder (or Spotlight: Cmd+Space, type "Xcode")
-2. If first time, wait for it to install components
-
-### Step 2: Create New Project
-1. Click **"Create New Project"** (or File → New → Project)
-2. Select **iOS** tab at top
-3. Select **App** → Click **Next**
-4. Fill in:
-   - Product Name: `SecuredApp`
-   - Team: Select your Apple Developer account
-   - Organization Identifier: `com.secured`
-   - Interface: **SwiftUI**
-   - Language: **Swift**
-   - Uncheck "Include Tests"
-5. Click **Next**
-6. Save location: `/Applications/Secured App/`
-7. Click **Create**
-
-### Step 3: Add Supabase Package
-1. In Xcode menu: **File → Add Package Dependencies**
-2. In search bar, paste: `https://github.com/supabase/supabase-swift`
-3. Click **Add Package**
-4. Wait for it to load, then click **Add Package** again
-5. Select **Supabase** from the list → Click **Add Package**
-
-### Step 4: Add Stripe Package
-1. **File → Add Package Dependencies** again
-2. Paste: `https://github.com/stripe/stripe-ios`
-3. Click **Add Package** → Select **Stripe** → **Add Package**
-
-### Step 5: Import Source Files
-1. In Finder, navigate to: `/Applications/Secured App/SecuredApp/SecuredApp/`
-2. You'll see folders: `App`, `Models`, `Views`, `ViewModels`, `Services`
-3. In Xcode, right-click on **SecuredApp** folder (yellow folder icon) in left sidebar
-4. Select **"Add Files to SecuredApp..."**
-5. Select ALL 5 folders (App, Models, Views, ViewModels, Services)
-6. Check ✓ "Copy items if needed"
-7. Check ✓ "Create groups"
-8. Check ✓ "Add to targets: SecuredApp"
-9. Click **Add**
-
-### Step 6: Delete Duplicate Files
-Xcode auto-created some files we're replacing:
-1. In Xcode sidebar, find and delete:
-   - `ContentView.swift` (the original one Xcode made)
-   - `SecuredAppApp.swift` (the original one Xcode made)
-2. Right-click → Delete → **Move to Trash**
-
-### Step 7: Build & Run
-1. At top of Xcode, select a simulator (e.g., "iPhone 15 Pro")
-2. Press **Cmd + R** (or click the Play button)
-3. Wait for build to complete
-4. App will launch in simulator
+### Quick Start (Project Already Set Up)
+1. In Finder, go to: `/Applications/Secured App/`
+2. Double-click **SecuredApp.xcodeproj**
+3. Wait for packages to download (check top right of Xcode)
+4. Select an iPhone simulator at the top
+5. Press **Cmd + R** to build and run
 
 ### Troubleshooting
-- If build fails with "No such module 'Supabase'": Wait for packages to finish downloading (check progress in Xcode navigator)
-- If "Signing" error: Go to project settings → Signing & Capabilities → Select your Team
-- If files not found: Make sure you added files to the correct target
+- **"No such module 'Supabase'"**: Wait for packages to finish downloading
+- **Signing error**: Go to project settings → Signing & Capabilities → Select your Team
+- **Build fails**: Clean build folder (Cmd + Shift + K) then rebuild
+
+---
+
+## Database Tables
+| Table | Purpose |
+|-------|---------|
+| categories | Product categories (New Sneakers, Used Sneakers, Pokemon) |
+| products | All inventory items with quantity, price, images |
+| customers | User accounts with addresses |
+| orders | Purchase records from all channels |
+| inventory_logs | Audit trail for stock changes |
+| scheduled_drops | Upcoming product releases |
+
+## Priority #1: Real-Time Inventory Sync
+All channels must see instant stock updates to prevent overselling.
+
+---
 
 ## Notes
 - Replacing Lightspeed (current POS/inventory system)
 - Client has Apple Developer account ready
 - Using Clover POS hardware, connected to Stripe
-- eBay/Whatnot start with manual sync, automate in Phase 2
+- eBay/Whatnot start with manual sync, automate later
 
 ## Links
+- Supabase Dashboard: https://supabase.com/dashboard
+- Stripe Dashboard: https://dashboard.stripe.com
 - Plan File: /Users/bozo/.claude/plans/breezy-marinating-jellyfish.md
-- Supabase Docs: https://supabase.com/docs
-- Stripe Docs: https://stripe.com/docs
-- Clover Docs: https://docs.clover.com
