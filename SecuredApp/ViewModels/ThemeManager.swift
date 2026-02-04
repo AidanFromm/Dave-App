@@ -10,9 +10,6 @@ import SwiftUI
 /// Manages the app's color scheme preference
 class ThemeManager: ObservableObject {
 
-    /// User's preferred color scheme stored in UserDefaults
-    @AppStorage("colorScheme") var colorSchemePreference: AppColorScheme = .system
-
     /// Color scheme options available to the user
     enum AppColorScheme: String, CaseIterable, Identifiable {
         case system = "System"
@@ -38,6 +35,18 @@ class ThemeManager: ObservableObject {
             case .dark: return "Always use dark appearance"
             }
         }
+    }
+
+    /// User's preferred color scheme stored in UserDefaults
+    @Published var colorSchemePreference: AppColorScheme {
+        didSet {
+            UserDefaults.standard.set(colorSchemePreference.rawValue, forKey: "colorScheme")
+        }
+    }
+
+    init() {
+        let savedValue = UserDefaults.standard.string(forKey: "colorScheme") ?? AppColorScheme.system.rawValue
+        self.colorSchemePreference = AppColorScheme(rawValue: savedValue) ?? .system
     }
 
     /// Returns the SwiftUI ColorScheme based on user preference
