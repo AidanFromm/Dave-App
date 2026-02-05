@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { STOCKX_API_BASE } from "@/lib/constants";
+import { getStockXHeaders } from "@/lib/stockx";
 
 export async function GET(
   _request: Request,
@@ -11,16 +12,18 @@ export async function GET(
     return NextResponse.json({ error: "Product ID required" }, { status: 400 });
   }
 
+  const headers = await getStockXHeaders();
+  if (!headers) {
+    return NextResponse.json(
+      { error: "StockX not connected" },
+      { status: 401 }
+    );
+  }
+
   try {
-    // Fetch product details
     const productRes = await fetch(
       `${STOCKX_API_BASE}/v2/catalog/products/${id}`,
-      {
-        headers: {
-          "x-api-key": process.env.STOCKX_API_KEY!,
-          Accept: "application/json",
-        },
-      }
+      { headers }
     );
 
     if (!productRes.ok) {
@@ -32,15 +35,9 @@ export async function GET(
 
     const product = await productRes.json();
 
-    // Fetch variants (sizes)
     const variantsRes = await fetch(
       `${STOCKX_API_BASE}/v2/catalog/products/${id}/variants?limit=100`,
-      {
-        headers: {
-          "x-api-key": process.env.STOCKX_API_KEY!,
-          Accept: "application/json",
-        },
-      }
+      { headers }
     );
 
     let variants: Array<{ id: string; size: string; gtins: string[] }> = [];

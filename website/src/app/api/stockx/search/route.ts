@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { getStockXHeaders } from "@/lib/stockx";
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -8,15 +9,18 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Query required" }, { status: 400 });
   }
 
+  const headers = await getStockXHeaders();
+  if (!headers) {
+    return NextResponse.json(
+      { error: "StockX not connected. Please connect in Settings." },
+      { status: 401 }
+    );
+  }
+
   try {
     const res = await fetch(
       `https://api.stockx.com/v2/catalog/search?query=${encodeURIComponent(query)}&limit=20`,
-      {
-        headers: {
-          "x-api-key": process.env.STOCKX_API_KEY!,
-          Accept: "application/json",
-        },
-      }
+      { headers }
     );
 
     if (!res.ok) {

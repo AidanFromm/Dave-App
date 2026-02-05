@@ -104,22 +104,26 @@ export function PokemonCardSearch({ onSelect }: PokemonCardSearchProps) {
               {/* Card info */}
               <div className="space-y-1 p-2">
                 <p className="truncate text-sm font-semibold">{card.name}</p>
-                <div className="flex items-center gap-1">
-                  {card.setSymbol && (
-                    <img
-                      src={card.setSymbol}
-                      alt={card.setName}
-                      className="h-3.5 w-3.5"
-                    />
-                  )}
-                  <span className="truncate text-xs text-muted-foreground">
-                    {card.setName} #{card.number}
-                  </span>
-                </div>
+                {(card.setName || card.number) && (
+                  <div className="flex items-center gap-1">
+                    {card.setSymbol && (
+                      <img
+                        src={card.setSymbol}
+                        alt={card.setName}
+                        className="h-3.5 w-3.5"
+                      />
+                    )}
+                    <span className="truncate text-xs text-muted-foreground">
+                      {card.setName ? `${card.setName} #${card.number}` : `#${card.number}`}
+                    </span>
+                  </div>
+                )}
                 <div className="flex items-center justify-between">
-                  <Badge variant="secondary" className="text-[10px]">
-                    {card.rarity}
-                  </Badge>
+                  {card.rarity ? (
+                    <Badge variant="secondary" className="text-[10px]">
+                      {card.rarity}
+                    </Badge>
+                  ) : <span />}
                   {card.marketPrice != null && (
                     <span className="text-xs font-bold text-green-600">
                       ${card.marketPrice.toFixed(2)}

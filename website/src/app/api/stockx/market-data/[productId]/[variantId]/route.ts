@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { STOCKX_API_BASE } from "@/lib/constants";
+import { getStockXHeaders } from "@/lib/stockx";
 
 export async function GET(
   _request: Request,
@@ -14,19 +15,23 @@ export async function GET(
     );
   }
 
+  const headers = await getStockXHeaders();
+  if (!headers) {
+    return NextResponse.json({
+      lastSale: null,
+      highestBid: null,
+      lowestAsk: null,
+      salesLast72Hours: null,
+    });
+  }
+
   try {
     const res = await fetch(
       `${STOCKX_API_BASE}/v2/catalog/products/${productId}/variants/${variantId}/market-data`,
-      {
-        headers: {
-          "x-api-key": process.env.STOCKX_API_KEY!,
-          Accept: "application/json",
-        },
-      }
+      { headers }
     );
 
     if (!res.ok) {
-      // Graceful fallback — market data may not be available
       return NextResponse.json({
         lastSale: null,
         highestBid: null,
@@ -44,7 +49,6 @@ export async function GET(
       salesLast72Hours: data.salesLast72Hours ?? data.numberOfAsks ?? null,
     });
   } catch {
-    // Graceful fallback
     return NextResponse.json({
       lastSale: null,
       highestBid: null,

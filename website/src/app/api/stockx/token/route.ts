@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { STOCKX_TOKEN_URL, STOCKX_REDIRECT_URI } from "@/lib/constants";
+import { saveStockXTokens } from "@/lib/stockx";
 
 export async function POST(request: Request) {
   const { code } = await request.json();
@@ -24,13 +25,16 @@ export async function POST(request: Request) {
     if (!res.ok) {
       const error = await res.text();
       return NextResponse.json(
-        { error: "Token exchange failed" },
+        { error: "Token exchange failed", detail: error },
         { status: res.status }
       );
     }
 
     const tokens = await res.json();
-    return NextResponse.json(tokens);
+
+    await saveStockXTokens(tokens);
+
+    return NextResponse.json({ success: true });
   } catch {
     return NextResponse.json(
       { error: "Token exchange failed" },

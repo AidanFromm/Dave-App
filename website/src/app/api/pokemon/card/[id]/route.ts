@@ -1,13 +1,14 @@
 import { NextResponse } from "next/server";
 
-const POKEMON_TCG_BASE = "https://api.pokemontcg.io/v2";
+const TCGDEX_BASE = "https://api.tcgdex.net/v2/en";
 
-interface PriceEntry {
-  low?: number | null;
-  mid?: number | null;
-  high?: number | null;
-  market?: number | null;
-  directLow?: number | null;
+interface TCGPlayerPriceEntry {
+  productId?: number;
+  lowPrice?: number | null;
+  midPrice?: number | null;
+  highPrice?: number | null;
+  marketPrice?: number | null;
+  directLowPrice?: number | null;
 }
 
 export async function GET(
@@ -24,11 +25,8 @@ export async function GET(
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 15000);
 
-    const res = await fetch(`${POKEMON_TCG_BASE}/cards/${id}`, {
-      headers: {
-        "X-Api-Key": process.env.POKEMON_TCG_API_KEY!,
-        Accept: "application/json",
-      },
+    const res = await fetch(`${TCGDEX_BASE}/cards/${id}`, {
+      headers: { Accept: "application/json" },
       signal: controller.signal,
     });
 
@@ -41,28 +39,27 @@ export async function GET(
       );
     }
 
-    const data = await res.json();
-    const card = data.data;
+    const card = await res.json();
 
-    const images = card.images as Record<string, string> | undefined;
-    const set = card.set as Record<string, unknown>;
-    const setImages = set?.images as Record<string, string> | undefined;
-    const tcgplayer = card.tcgplayer as Record<string, unknown> | undefined;
-    const prices = tcgplayer?.prices as Record<string, PriceEntry> | undefined;
+    const image = card.image as string | undefined;
+    const set = card.set as Record<string, unknown> | undefined;
+    const pricing = card.pricing as Record<string, unknown> | undefined;
+    const tcgplayer = pricing?.tcgplayer as Record<string, unknown> | undefined;
 
-    // Build variant prices
     const variantPrices: Record<
       string,
       { low: number | null; mid: number | null; high: number | null; market: number | null }
     > = {};
 
-    if (prices) {
-      for (const [variant, priceData] of Object.entries(prices)) {
+    if (tcgplayer) {
+      for (const [variant, priceData] of Object.entries(tcgplayer)) {
+        if (variant === "updated" || variant === "unit") continue;
+        const p = priceData as TCGPlayerPriceEntry;
         variantPrices[variant] = {
-          low: priceData.low ?? null,
-          mid: priceData.mid ?? null,
-          high: priceData.high ?? null,
-          market: priceData.market ?? null,
+          low: p.lowPrice ?? null,
+          mid: p.midPrice ?? null,
+          high: p.highPrice ?? null,
+          market: p.marketPrice ?? null,
         };
       }
     }
@@ -70,24 +67,24 @@ export async function GET(
     return NextResponse.json({
       id: card.id,
       name: card.name,
-      supertype: card.supertype,
-      subtypes: card.subtypes ?? [],
-      hp: card.hp ?? null,
+      supertype: card.category ?? "",
+      subtypes: card.stage ? [card.stage] : [],
+      hp: card.hp != null ? String(card.hp) : null,
       types: card.types ?? [],
-      number: card.number,
+      number: card.localId ?? "",
       rarity: card.rarity ?? "Unknown",
-      artist: card.artist ?? null,
-      imageSmall: images?.small ?? "",
-      imageLarge: images?.large ?? "",
+      artist: card.illustrator ?? null,
+      imageSmall: image ? `${image}/low.png` : "",
+      imageLarge: image ? `${image}/high.png` : "",
       set: {
-        id: set.id,
-        name: set.name,
-        series: set.series,
-        releaseDate: set.releaseDate,
-        symbol: setImages?.symbol ?? "",
-        logo: setImages?.logo ?? "",
+        id: set?.id ?? "",
+        name: set?.name ?? "",
+        series: "",
+        releaseDate: "",
+        symbol: set?.symbol ? `${set.symbol}.png` : "",
+        logo: set?.logo ? `${set.logo}.png` : "",
       },
-      tcgplayerUrl: tcgplayer?.url ?? null,
+      tcgplayerUrl: null,
       variantPrices,
       regulationMark: card.regulationMark ?? null,
     });

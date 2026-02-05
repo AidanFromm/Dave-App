@@ -51,7 +51,11 @@ export function PokemonScanForm({ card, onSubmit, onBack }: PokemonScanFormProps
   // Determine best market price for suggestion
   const getBestPrice = (): number | null => {
     if (!detail?.variantPrices) return card.marketPrice;
-    for (const variant of ["holofoil", "reverseHolofoil", "normal", "1stEditionHolofoil"]) {
+    for (const variant of [
+      "holofoil", "reverse-holofoil", "normal",
+      "1st-edition-holofoil", "1st-edition-normal",
+      "reverseHolofoil", "1stEditionHolofoil",
+    ]) {
       const p = detail.variantPrices[variant];
       if (p?.market != null) return p.market;
     }
@@ -258,7 +262,7 @@ export function PokemonScanForm({ card, onSubmit, onBack }: PokemonScanFormProps
             onClick={() => setPrice(String(bestPrice.toFixed(2)))}
             className="w-full"
           >
-            Suggest Price: ${bestPrice.toFixed(2)} (TCGPlayer Market)
+            Suggest Price: ${bestPrice.toFixed(2)} (Market)
           </Button>
         )}
 

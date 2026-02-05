@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { getBarcodeCatalogCount } from "@/actions/barcode";
+import { checkStockXConnection, getStockXAuthUrl } from "@/actions/stockx-auth";
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface CloverStatus {
@@ -50,6 +51,8 @@ export default function SettingsPage() {
   const [loading, setLoading] = useState(true);
   const [lowStockThreshold, setLowStockThreshold] = useState(5);
   const [catalogCount, setCatalogCount] = useState<number | null>(null);
+  const [stockxConnected, setStockxConnected] = useState<boolean | null>(null);
+  const [connectingStockx, setConnectingStockx] = useState(false);
 
   // Placeholder staff data
   const staffMembers: StaffMember[] = [
@@ -77,16 +80,26 @@ export default function SettingsPage() {
 
     fetchSettings();
     getBarcodeCatalogCount().then(setCatalogCount).catch(() => {});
+    checkStockXConnection().then(setStockxConnected).catch(() => setStockxConnected(false));
 
     // Check URL params for Clover callback result
     const params = new URLSearchParams(window.location.search);
     if (params.get("clover") === "connected") {
       toast.success("Clover connected successfully!");
-      // Clean URL
+      window.history.replaceState({}, "", "/admin/settings");
+    }
+    if (params.get("stockx") === "connected") {
+      toast.success("StockX connected successfully!");
+      setStockxConnected(true);
+      window.history.replaceState({}, "", "/admin/settings");
+    }
+    if (params.get("stockx") === "error") {
+      const stockxErr = params.get("error");
+      toast.error(`StockX connection failed: ${(stockxErr ?? "unknown").replace(/_/g, " ")}`);
       window.history.replaceState({}, "", "/admin/settings");
     }
     const error = params.get("error");
-    if (error) {
+    if (error && !params.get("stockx")) {
       toast.error(`Clover connection failed: ${error.replace(/_/g, " ")}`);
       window.history.replaceState({}, "", "/admin/settings");
     }
@@ -369,6 +382,50 @@ export default function SettingsPage() {
         </div>
 
         <div className="space-y-3">
+          <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
+            <div className="flex items-center gap-3">
+              {stockxConnected ? (
+                <CheckCircle className="h-5 w-5 text-green-500" />
+              ) : (
+                <AlertCircle className="h-5 w-5 text-yellow-500" />
+              )}
+              <div>
+                <p className="font-medium text-sm">
+                  {stockxConnected === null
+                    ? "Checking..."
+                    : stockxConnected
+                      ? "Connected"
+                      : "Not Connected"}
+                </p>
+                {!stockxConnected && stockxConnected !== null && (
+                  <p className="text-xs text-muted-foreground">
+                    Connect your StockX account to enable barcode lookups
+                  </p>
+                )}
+              </div>
+            </div>
+            <button
+              onClick={async () => {
+                setConnectingStockx(true);
+                try {
+                  const url = await getStockXAuthUrl();
+                  window.location.href = url;
+                } catch {
+                  toast.error("Failed to start StockX connection");
+                  setConnectingStockx(false);
+                }
+              }}
+              disabled={connectingStockx}
+              className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50"
+            >
+              {connectingStockx
+                ? "Redirecting..."
+                : stockxConnected
+                  ? "Reconnect"
+                  : "Connect StockX"}
+            </button>
+          </div>
+
           <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
             <div className="flex items-center gap-2">
               <Key className="h-4 w-4 text-muted-foreground" />
