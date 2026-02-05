@@ -71,7 +71,7 @@ export interface Order {
   order_number: string;
   customer_id: string | null;
   customer_email: string;
-  channel: SalesChannel;
+  sales_channel: SalesChannel;
   items: OrderItem[];
   subtotal: number;
   tax: number;

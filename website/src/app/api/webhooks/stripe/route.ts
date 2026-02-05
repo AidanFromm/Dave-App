@@ -37,7 +37,7 @@ export async function POST(request: Request) {
     await supabase.from("orders").insert({
       order_number: orderNumber,
       customer_email: email,
-      channel: "web",
+      sales_channel: "web",
       subtotal: paymentIntent.amount / 100,
       tax: 0, // Calculated on client side, stored in metadata
       shipping_cost: 0,
