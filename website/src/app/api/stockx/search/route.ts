@@ -28,17 +28,20 @@ export async function GET(request: Request) {
 
     const data = await res.json();
 
-    const products = (data.products ?? []).map((p: Record<string, unknown>) => ({
-      id: p.id,
-      name: p.title ?? p.name,
-      brand: p.brand,
-      colorway: p.colorway,
-      styleId: p.styleId,
-      retailPrice: p.retailPrice ?? 0,
-      thumbnailUrl: p.media && typeof p.media === "object" && "thumbUrl" in (p.media as Record<string, unknown>)
-        ? (p.media as Record<string, unknown>).thumbUrl
-        : "",
-    }));
+    const products = (data.products ?? []).map((p: Record<string, unknown>) => {
+      const media = p.media as Record<string, unknown> | undefined;
+      return {
+        id: p.id,
+        name: p.title ?? p.name,
+        brand: p.brand,
+        colorway: p.colorway,
+        styleId: p.styleId,
+        retailPrice: p.retailPrice ?? 0,
+        thumbnailUrl: media && "thumbUrl" in media ? media.thumbUrl : "",
+        imageUrl: media && "imageUrl" in media ? media.imageUrl : "",
+        urlSlug: p.urlSlug ?? "",
+      };
+    });
 
     return NextResponse.json({ products });
   } catch {

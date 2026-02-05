@@ -16,7 +16,13 @@ import {
   Pencil,
   Shield,
   Clock,
+  ExternalLink,
+  ScanBarcode,
+  Database,
+  Key,
 } from "lucide-react";
+import Link from "next/link";
+import { getBarcodeCatalogCount } from "@/actions/barcode";
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface CloverStatus {
@@ -43,6 +49,7 @@ export default function SettingsPage() {
   const [syncing, setSyncing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [lowStockThreshold, setLowStockThreshold] = useState(5);
+  const [catalogCount, setCatalogCount] = useState<number | null>(null);
 
   // Placeholder staff data
   const staffMembers: StaffMember[] = [
@@ -69,6 +76,7 @@ export default function SettingsPage() {
     }
 
     fetchSettings();
+    getBarcodeCatalogCount().then(setCatalogCount).catch(() => {});
 
     // Check URL params for Clover callback result
     const params = new URLSearchParams(window.location.search);
@@ -350,6 +358,49 @@ export default function SettingsPage() {
               </button>
             </div>
           )}
+        </div>
+      </div>
+
+      {/* StockX Integration */}
+      <div className="rounded-xl shadow-card bg-card p-6">
+        <div className="flex items-center gap-2 mb-6">
+          <ExternalLink className="h-5 w-5 text-primary" />
+          <h3 className="text-lg font-semibold">StockX Integration</h3>
+        </div>
+
+        <div className="space-y-3">
+          <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
+            <div className="flex items-center gap-2">
+              <Key className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm">API Key</span>
+            </div>
+            <span className="inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-700 dark:bg-green-900/30 dark:text-green-400">
+              Configured
+            </span>
+          </div>
+
+          <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
+            <div className="flex items-center gap-2">
+              <Database className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm">Barcode Catalog</span>
+            </div>
+            <span className="text-sm font-medium">
+              {catalogCount !== null ? `${catalogCount} entries` : "Loading..."}
+            </span>
+          </div>
+
+          <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
+            <div className="flex items-center gap-2">
+              <ScanBarcode className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm">Barcode Scanner</span>
+            </div>
+            <Link
+              href="/admin/scan"
+              className="rounded-lg border border-border px-3 py-1.5 text-sm font-medium hover:bg-muted transition-colors"
+            >
+              Open Scanner
+            </Link>
+          </div>
         </div>
       </div>
 

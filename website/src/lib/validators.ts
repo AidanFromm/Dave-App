@@ -73,8 +73,26 @@ export const productFormSchema = z.object({
   tags: z.array(z.string()),
 });
 
+export const scanFormSchema = z.object({
+  barcode: z.string().min(1, "Barcode is required"),
+  productName: z.string().min(1, "Product name is required"),
+  brand: z.string().optional(),
+  colorway: z.string().optional(),
+  styleId: z.string().optional(),
+  size: z.string().optional(),
+  condition: z.enum(["new", "used_like_new", "used_good", "used_fair"]),
+  hasBox: z.boolean(),
+  cost: z.number().min(0, "Cost must be positive"),
+  price: z.number().positive("Price must be positive"),
+  images: z.array(z.string()),
+  productType: z.enum(["sneaker", "pokemon"]),
+  stockxProductId: z.string().optional(),
+  stockxVariantId: z.string().optional(),
+});
+
 export type AddressFormValues = z.infer<typeof addressSchema>;
 export type ShippingFormValues = z.infer<typeof shippingFormSchema>;
 export type SignInFormValues = z.infer<typeof signInSchema>;
 export type SignUpFormValues = z.infer<typeof signUpSchema>;
 export type ProductFormValues = z.infer<typeof productFormSchema>;
+export type ScanFormValues = z.infer<typeof scanFormSchema>;
