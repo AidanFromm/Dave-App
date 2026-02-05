@@ -2,12 +2,12 @@
 //  StockXAuthManager.swift
 //  SecuredApp
 //
-//  Handles StockX OAuth 2.0 authentication with PKCE
+//  Handles StockX OAuth 2.0 Authorization Code flow
 //
 //  Flow:
-//  1. Generate PKCE code verifier and challenge
-//  2. Open StockX login in browser
-//  3. User logs in, StockX redirects back with auth code
+//  1. Open StockX login in browser
+//  2. User logs in, StockX redirects to securedtampa.com
+//  3. Redirect page forwards to securedapp:// with auth code
 //  4. Exchange auth code for access/refresh tokens
 //  5. Store tokens in Keychain
 //  6. Auto-refresh tokens before expiry
@@ -15,7 +15,6 @@
 
 import Foundation
 import AuthenticationServices
-import CryptoKit
 import Combine
 
 @MainActor
@@ -32,14 +31,12 @@ class StockXAuthManager: NSObject, ObservableObject {
     private let clientSecret = "oTNzarbhweQGzF2aQJn_TPWFbT5y5wvRHuQFxjH-hJ5oweeFocZJ:"
     private let apiKey = "qAYBY1lFUv2PVXRldvSf4ya1pkjGhQZ9rxBj4LW7"
 
-    private let authorizationEndpoint = "https://accounts.stockx.com/oauth/authorize"
+    private let authorizationEndpoint = "https://accounts.stockx.com/authorize"
     private let tokenEndpoint = "https://accounts.stockx.com/oauth/token"
     private let audience = "gateway.stockx.com"
     private let redirectUri = "https://securedtampa.com/stockx/callback"
-    private let scope = "openid offline_access"
+    private let scope = "offline_access openid"
 
-    // MARK: - PKCE
-    private var codeVerifier: String?
     private var authSession: ASWebAuthenticationSession?
 
     private let keychain = KeychainHelper.shared
@@ -67,14 +64,8 @@ class StockXAuthManager: NSObject, ObservableObject {
         isLoading = true
         error = nil
 
-        // Generate PKCE code verifier and challenge
-        codeVerifier = generateCodeVerifier()
-        guard let verifier = codeVerifier,
-              let codeChallenge = generateCodeChallenge(from: verifier) else {
-            error = "Failed to generate PKCE challenge"
-            isLoading = false
-            return
-        }
+        // Generate state for CSRF protection
+        let state = UUID().uuidString
 
         // Build authorization URL
         var components = URLComponents(string: authorizationEndpoint)!
@@ -84,8 +75,7 @@ class StockXAuthManager: NSObject, ObservableObject {
             URLQueryItem(name: "redirect_uri", value: redirectUri),
             URLQueryItem(name: "scope", value: scope),
             URLQueryItem(name: "audience", value: audience),
-            URLQueryItem(name: "code_challenge", value: codeChallenge),
-            URLQueryItem(name: "code_challenge_method", value: "S256")
+            URLQueryItem(name: "state", value: state)
         ]
 
         guard let authURL = components.url else {
@@ -143,19 +133,12 @@ class StockXAuthManager: NSObject, ObservableObject {
 
     // MARK: - Token Exchange
     private func exchangeCodeForTokens(code: String) async {
-        guard let verifier = codeVerifier else {
-            error = "Missing code verifier"
-            isLoading = false
-            return
-        }
-
         let parameters: [String: String] = [
             "grant_type": "authorization_code",
             "client_id": clientId,
             "client_secret": clientSecret,
             "code": code,
-            "redirect_uri": redirectUri,
-            "code_verifier": verifier
+            "redirect_uri": redirectUri
         ]
 
         await performTokenRequest(parameters: parameters)
@@ -242,18 +225,6 @@ class StockXAuthManager: NSObject, ObservableObject {
         apiKey
     }
 
-    // MARK: - PKCE Helpers
-    private func generateCodeVerifier() -> String {
-        var bytes = [UInt8](repeating: 0, count: 32)
-        _ = SecRandomCopyBytes(kSecRandomDefault, bytes.count, &bytes)
-        return Data(bytes).base64URLEncodedString()
-    }
-
-    private func generateCodeChallenge(from verifier: String) -> String? {
-        guard let data = verifier.data(using: .utf8) else { return nil }
-        let hash = SHA256.hash(data: data)
-        return Data(hash).base64URLEncodedString()
-    }
 }
 
 // MARK: - ASWebAuthenticationPresentationContextProviding
@@ -288,12 +259,3 @@ private struct ErrorResponse: Decodable {
     }
 }
 
-// MARK: - Data Extension for Base64URL
-extension Data {
-    func base64URLEncodedString() -> String {
-        base64EncodedString()
-            .replacingOccurrences(of: "+", with: "-")
-            .replacingOccurrences(of: "/", with: "_")
-            .replacingOccurrences(of: "=", with: "")
-    }
-}
