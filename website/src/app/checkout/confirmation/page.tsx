@@ -5,6 +5,7 @@ import Link from "next/link";
 import { CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useCartStore } from "@/stores/cart-store";
+import { CheckoutProgress } from "@/components/checkout/checkout-progress";
 import { Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 
@@ -21,6 +22,7 @@ function ConfirmationContent() {
 
   return (
     <div className="mx-auto flex max-w-lg flex-col items-center justify-center px-4 py-24 text-center">
+      <CheckoutProgress currentStep={3} />
       <CheckCircle className="h-16 w-16 text-secured-success" />
       <h1 className="mt-4 text-2xl font-bold">Order Confirmed!</h1>
       <p className="mt-2 text-muted-foreground">

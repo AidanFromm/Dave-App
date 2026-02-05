@@ -24,7 +24,7 @@ export default async function AccountPage() {
       <h1 className="text-2xl font-bold">My Account</h1>
 
       {/* Profile Card */}
-      <div className="mt-6 rounded-lg border border-border bg-card p-6">
+      <div className="mt-6 rounded-xl shadow-card bg-card p-6">
         <div className="flex items-center gap-4">
           <div className="flex h-14 w-14 items-center justify-center rounded-full bg-primary text-xl font-bold text-primary-foreground">
             {firstName?.[0]?.toUpperCase() ?? email[0]?.toUpperCase()}
@@ -42,7 +42,7 @@ export default async function AccountPage() {
       <div className="mt-6 space-y-2">
         <Link
           href="/account/orders"
-          className="flex items-center justify-between rounded-lg border border-border bg-card p-4 transition-colors hover:bg-accent"
+          className="flex items-center justify-between rounded-xl shadow-card bg-card p-4 transition-colors hover:bg-accent"
         >
           <div className="flex items-center gap-3">
             <Package className="h-5 w-5 text-muted-foreground" />
@@ -53,7 +53,7 @@ export default async function AccountPage() {
 
         <Link
           href="/account/settings"
-          className="flex items-center justify-between rounded-lg border border-border bg-card p-4 transition-colors hover:bg-accent"
+          className="flex items-center justify-between rounded-xl shadow-card bg-card p-4 transition-colors hover:bg-accent"
         >
           <div className="flex items-center gap-3">
             <Settings className="h-5 w-5 text-muted-foreground" />

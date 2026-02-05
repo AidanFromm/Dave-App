@@ -7,13 +7,12 @@ import {
   Heart,
   User,
   Menu,
-  Search,
-  X,
   Sun,
   Moon,
   Monitor,
   LogOut,
   Shield,
+  Search,
 } from "lucide-react";
 import { useState } from "react";
 import { useTheme } from "next-themes";
@@ -28,6 +27,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
 import { useCartStore } from "@/stores/cart-store";
+import { useCartDrawerStore } from "@/stores/cart-drawer-store";
 import { useAuth } from "@/hooks/use-auth";
 import { cn } from "@/lib/utils";
 
@@ -37,15 +37,11 @@ export function Header() {
   const { theme, setTheme } = useTheme();
   const { user, signOut, isAdmin } = useAuth();
   const itemCount = useCartStore((s) => s.getItemCount());
-
-  const navLinks = [
-    { href: "/", label: "Shop" },
-    { href: "/wishlist", label: "Wishlist" },
-  ];
+  const openCartDrawer = useCartDrawerStore((s) => s.open);
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+    <header className="sticky top-0 z-50 w-full bg-background/95 shadow-sm backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2">
           <span className="text-xl font-bold tracking-tight text-primary">
@@ -53,26 +49,8 @@ export function Header() {
           </span>
         </Link>
 
-        {/* Desktop nav */}
-        <nav className="hidden items-center gap-6 md:flex">
-          {navLinks.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              className={cn(
-                "text-sm font-medium transition-colors hover:text-primary",
-                pathname === link.href
-                  ? "text-primary"
-                  : "text-muted-foreground"
-              )}
-            >
-              {link.label}
-            </Link>
-          ))}
-        </nav>
-
         {/* Right side actions */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1">
           {/* Theme toggle */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -103,20 +81,23 @@ export function Header() {
             </Link>
           </Button>
 
-          {/* Cart */}
-          <Button variant="ghost" size="icon" asChild className="relative">
-            <Link href="/cart">
-              <ShoppingBag className="h-4 w-4" />
-              {itemCount > 0 && (
-                <Badge
-                  variant="default"
-                  className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full p-0 text-[10px]"
-                >
-                  {itemCount}
-                </Badge>
-              )}
-              <span className="sr-only">Cart</span>
-            </Link>
+          {/* Cart — opens drawer */}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="relative"
+            onClick={openCartDrawer}
+          >
+            <ShoppingBag className="h-4 w-4" />
+            {itemCount > 0 && (
+              <Badge
+                variant="default"
+                className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full p-0 text-[10px]"
+              >
+                {itemCount}
+              </Badge>
+            )}
+            <span className="sr-only">Cart</span>
           </Button>
 
           {/* User menu */}
@@ -175,28 +156,35 @@ export function Header() {
                 SECURED
               </SheetTitle>
               <nav className="mt-6 flex flex-col gap-4">
-                {navLinks.map((link) => (
-                  <Link
-                    key={link.href}
-                    href={link.href}
-                    onClick={() => setMobileOpen(false)}
-                    className={cn(
-                      "text-lg font-medium transition-colors",
-                      pathname === link.href
-                        ? "text-primary"
-                        : "text-foreground"
-                    )}
-                  >
-                    {link.label}
-                  </Link>
-                ))}
                 <Link
-                  href="/cart"
+                  href="/"
                   onClick={() => setMobileOpen(false)}
-                  className="text-lg font-medium text-foreground"
+                  className={cn(
+                    "text-lg font-medium transition-colors",
+                    pathname === "/" ? "text-primary" : "text-foreground"
+                  )}
+                >
+                  Shop
+                </Link>
+                <Link
+                  href="/wishlist"
+                  onClick={() => setMobileOpen(false)}
+                  className={cn(
+                    "text-lg font-medium transition-colors",
+                    pathname === "/wishlist" ? "text-primary" : "text-foreground"
+                  )}
+                >
+                  Wishlist
+                </Link>
+                <button
+                  onClick={() => {
+                    setMobileOpen(false);
+                    openCartDrawer();
+                  }}
+                  className="text-left text-lg font-medium text-foreground"
                 >
                   Cart {itemCount > 0 && `(${itemCount})`}
-                </Link>
+                </button>
                 {user ? (
                   <>
                     <Link

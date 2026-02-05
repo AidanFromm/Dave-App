@@ -18,7 +18,7 @@ export default function SettingsPage() {
     <div className="mx-auto max-w-2xl px-4 py-6 sm:px-6">
       <h1 className="text-2xl font-bold">Settings</h1>
 
-      <div className="mt-6">
+      <div className="mt-6 rounded-xl shadow-card bg-card p-4 sm:p-6">
         <h2 className="font-semibold">Appearance</h2>
         <p className="mt-1 text-sm text-muted-foreground">
           Choose your preferred color theme

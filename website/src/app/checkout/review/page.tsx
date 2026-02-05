@@ -15,6 +15,7 @@ import { useCartStore } from "@/stores/cart-store";
 import { formatCurrency } from "@/lib/utils";
 import { Loader2, CreditCard, ArrowLeft } from "lucide-react";
 import Link from "next/link";
+import { CheckoutProgress } from "@/components/checkout/checkout-progress";
 
 const stripePromise = loadStripe(
   process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!
@@ -134,13 +135,10 @@ export default function ReviewPage() {
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-6 sm:px-6">
-      <h1 className="text-2xl font-bold">Review & Pay</h1>
-      <p className="mt-1 text-sm text-muted-foreground">
-        Step 2 of 2 — Payment
-      </p>
+      <CheckoutProgress currentStep={2} />
 
       {/* Order summary */}
-      <div className="mt-6 rounded-lg border border-border bg-card p-4">
+      <div className="mt-6 rounded-xl shadow-card bg-card p-4">
         <h2 className="font-semibold">Order Summary</h2>
         <div className="mt-3 space-y-2">
           {items.map((item) => (
@@ -182,7 +180,7 @@ export default function ReviewPage() {
 
       {/* Shipping info */}
       {fulfillmentType === "ship" && shippingAddress && (
-        <div className="mt-4 rounded-lg border border-border bg-card p-4">
+        <div className="mt-4 rounded-xl shadow-card bg-card p-4">
           <div className="flex items-center justify-between">
             <h2 className="font-semibold">Shipping To</h2>
             <Link
@@ -205,7 +203,7 @@ export default function ReviewPage() {
       )}
 
       {fulfillmentType === "pickup" && (
-        <div className="mt-4 rounded-lg border border-border bg-card p-4">
+        <div className="mt-4 rounded-xl shadow-card bg-card p-4">
           <h2 className="font-semibold">Store Pickup</h2>
           <p className="mt-1 text-sm text-muted-foreground">
             Tampa, FL — We&apos;ll notify you when your order is ready.
@@ -224,7 +222,7 @@ export default function ReviewPage() {
             stripe={stripePromise}
             options={{
               clientSecret,
-              appearance: { theme: "stripe" },
+              appearance: { theme: "stripe", variables: { colorPrimary: "#FB4F14", fontFamily: "Inter, sans-serif" } },
             }}
           >
             <PaymentForm />

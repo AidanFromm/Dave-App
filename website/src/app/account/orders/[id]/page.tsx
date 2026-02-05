@@ -40,60 +40,62 @@ export default async function OrderDetailPage({ params }: Props) {
         </Badge>
       </div>
 
-      {/* Items */}
-      <div className="mt-6 space-y-3">
-        <h2 className="font-semibold">Items</h2>
-        {order.items?.map((item, i) => (
-          <div key={i} className="flex justify-between text-sm">
-            <div>
-              <p className="font-medium">{item.name}</p>
-              <p className="text-muted-foreground">
-                {item.sku && `${item.sku} · `}
-                {item.size && `Size ${item.size} · `}
-                Qty {item.quantity}
-              </p>
+      {/* Items & Totals */}
+      <div className="mt-6 rounded-xl shadow-card bg-card p-4 sm:p-6">
+        <div className="space-y-3">
+          <h2 className="font-semibold">Items</h2>
+          {order.items?.map((item, i) => (
+            <div key={i} className="flex justify-between text-sm">
+              <div>
+                <p className="font-medium">{item.name}</p>
+                <p className="text-muted-foreground">
+                  {item.sku && `${item.sku} · `}
+                  {item.size && `Size ${item.size} · `}
+                  Qty {item.quantity}
+                </p>
+              </div>
+              <span className="font-medium">{formatCurrency(item.total)}</span>
             </div>
-            <span className="font-medium">{formatCurrency(item.total)}</span>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
 
-      <Separator className="my-4" />
+        <Separator className="my-4" />
 
-      {/* Totals */}
-      <div className="space-y-2 text-sm">
-        <div className="flex justify-between">
-          <span className="text-muted-foreground">Subtotal</span>
-          <span>{formatCurrency(order.subtotal)}</span>
-        </div>
-        <div className="flex justify-between">
-          <span className="text-muted-foreground">Tax</span>
-          <span>{formatCurrency(order.tax)}</span>
-        </div>
-        <div className="flex justify-between">
-          <span className="text-muted-foreground">Shipping</span>
-          <span>
-            {order.shipping_cost === 0
-              ? "FREE"
-              : formatCurrency(order.shipping_cost)}
-          </span>
-        </div>
-        {order.discount > 0 && (
-          <div className="flex justify-between text-secured-success">
-            <span>Discount</span>
-            <span>-{formatCurrency(order.discount)}</span>
+        {/* Totals */}
+        <div className="space-y-2 text-sm">
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">Subtotal</span>
+            <span>{formatCurrency(order.subtotal)}</span>
           </div>
-        )}
-        <Separator />
-        <div className="flex justify-between text-base font-bold">
-          <span>Total</span>
-          <span>{formatCurrency(order.total)}</span>
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">Tax</span>
+            <span>{formatCurrency(order.tax)}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">Shipping</span>
+            <span>
+              {order.shipping_cost === 0
+                ? "FREE"
+                : formatCurrency(order.shipping_cost)}
+            </span>
+          </div>
+          {order.discount > 0 && (
+            <div className="flex justify-between text-secured-success">
+              <span>Discount</span>
+              <span>-{formatCurrency(order.discount)}</span>
+            </div>
+          )}
+          <Separator />
+          <div className="flex justify-between text-base font-bold">
+            <span>Total</span>
+            <span>{formatCurrency(order.total)}</span>
+          </div>
         </div>
       </div>
 
       {/* Shipping address */}
       {order.shipping_address && (
-        <div className="mt-6">
+        <div className="mt-6 rounded-xl shadow-card bg-card p-4 sm:p-6">
           <h2 className="font-semibold">Shipping Address</h2>
           <p className="mt-1 text-sm text-muted-foreground">
             {order.shipping_address.firstName}{" "}

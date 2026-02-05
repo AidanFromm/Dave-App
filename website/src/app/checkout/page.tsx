@@ -14,6 +14,7 @@ import { formatCurrency } from "@/lib/utils";
 import { ArrowRight, Loader2 } from "lucide-react";
 import { useState } from "react";
 import Link from "next/link";
+import { CheckoutProgress } from "@/components/checkout/checkout-progress";
 
 export default function CheckoutPage() {
   const router = useRouter();
@@ -76,10 +77,7 @@ export default function CheckoutPage() {
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-6 sm:px-6">
-      <h1 className="text-2xl font-bold">Checkout</h1>
-      <p className="mt-1 text-sm text-muted-foreground">
-        Step 1 of 2 — Shipping Info
-      </p>
+      <CheckoutProgress currentStep={1} />
 
       <form onSubmit={handleSubmit(onSubmit)} className="mt-6 space-y-6">
         {/* Contact */}
@@ -206,6 +204,7 @@ export default function CheckoutPage() {
         <Separator />
 
         {/* Summary */}
+        <div className="rounded-xl shadow-card bg-card p-4">
         <div className="space-y-2 text-sm">
           <div className="flex justify-between">
             <span className="text-muted-foreground">
@@ -230,6 +229,7 @@ export default function CheckoutPage() {
             <span>Total</span>
             <span>{formatCurrency(getTotal())}</span>
           </div>
+        </div>
         </div>
 
         <Button type="submit" size="lg" className="w-full" disabled={loading}>

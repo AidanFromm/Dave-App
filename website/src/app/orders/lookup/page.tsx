@@ -52,38 +52,41 @@ export default function OrderLookupPage() {
 
   return (
     <div className="mx-auto max-w-lg px-4 py-12">
-      <h1 className="text-2xl font-bold">Track Your Order</h1>
-      <p className="mt-1 text-sm text-muted-foreground">
-        Enter the email you used at checkout
-      </p>
+      <div className="rounded-2xl shadow-card bg-card p-6 sm:p-8">
+        <span className="text-xl font-bold text-primary">SECURED</span>
+        <h1 className="mt-2 text-2xl font-bold">Track Your Order</h1>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Enter the email you used at checkout
+        </p>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="mt-6 space-y-4">
-        {error && (
-          <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">
-            {error}
+        <form onSubmit={handleSubmit(onSubmit)} className="mt-6 space-y-4">
+          {error && (
+            <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">
+              {error}
+            </div>
+          )}
+          <div className="space-y-2">
+            <Label htmlFor="email">Email Address</Label>
+            <Input
+              id="email"
+              type="email"
+              autoComplete="email"
+              {...register("email")}
+            />
+            {errors.email && (
+              <p className="text-xs text-destructive">{errors.email.message}</p>
+            )}
           </div>
-        )}
-        <div className="space-y-2">
-          <Label htmlFor="email">Email Address</Label>
-          <Input
-            id="email"
-            type="email"
-            autoComplete="email"
-            {...register("email")}
-          />
-          {errors.email && (
-            <p className="text-xs text-destructive">{errors.email.message}</p>
-          )}
-        </div>
-        <Button type="submit" className="w-full" disabled={loading}>
-          {loading ? (
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-          ) : (
-            <Search className="mr-2 h-4 w-4" />
-          )}
-          Look Up Orders
-        </Button>
-      </form>
+          <Button type="submit" className="w-full" disabled={loading}>
+            {loading ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <Search className="mr-2 h-4 w-4" />
+            )}
+            Look Up Orders
+          </Button>
+        </form>
+      </div>
 
       {orders !== null && (
         <div className="mt-8">
@@ -99,7 +102,7 @@ export default function OrderLookupPage() {
               {orders.map((order) => (
                 <div
                   key={order.id}
-                  className="flex items-center justify-between rounded-lg border border-border bg-card p-4"
+                  className="flex items-center justify-between rounded-xl shadow-card bg-card p-4"
                 >
                   <div>
                     <p className="font-semibold">{order.order_number}</p>

@@ -4,6 +4,7 @@ import { ShoppingBag, Check } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useCartStore } from "@/stores/cart-store";
+import { useCartDrawerStore } from "@/stores/cart-drawer-store";
 import type { Product } from "@/types/product";
 import { toast } from "sonner";
 
@@ -14,11 +15,13 @@ interface AddToCartButtonProps {
 
 export function AddToCartButton({ product, disabled }: AddToCartButtonProps) {
   const addItem = useCartStore((s) => s.addItem);
+  const openDrawer = useCartDrawerStore((s) => s.open);
   const [added, setAdded] = useState(false);
 
   const handleAdd = () => {
     addItem(product, 1);
     setAdded(true);
+    openDrawer();
     toast.success(`${product.name} added to cart`);
     setTimeout(() => setAdded(false), 2000);
   };

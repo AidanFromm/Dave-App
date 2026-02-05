@@ -18,7 +18,7 @@ export function SearchBar({ value, onChange }: SearchBarProps) {
         placeholder="Search products..."
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="pl-9 pr-9"
+        className="rounded-full bg-muted/50 pl-9 pr-9"
       />
       {value && (
         <Button

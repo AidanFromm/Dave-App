@@ -52,7 +52,7 @@ export default function CartPage() {
           {items.map((item) => (
             <div
               key={item.id}
-              className="flex gap-4 rounded-lg border border-border bg-card p-4"
+              className="flex gap-4 rounded-xl shadow-card bg-card p-4"
             >
               {/* Image */}
               <Link
@@ -144,7 +144,7 @@ export default function CartPage() {
         </div>
 
         {/* Order Summary */}
-        <div className="rounded-lg border border-border bg-card p-6">
+        <div className="rounded-xl shadow-card bg-card p-6">
           <h2 className="text-lg font-semibold">Order Summary</h2>
 
           {/* Fulfillment type */}

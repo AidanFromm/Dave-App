@@ -2,19 +2,21 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { Heart } from "lucide-react";
+import { Heart, ShoppingBag } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import type { Product } from "@/types/product";
 import {
   isNewDrop,
-  isLowStock,
   discountPercentage,
   CONDITION_LABELS,
   formatCurrency,
 } from "@/types/product";
 import { useWishlistStore } from "@/stores/wishlist-store";
+import { useCartStore } from "@/stores/cart-store";
+import { useCartDrawerStore } from "@/stores/cart-drawer-store";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 interface ProductCardProps {
   product: Product;
@@ -22,14 +24,23 @@ interface ProductCardProps {
 
 export function ProductCard({ product }: ProductCardProps) {
   const { isWishlisted, toggleProduct } = useWishlistStore();
+  const addItem = useCartStore((s) => s.addItem);
+  const openDrawer = useCartDrawerStore((s) => s.open);
   const wishlisted = isWishlisted(product.id);
   const discount = discountPercentage(product);
   const newDrop = isNewDrop(product);
-  const lowStock = isLowStock(product);
   const soldOut = product.quantity <= 0;
 
+  const handleQuickAdd = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    addItem(product, 1);
+    openDrawer();
+    toast.success(`${product.name} added to cart`);
+  };
+
   return (
-    <div className="group relative flex flex-col overflow-hidden rounded-lg border border-border bg-card transition-shadow hover:shadow-lg">
+    <div className="group relative flex flex-col overflow-hidden rounded-xl shadow-card transition-shadow hover:shadow-md">
       {/* Image */}
       <Link href={`/product/${product.id}`} className="relative aspect-square overflow-hidden bg-muted">
         {product.images?.[0] ? (
@@ -46,31 +57,35 @@ export function ProductCard({ product }: ProductCardProps) {
           </div>
         )}
 
+        {/* SOLD OUT overlay */}
+        {soldOut && (
+          <div className="absolute inset-0 flex items-center justify-center bg-background/60">
+            <span className="text-sm font-bold uppercase tracking-wider text-muted-foreground">
+              Sold Out
+            </span>
+          </div>
+        )}
+
         {/* Badges overlay */}
         <div className="absolute left-2 top-2 flex flex-col gap-1">
           {newDrop && (
-            <Badge className="bg-primary text-primary-foreground">
+            <Badge className="bg-primary text-primary-foreground text-[10px]">
               NEW DROP
             </Badge>
           )}
           {discount && (
-            <Badge variant="destructive">-{discount}%</Badge>
-          )}
-          {soldOut && (
-            <Badge variant="secondary" className="bg-muted-foreground text-white">
-              SOLD OUT
-            </Badge>
-          )}
-          {lowStock && !soldOut && (
-            <Badge className="bg-secured-warning text-white">LOW STOCK</Badge>
+            <Badge variant="destructive" className="text-[10px]">-{discount}%</Badge>
           )}
         </div>
 
-        {/* Wishlist button */}
+        {/* Wishlist button — show on hover */}
         <Button
           variant="ghost"
           size="icon"
-          className="absolute right-2 top-2 h-8 w-8 rounded-full bg-background/80 backdrop-blur-sm hover:bg-background"
+          className={cn(
+            "absolute right-2 top-2 h-8 w-8 rounded-full bg-background/80 backdrop-blur-sm hover:bg-background transition-opacity",
+            wishlisted ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+          )}
           onClick={(e) => {
             e.preventDefault();
             toggleProduct(product.id);
@@ -85,30 +100,32 @@ export function ProductCard({ product }: ProductCardProps) {
             )}
           />
         </Button>
+
+        {/* Quick-add button on hover (desktop) */}
+        {!soldOut && (
+          <Button
+            size="sm"
+            className="absolute bottom-2 left-2 right-2 opacity-0 transition-opacity group-hover:opacity-100 hidden sm:flex"
+            onClick={handleQuickAdd}
+          >
+            <ShoppingBag className="mr-1.5 h-3.5 w-3.5" />
+            Add to Cart
+          </Button>
+        )}
       </Link>
 
-      {/* Info */}
+      {/* Info — minimal */}
       <Link
         href={`/product/${product.id}`}
         className="flex flex-1 flex-col p-3"
       >
-        {product.brand && (
-          <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-            {product.brand}
-          </p>
-        )}
-        <h3 className="mt-1 line-clamp-2 text-sm font-semibold leading-tight">
+        <h3 className="line-clamp-1 text-sm font-semibold leading-tight">
           {product.name}
         </h3>
-        <div className="mt-1 flex items-center gap-1">
-          {product.size && (
-            <span className="text-xs text-muted-foreground">
-              Size {product.size}
-            </span>
-          )}
-          {product.size && (
-            <span className="text-xs text-muted-foreground">·</span>
-          )}
+        <div className="mt-1.5 flex items-center gap-2">
+          <span className="text-sm font-bold">
+            {formatCurrency(product.price)}
+          </span>
           <Badge
             variant="outline"
             className={cn(
@@ -120,16 +137,6 @@ export function ProductCard({ product }: ProductCardProps) {
           >
             {CONDITION_LABELS[product.condition]}
           </Badge>
-        </div>
-        <div className="mt-auto flex items-baseline gap-2 pt-2">
-          <span className="text-base font-bold">
-            {formatCurrency(product.price)}
-          </span>
-          {product.compare_at_price && product.compare_at_price > product.price && (
-            <span className="text-xs text-muted-foreground line-through">
-              {formatCurrency(product.compare_at_price)}
-            </span>
-          )}
         </div>
       </Link>
     </div>
