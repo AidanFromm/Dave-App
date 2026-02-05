@@ -7,6 +7,66 @@
 
 import Foundation
 import Combine
+import Supabase
+
+// MARK: - Encodable Structs for Supabase
+
+struct ProductInsert: Encodable {
+    let sku: String?
+    let barcode: String?
+    let name: String
+    let description: String?
+    let category_id: String?
+    let brand: String?
+    let size: String?
+    let condition: String
+    let colorway: String?
+    let has_box: Bool
+    let price: Double
+    let cost: Double?
+    let quantity: Int
+    let low_stock_threshold: Int
+    let images: [String]
+    let is_active: Bool
+    let is_featured: Bool
+    let tags: [String]
+}
+
+struct ProductUpdate: Encodable {
+    let name: String
+    let description: String?
+    let brand: String?
+    let size: String?
+    let condition: String
+    let colorway: String?
+    let has_box: Bool
+    let price: Double
+    let cost: Double?
+    let quantity: Int
+    let low_stock_threshold: Int
+    let images: [String]
+    let is_active: Bool
+    let is_featured: Bool
+    let tags: [String]
+}
+
+struct QuantityUpdate: Encodable {
+    let quantity: Int
+}
+
+struct SoftDelete: Encodable {
+    let is_active: Bool
+}
+
+struct InventoryLogInsert: Encodable {
+    let product_id: String
+    let change_type: String
+    let quantity_change: Int
+    let quantity_before: Int
+    let quantity_after: Int
+    let reason: String
+    let channel: String
+}
 
 @MainActor
 class InventoryViewModel: ObservableObject {
@@ -40,7 +100,6 @@ class InventoryViewModel: ObservableObject {
     // MARK: - Filter Setup
 
     private func setupFilters() {
-        // Combine all filter changes and apply them
         Publishers.CombineLatest4(
             $searchQuery.debounce(for: .milliseconds(300), scheduler: RunLoop.main),
             $selectedCategory,
@@ -68,7 +127,6 @@ class InventoryViewModel: ObservableObject {
     ) {
         var filtered = products
 
-        // Search query
         if !query.isEmpty {
             let lowercased = query.lowercased()
             filtered = filtered.filter { product in
@@ -79,17 +137,14 @@ class InventoryViewModel: ObservableObject {
             }
         }
 
-        // Category filter
         if let category = category {
             filtered = filtered.filter { $0.categoryId == category.id }
         }
 
-        // Condition filter
         if let condition = condition {
             filtered = filtered.filter { $0.condition == condition }
         }
 
-        // Stock filters
         if outOfStockOnly {
             filtered = filtered.filter { $0.quantity == 0 }
         } else if lowStockOnly {
@@ -129,30 +184,30 @@ class InventoryViewModel: ObservableObject {
         error = nil
 
         do {
-            let productData: [String: Any] = [
-                "sku": product.sku ?? "",
-                "barcode": product.barcode ?? "",
-                "name": product.name,
-                "description": product.description ?? "",
-                "category_id": product.categoryId?.uuidString ?? "",
-                "brand": product.brand ?? "",
-                "size": product.size ?? "",
-                "condition": product.condition.rawValue,
-                "colorway": product.colorway ?? "",
-                "has_box": product.hasBox,
-                "price": NSDecimalNumber(decimal: product.price).doubleValue,
-                "cost": product.cost != nil ? NSDecimalNumber(decimal: product.cost!).doubleValue : 0,
-                "quantity": product.quantity,
-                "low_stock_threshold": product.lowStockThreshold,
-                "images": product.images,
-                "is_active": true,
-                "is_featured": false,
-                "tags": product.tags
-            ]
+            let insertData = ProductInsert(
+                sku: product.sku,
+                barcode: product.barcode,
+                name: product.name,
+                description: product.description,
+                category_id: product.categoryId?.uuidString,
+                brand: product.brand,
+                size: product.size,
+                condition: product.condition.rawValue,
+                colorway: product.colorway,
+                has_box: product.hasBox,
+                price: NSDecimalNumber(decimal: product.price).doubleValue,
+                cost: product.cost != nil ? NSDecimalNumber(decimal: product.cost!).doubleValue : nil,
+                quantity: product.quantity,
+                low_stock_threshold: product.lowStockThreshold,
+                images: product.images,
+                is_active: true,
+                is_featured: false,
+                tags: product.tags
+            )
 
             try await supabase.client
                 .from("products")
-                .insert(productData)
+                .insert(insertData)
                 .execute()
 
             successMessage = "Product added successfully!"
@@ -174,24 +229,23 @@ class InventoryViewModel: ObservableObject {
         error = nil
 
         do {
-            let updateData: [String: Any] = [
-                "name": product.name,
-                "description": product.description ?? "",
-                "brand": product.brand ?? "",
-                "size": product.size ?? "",
-                "condition": product.condition.rawValue,
-                "colorway": product.colorway ?? "",
-                "has_box": product.hasBox,
-                "price": NSDecimalNumber(decimal: product.price).doubleValue,
-                "cost": product.cost != nil ? NSDecimalNumber(decimal: product.cost!).doubleValue : 0,
-                "quantity": product.quantity,
-                "low_stock_threshold": product.lowStockThreshold,
-                "images": product.images,
-                "is_active": product.isActive,
-                "is_featured": product.isFeatured,
-                "tags": product.tags,
-                "updated_at": ISO8601DateFormatter().string(from: Date())
-            ]
+            let updateData = ProductUpdate(
+                name: product.name,
+                description: product.description,
+                brand: product.brand,
+                size: product.size,
+                condition: product.condition.rawValue,
+                colorway: product.colorway,
+                has_box: product.hasBox,
+                price: NSDecimalNumber(decimal: product.price).doubleValue,
+                cost: product.cost != nil ? NSDecimalNumber(decimal: product.cost!).doubleValue : nil,
+                quantity: product.quantity,
+                low_stock_threshold: product.lowStockThreshold,
+                images: product.images,
+                is_active: product.isActive,
+                is_featured: product.isFeatured,
+                tags: product.tags
+            )
 
             try await supabase.client
                 .from("products")
@@ -218,10 +272,11 @@ class InventoryViewModel: ObservableObject {
         error = nil
 
         do {
-            // Soft delete - just mark as inactive
+            let softDelete = SoftDelete(is_active: false)
+
             try await supabase.client
                 .from("products")
-                .update(["is_active": false])
+                .update(softDelete)
                 .eq("id", value: product.id.uuidString)
                 .execute()
 
@@ -250,26 +305,23 @@ class InventoryViewModel: ObservableObject {
         let newQuantity = max(0, product.quantity + adjustment)
 
         do {
-            // Update product quantity
+            let quantityUpdate = QuantityUpdate(quantity: newQuantity)
+
             try await supabase.client
                 .from("products")
-                .update([
-                    "quantity": newQuantity,
-                    "updated_at": ISO8601DateFormatter().string(from: Date())
-                ])
+                .update(quantityUpdate)
                 .eq("id", value: product.id.uuidString)
                 .execute()
 
-            // Log the adjustment
-            let logEntry: [String: Any] = [
-                "product_id": product.id.uuidString,
-                "change_type": adjustment > 0 ? "addition" : "removal",
-                "quantity_change": adjustment,
-                "quantity_before": product.quantity,
-                "quantity_after": newQuantity,
-                "reason": reason,
-                "channel": "admin_adjustment"
-            ]
+            let logEntry = InventoryLogInsert(
+                product_id: product.id.uuidString,
+                change_type: adjustment > 0 ? "addition" : "removal",
+                quantity_change: adjustment,
+                quantity_before: product.quantity,
+                quantity_after: newQuantity,
+                reason: reason,
+                channel: "admin_adjustment"
+            )
 
             try await supabase.client
                 .from("inventory_logs")

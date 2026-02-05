@@ -42,7 +42,7 @@ See individual files in `/Config` for full credentials and documentation.
 ---
 
 ## Current Phase
-**Phase 2: iOS App Development - App Running, Building Admin Inventory System**
+**Phase 2: iOS App Development - Admin Inventory System Complete, StockX OAuth Needs HTTPS Callback**
 
 ## Progress Checklist
 
@@ -66,9 +66,19 @@ See individual files in `/Config` for full credentials and documentation.
 - [x] Keychain storage for secure tokens
 - [x] StockX API service (search, product lookup, barcode)
 - [x] Admin tab and dashboard UI
-- [~] **Barcode Scanner** - Kyle continuing next session
-- [ ] Register URL scheme for OAuth callback (securedapp://)
-- [ ] Test StockX OAuth flow end-to-end
+- [x] Barcode scanning (camera + Bluetooth + manual)
+- [x] Product lookup (StockX barcode + search fallback)
+- [x] Product entry form (StockX pre-fill or manual)
+- [x] Inventory list with search/filter/swipe actions
+- [x] Product editing
+- [x] Quick quantity adjustments with audit logging
+- [x] Pokemon manual entry with grading support
+- [x] Register URL scheme for OAuth callback (securedapp://)
+- [x] Camera permission in Info.plist
+- [x] InventoryViewModel with full CRUD operations
+- [ ] **⚠️ StockX OAuth needs HTTPS callback URL** (see TASKS.md for instructions)
+- [ ] Image upload to Supabase Storage
+- [ ] Admin role authentication check
 - [ ] Connect to Supabase (test product fetch)
 - [ ] Implement Stripe checkout
 - [ ] Test full purchase flow
@@ -132,14 +142,21 @@ SecuredApp/
 - Lookup by UPC/barcode returns: name, brand, colorway, size, retail price, images
 - Rate limits: TBD based on plan
 
+### Known Issue: StockX OAuth Callback
+StockX Developer Portal requires HTTPS callback URLs. Custom URL schemes (`securedapp://`) are rejected.
+**Solution**: Set up an HTTPS domain with a redirect page → `securedapp://stockx/callback`.
+See TASKS.md for full step-by-step instructions.
+
 ### Work Division
-| Feature | Owner |
-|---------|-------|
-| Admin Inventory Scanner | Kyle |
-| Sneaker barcode lookup (StockX) | Kyle |
-| Pokemon item entry | Partner (TCGPlayer API) |
-| Website | Partner |
-| Stripe checkout | TBD |
+| Feature | Owner | Status |
+|---------|-------|--------|
+| Admin Inventory Scanner | Kyle | ✅ Complete |
+| Sneaker barcode lookup (StockX) | Kyle | ✅ Complete |
+| StockX OAuth callback URL setup | Partner | ⚠️ Needs domain |
+| Pokemon item entry | Partner | TCGPlayer API |
+| Image upload to Supabase Storage | TBD | Not started |
+| Website | Partner | Not started |
+| Stripe checkout | TBD | Not started |
 
 ---
 
@@ -166,16 +183,26 @@ SecuredApp/
 │   │   ├── Shop/                # Customer-facing shop
 │   │   ├── Cart/                # Shopping cart
 │   │   ├── Profile/             # User profile
-│   │   └── Admin/               # Admin inventory (Kyle building)
-│   │       ├── AdminTabView.swift     ✅ Dashboard
-│   │       └── StockXLoginView.swift  ✅ StockX connection
+│   │   └── Admin/               # Admin inventory system (COMPLETE)
+│   │       ├── AdminTabView.swift        ✅ Dashboard with stats
+│   │       ├── StockXLoginView.swift     ✅ StockX OAuth login
+│   │       ├── BarcodeScannerView.swift  ✅ Camera/BT/Manual modes
+│   │       ├── ProductLookupView.swift   ✅ StockX search results
+│   │       ├── ProductEntryView.swift    ✅ Add new products
+│   │       ├── InventoryListView.swift   ✅ Browse/search/filter
+│   │       ├── ProductEditView.swift     ✅ Edit products
+│   │       ├── QuickAdjustSheet.swift    ✅ Quantity adjustments
+│   │       └── ManualEntryView.swift     ✅ Sneakers + Pokemon
 │   ├── ViewModels/
+│   │   └── InventoryViewModel.swift     ✅ Full inventory CRUD
 │   ├── Services/
 │   │   ├── SupabaseService.swift
-│   │   ├── StockXAuthManager.swift  ✅ OAuth 2.0 + PKCE
-│   │   └── StockXService.swift      ✅ API client
+│   │   ├── StockXAuthManager.swift      ✅ OAuth 2.0 + PKCE
+│   │   ├── StockXService.swift          ✅ StockX API client
+│   │   ├── BarcodeScannerService.swift  ✅ Camera scanning
+│   │   └── BluetoothScannerService.swift ✅ BT HID scanner
 │   ├── Utilities/
-│   │   └── KeychainHelper.swift     ✅ Secure token storage
+│   │   └── KeychainHelper.swift         ✅ Secure token storage
 │   └── Assets.xcassets
 └── database/                    # SQL migration files
 ```
@@ -218,6 +245,9 @@ All channels must see instant stock updates to prevent overselling.
 - Client has Apple Developer account ready
 - Using Clover POS hardware, connected to Stripe
 - eBay/Whatnot start with manual sync, automate later
+- 2026-02-04: Admin inventory system fully built by Kyle. App compiles clean.
+- 2026-02-04: StockX OAuth login blocked by callback URL issue (needs HTTPS domain). See TASKS.md.
+- 2026-02-04: Handed off to partner to set up domain and finish StockX callback.
 
 ## Links
 - Supabase Dashboard: https://supabase.com/dashboard

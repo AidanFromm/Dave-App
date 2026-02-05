@@ -9,6 +9,7 @@
 import AVFoundation
 import UIKit
 import AudioToolbox
+import Combine
 
 @MainActor
 class BarcodeScannerService: NSObject, ObservableObject {
@@ -117,26 +118,30 @@ class BarcodeScannerService: NSObject, ObservableObject {
         scannedCode = nil
         error = nil
 
-        guard let session = captureSession else {
+        if captureSession == nil {
             _ = setupScanner()
-            guard let session = captureSession else { return }
-
-            Task.detached { [weak session] in
-                session?.startRunning()
-            }
-            isScanning = true
-            return
         }
 
-        Task.detached { [weak session] in
-            session?.startRunning()
+        guard let session = captureSession else { return }
+
+        if !session.isRunning {
+            DispatchQueue.global(qos: .userInitiated).async {
+                session.startRunning()
+            }
         }
         isScanning = true
     }
 
     func stopScanning() {
-        Task.detached { [weak self] in
-            self?.captureSession?.stopRunning()
+        guard let session = captureSession else {
+            isScanning = false
+            return
+        }
+
+        if session.isRunning {
+            DispatchQueue.global(qos: .userInitiated).async {
+                session.stopRunning()
+            }
         }
         isScanning = false
     }

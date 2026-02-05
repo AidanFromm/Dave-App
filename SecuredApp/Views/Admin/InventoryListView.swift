@@ -45,7 +45,7 @@ struct InventoryListView: View {
             // Quick filters
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 8) {
-                    FilterChip(
+                    InventoryFilterChip(
                         title: "Low Stock",
                         isActive: viewModel.showLowStockOnly,
                         count: viewModel.lowStockCount
@@ -56,7 +56,7 @@ struct InventoryListView: View {
                         }
                     }
 
-                    FilterChip(
+                    InventoryFilterChip(
                         title: "Out of Stock",
                         isActive: viewModel.showOutOfStockOnly,
                         count: viewModel.outOfStockCount
@@ -68,7 +68,7 @@ struct InventoryListView: View {
                     }
 
                     ForEach(ProductCondition.allCases, id: \.self) { condition in
-                        FilterChip(
+                        InventoryFilterChip(
                             title: condition.displayName,
                             isActive: viewModel.selectedCondition == condition
                         ) {
@@ -327,7 +327,7 @@ struct ProductRowView: View {
 
 // MARK: - Filter Chip
 
-struct FilterChip: View {
+struct InventoryFilterChip: View {
     let title: String
     let isActive: Bool
     var count: Int?

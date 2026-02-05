@@ -15,9 +15,22 @@
 		A3555BB32F33562900106F5C /* SecuredApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SecuredApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		A3D8D68C2F34347A0033AF6B /* Exceptions for "SecuredApp" folder in "SecuredApp" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = A3555BB22F33562900106F5C /* SecuredApp */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		A3555BB52F33562900106F5C /* SecuredApp */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				A3D8D68C2F34347A0033AF6B /* Exceptions for "SecuredApp" folder in "SecuredApp" target */,
+			);
 			path = SecuredApp;
 			sourceTree = "<group>";
 		};
@@ -277,7 +290,9 @@
 				DEVELOPMENT_TEAM = 49WGA7HSXD;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = SecuredApp/Info.plist;
 				INFOPLIST_KEY_CFBundleURLTypes = "[{CFBundleURLName = \"com.secured.app\"; CFBundleURLSchemes = (securedapp); }]";
+				INFOPLIST_KEY_NSCameraUsageDescription = "amera access is needed to scan barcodes";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -310,7 +325,9 @@
 				DEVELOPMENT_TEAM = 49WGA7HSXD;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = SecuredApp/Info.plist;
 				INFOPLIST_KEY_CFBundleURLTypes = "[{CFBundleURLName = \"com.secured.app\"; CFBundleURLSchemes = (securedapp); }]";
+				INFOPLIST_KEY_NSCameraUsageDescription = "amera access is needed to scan barcodes";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;

@@ -32,7 +32,7 @@ class StockXAuthManager: NSObject, ObservableObject {
     private let clientSecret = "oTNzarbhweQGzF2aQJn_TPWFbT5y5wvRHuQFxjH-hJ5oweeFocZJ:"
     private let apiKey = "qAYBY1lFUv2PVXRldvSf4ya1pkjGhQZ9rxBj4LW7"
 
-    private let authorizationEndpoint = "https://accounts.stockx.com/authorize"
+    private let authorizationEndpoint = "https://accounts.stockx.com/oauth/authorize"
     private let tokenEndpoint = "https://accounts.stockx.com/oauth/token"
     private let audience = "gateway.stockx.com"
     private let redirectUri = "securedapp://stockx/callback"

@@ -10,7 +10,7 @@ import SwiftUI
 struct ProductLookupView: View {
     let barcode: String
 
-    @StateObject private var stockXService = StockXService.shared
+    private let stockXService = StockXService.shared
     @State private var lookupResult: StockXLookupResult?
     @State private var searchResults: [StockXProduct] = []
     @State private var isLoading = true
