@@ -7,10 +7,12 @@ import { ScanResultCard } from "@/components/admin/scan-result-card";
 import { ScanForm } from "@/components/admin/scan-form";
 import { StockXSearchModal } from "@/components/admin/stockx-search-modal";
 import { ScanHistoryTable } from "@/components/admin/scan-history-table";
+import { PokemonCardSearch } from "@/components/admin/pokemon-card-search";
+import { PokemonScanForm } from "@/components/admin/pokemon-scan-form";
 import { lookupBarcode, updateScanCount } from "@/actions/barcode";
 import { addScannedProductToInventory } from "@/actions/scan";
 import { Button } from "@/components/ui/button";
-import { Search, ScanBarcode } from "lucide-react";
+import { Search, ScanBarcode, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import type {
   ScanResult,
@@ -19,6 +21,7 @@ import type {
   ScanFormData,
   StockXMarketData,
   StockXVariant,
+  PokemonCardSearchResult,
 } from "@/types/barcode";
 
 export default function ScanPage() {
@@ -27,6 +30,8 @@ export default function ScanPage() {
   const [scanHistory, setScanHistory] = useState<ScanHistoryEntry[]>([]);
   const [searchModalOpen, setSearchModalOpen] = useState(false);
   const [pendingBarcode, setPendingBarcode] = useState("");
+  const [selectedPokemonCard, setSelectedPokemonCard] =
+    useState<PokemonCardSearchResult | null>(null);
 
   const handleScan = useCallback(async (barcode: string) => {
     setScanState("looking_up");
@@ -279,6 +284,44 @@ export default function ScanPage() {
     setScanState("idle");
   };
 
+  const handlePokemonAddToInventory = async (data: ScanFormData) => {
+    const result = await addScannedProductToInventory(data);
+
+    if (result.error) {
+      toast.error(result.error);
+      setScanHistory((prev) => [
+        {
+          id: crypto.randomUUID(),
+          time: new Date().toISOString(),
+          barcode: data.barcode,
+          productName: data.productName,
+          size: data.size,
+          condition: data.condition,
+          price: data.price,
+          status: "failed",
+        },
+        ...prev,
+      ]);
+      return;
+    }
+
+    toast.success(`${data.productName} added to inventory!`);
+    setScanHistory((prev) => [
+      {
+        id: crypto.randomUUID(),
+        time: new Date().toISOString(),
+        barcode: data.barcode,
+        productName: data.productName,
+        size: data.size,
+        condition: data.condition,
+        price: data.price,
+        status: "added",
+      },
+      ...prev,
+    ]);
+    setSelectedPokemonCard(null);
+  };
+
   const fetchMarketData = async (
     productId: string,
     variantId: string
@@ -307,8 +350,9 @@ export default function ScanPage() {
             <ScanBarcode className="mr-1.5 h-4 w-4" />
             Sneakers
           </TabsTrigger>
-          <TabsTrigger value="pokemon" disabled>
-            Pokemon (Coming Soon)
+          <TabsTrigger value="pokemon">
+            <Sparkles className="mr-1.5 h-4 w-4" />
+            Pokemon TCG
           </TabsTrigger>
         </TabsList>
 
@@ -383,14 +427,21 @@ export default function ScanPage() {
           </div>
         </TabsContent>
 
-        <TabsContent value="pokemon">
-          <div className="flex items-center justify-center py-20">
-            <div className="text-center">
-              <p className="text-lg font-medium">Pokemon TCG</p>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Coming soon. Pokemon TCG API integration is in development.
-              </p>
-            </div>
+        <TabsContent value="pokemon" className="mt-4 space-y-6">
+          {selectedPokemonCard ? (
+            <PokemonScanForm
+              card={selectedPokemonCard}
+              onSubmit={handlePokemonAddToInventory}
+              onBack={() => setSelectedPokemonCard(null)}
+            />
+          ) : (
+            <PokemonCardSearch onSelect={setSelectedPokemonCard} />
+          )}
+
+          {/* Shared session history */}
+          <div className="space-y-3">
+            <h2 className="font-semibold">Session History</h2>
+            <ScanHistoryTable entries={scanHistory} />
           </div>
         </TabsContent>
       </Tabs>

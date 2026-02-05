@@ -117,3 +117,58 @@ export type ScanState =
   | "not_found"
   | "adding"
   | "added";
+
+// ─── Pokemon TCG Types ───────────────────────────────────────
+
+export interface PokemonCardSearchResult {
+  id: string;
+  name: string;
+  number: string;
+  rarity: string;
+  supertype: string;
+  subtypes: string[];
+  imageSmall: string;
+  imageLarge: string;
+  setId: string;
+  setName: string;
+  setSeries: string;
+  setSymbol: string;
+  marketPrice: number | null;
+  tcgplayerUrl: string | null;
+}
+
+export interface PokemonCardDetail {
+  id: string;
+  name: string;
+  supertype: string;
+  subtypes: string[];
+  hp: string | null;
+  types: string[];
+  number: string;
+  rarity: string;
+  artist: string | null;
+  imageSmall: string;
+  imageLarge: string;
+  set: {
+    id: string;
+    name: string;
+    series: string;
+    releaseDate: string;
+    symbol: string;
+    logo: string;
+  };
+  tcgplayerUrl: string | null;
+  variantPrices: Record<
+    string,
+    { low: number | null; mid: number | null; high: number | null; market: number | null }
+  >;
+  regulationMark: string | null;
+}
+
+// Pokemon card condition labels (TCG standard)
+export const POKEMON_CONDITION_MAP: Record<string, { label: string; dbValue: import("./product").ProductCondition }> = {
+  near_mint: { label: "Near Mint", dbValue: "new" },
+  lightly_played: { label: "Lightly Played", dbValue: "used_like_new" },
+  moderately_played: { label: "Moderately Played", dbValue: "used_good" },
+  heavily_played: { label: "Heavily Played / Damaged", dbValue: "used_fair" },
+};
