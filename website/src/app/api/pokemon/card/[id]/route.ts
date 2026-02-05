@@ -21,12 +21,18 @@ export async function GET(
   }
 
   try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 15000);
+
     const res = await fetch(`${POKEMON_TCG_BASE}/cards/${id}`, {
       headers: {
         "X-Api-Key": process.env.POKEMON_TCG_API_KEY!,
         Accept: "application/json",
       },
+      signal: controller.signal,
     });
+
+    clearTimeout(timeout);
 
     if (!res.ok) {
       return NextResponse.json(

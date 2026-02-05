@@ -42,7 +42,7 @@ export function PokemonCardSearch({ onSelect }: PokemonCardSearchProps) {
         }
       }
     } catch {
-      setError("Search failed");
+      setError("Search timed out or failed. The Pokemon TCG API may be slow — try again.");
     }
 
     setLoading(false);

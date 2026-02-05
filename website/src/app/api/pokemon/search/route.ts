@@ -26,15 +26,21 @@ export async function GET(request: Request) {
 
     const q = parts.join(" ");
 
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 15000);
+
     const res = await fetch(
-      `${POKEMON_TCG_BASE}/cards?q=${encodeURIComponent(q)}&pageSize=20&page=${page}&orderBy=-set.releaseDate&select=id,name,number,rarity,images,set,tcgplayer,supertype,subtypes`,
+      `${POKEMON_TCG_BASE}/cards?q=${encodeURIComponent(q)}&pageSize=12&page=${page}&select=id,name,number,rarity,images,set,tcgplayer,supertype,subtypes`,
       {
         headers: {
           "X-Api-Key": process.env.POKEMON_TCG_API_KEY!,
           Accept: "application/json",
         },
+        signal: controller.signal,
       }
     );
+
+    clearTimeout(timeout);
 
     if (!res.ok) {
       return NextResponse.json(
