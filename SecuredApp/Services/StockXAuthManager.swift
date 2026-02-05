@@ -16,6 +16,7 @@
 import Foundation
 import AuthenticationServices
 import CryptoKit
+import Combine
 
 @MainActor
 class StockXAuthManager: NSObject, ObservableObject {

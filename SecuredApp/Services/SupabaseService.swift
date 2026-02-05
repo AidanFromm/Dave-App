@@ -73,11 +73,12 @@ final class SupabaseService: Sendable {
     }
 
     func searchProducts(query: String) async throws -> [Product] {
-        try await client
+        let pattern = "%\(query)%"
+        return try await client
             .from("products")
             .select()
             .eq("is_active", value: true)
-            .ilike("name", pattern: "%\(query)%")
+            .ilike("name", pattern: pattern)
             .order("name")
             .execute()
             .value

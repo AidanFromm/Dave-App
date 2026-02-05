@@ -64,19 +64,24 @@
 - [x] Xcode project setup with Supabase + Stripe SDKs - @Kyle
 - [x] Fixed all Swift 6 compatibility issues - @Kyle
 
-### Admin Inventory System - @Kyle (IN PROGRESS)
+### Admin Inventory System - @Kyle (MAJOR PROGRESS)
 - [x] Design admin inventory scanner UI - @Kyle
 - [x] StockX OAuth 2.0 authentication - @Kyle
 - [x] Secure token storage (Keychain) - @Kyle
 - [x] StockX API client (search, product lookup, barcode) - @Kyle
 - [x] Admin tab and dashboard UI - @Kyle
-- [~] Register URL scheme for OAuth callback - @Kyle (next session)
-- [~] Test StockX OAuth flow end-to-end - @Kyle (next session)
-- [ ] Implement barcode scanning (camera + bluetooth)
-- [ ] Product entry form after scan
-- [ ] New vs Used item workflow
-- [ ] Image upload for used items
-- [ ] Inventory logging system
+- [x] Barcode scanning (camera + bluetooth) - @Kyle
+- [x] Product lookup view (StockX search fallback) - @Kyle
+- [x] Product entry form (pre-filled from StockX) - @Kyle
+- [x] Inventory list with search/filter - @Kyle
+- [x] Product edit view - @Kyle
+- [x] Quick quantity adjustment with logging - @Kyle
+- [x] Pokemon manual entry form - @Kyle
+- [x] New vs Used item workflow - @Kyle
+- [x] InventoryViewModel with full CRUD - @Kyle
+- [~] Register URL scheme for OAuth callback - @Kyle (in Xcode)
+- [~] Add camera permission to Info.plist - @Kyle (in Xcode)
+- [ ] Image upload to Supabase Storage
 - [ ] Admin authentication/role check
 
 ### Pokemon System - ASSIGNED TO PARTNER
@@ -105,6 +110,20 @@
 ---
 
 ## Completed Tasks
+
+### February 4, 2026 (Night Session) - FULL ADMIN SYSTEM
+- [x] BarcodeScannerService - Camera scanning with AVFoundation - @Kyle
+- [x] BluetoothScannerService - HID Bluetooth scanner support - @Kyle
+- [x] InventoryViewModel - Full inventory management logic - @Kyle
+- [x] BarcodeScannerView - Camera/Bluetooth/Manual entry modes - @Kyle
+- [x] ProductLookupView - StockX lookup with search fallback - @Kyle
+- [x] ProductEntryView - Add products (StockX pre-fill or manual) - @Kyle
+- [x] InventoryListView - Browse, search, filter all inventory - @Kyle
+- [x] ProductEditView - Edit existing products - @Kyle
+- [x] QuickAdjustSheet - Quantity adjustments with reason logging - @Kyle
+- [x] ManualEntryView - Sneakers and Pokemon manual entry - @Kyle
+- [x] PokemonEntryView - Pokemon-specific fields (set, rarity, grading) - @Kyle
+- [x] AdminTabView upgraded to full dashboard - @Kyle
 
 ### February 4, 2026 (Evening Session)
 - [x] StockX OAuth 2.0 authentication system - @Kyle
@@ -149,32 +168,50 @@
 
 ## FOR PARTNER (Morning Update)
 
-Hey! I made good progress on the admin inventory system last night. Here's what's done:
+Hey! The full admin inventory system is now built! Here's what's done:
 
-**StockX Integration (Complete):**
-- OAuth 2.0 authentication with PKCE (industry standard secure auth)
-- Tokens stored securely in iOS Keychain
-- API service ready to search products and lookup barcodes
-- Login UI for connecting the StockX account
-- Admin tab added to the app
+**COMPLETE Admin System Features:**
+- ✅ Dashboard with live inventory stats (total, low stock, out of stock, value)
+- ✅ Barcode scanning (iPhone camera, Bluetooth scanner, or manual entry)
+- ✅ StockX integration - scan barcode → auto-fill product data
+- ✅ Product entry form with StockX pre-fill or manual entry
+- ✅ Full inventory list with search, filters (category, condition, stock status)
+- ✅ Product editing
+- ✅ Quick quantity adjustments with reason logging
+- ✅ Pokemon manual entry with grading support
+- ✅ New vs Used item handling
 
 **Files I Created:**
-- `Utilities/KeychainHelper.swift` - Handles secure storage
-- `Services/StockXAuthManager.swift` - Manages login/logout/tokens
-- `Services/StockXService.swift` - Calls StockX API
-- `Views/Admin/StockXLoginView.swift` - Login button UI
-- `Views/Admin/AdminTabView.swift` - Admin dashboard
+```
+Services/
+├── BarcodeScannerService.swift    # Camera barcode scanning
+├── BluetoothScannerService.swift  # Bluetooth scanner support
+├── StockXAuthManager.swift        # OAuth 2.0 + PKCE
+└── StockXService.swift            # StockX API client
 
-**What I'll Do Next:**
-1. Register URL scheme in Xcode (needed for OAuth redirect)
-2. Test the full StockX login flow
-3. Build the barcode scanner
-4. Create the product entry form
+ViewModels/
+└── InventoryViewModel.swift       # Full inventory CRUD
+
+Views/Admin/
+├── AdminTabView.swift             # Dashboard with stats
+├── BarcodeScannerView.swift       # Camera/Bluetooth/Manual modes
+├── ProductLookupView.swift        # StockX search results
+├── ProductEntryView.swift         # Add new products
+├── InventoryListView.swift        # Browse all inventory
+├── ProductEditView.swift          # Edit existing products
+├── QuickAdjustSheet.swift         # Quantity adjustments
+├── ManualEntryView.swift          # Manual entry (sneakers/pokemon)
+└── StockXLoginView.swift          # StockX OAuth login
+```
+
+**Before Testing - Do These in Xcode:**
+1. Add camera permission: Project → Info → add "Privacy - Camera Usage Description"
+2. Register URL scheme: Project → Info → URL Types → add "securedapp"
 
 **You Can Work On:**
-- Pokemon system (see Config/Pokemon.md)
-- Website
-- Customer-facing app features
-- Stripe payment setup
+- TCGPlayer API for Pokemon (see Config/Pokemon.md)
+- Website development
+- Customer checkout flow
+- Stripe payment integration
 
-To run the app: Open Xcode (double-click SecuredApp.xcodeproj), select iPhone simulator, Cmd+R to run.
+To run: Double-click SecuredApp.xcodeproj → Select simulator → Cmd+R

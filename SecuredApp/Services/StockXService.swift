@@ -12,6 +12,7 @@
 
 import Foundation
 
+@MainActor
 class StockXService {
     static let shared = StockXService()
     private init() {}
@@ -19,7 +20,9 @@ class StockXService {
     private let baseURL = "https://api.stockx.com/v2"
     private let apiKey = "qAYBY1lFUv2PVXRldvSf4ya1pkjGhQZ9rxBj4LW7"
 
-    private let authManager = StockXAuthManager.shared
+    private var authManager: StockXAuthManager {
+        StockXAuthManager.shared
+    }
 
     // MARK: - Search Products
     func searchProducts(query: String, limit: Int = 20) async throws -> [StockXProduct] {
