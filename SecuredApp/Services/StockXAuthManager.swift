@@ -35,7 +35,7 @@ class StockXAuthManager: NSObject, ObservableObject {
     private let authorizationEndpoint = "https://accounts.stockx.com/oauth/authorize"
     private let tokenEndpoint = "https://accounts.stockx.com/oauth/token"
     private let audience = "gateway.stockx.com"
-    private let redirectUri = "securedapp://stockx/callback"
+    private let redirectUri = "https://securedtampa.com/stockx/callback"
     private let scope = "openid offline_access"
 
     // MARK: - PKCE
