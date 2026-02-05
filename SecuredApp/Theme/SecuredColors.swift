@@ -201,6 +201,17 @@ struct SecuredAnimation {
 
     /// Tab selection animation
     static let tabSelection = Animation.spring(response: 0.3, dampingFraction: 0.8)
+
+    // MARK: - Splash Screen Animations
+
+    /// Splash screen logo entry animation
+    static let splashEntry = Animation.spring(response: 0.6, dampingFraction: 0.8)
+
+    /// Splash screen underline draw animation
+    static let splashUnderline = Animation.easeOut(duration: 0.6)
+
+    /// Splash screen exit animation
+    static let splashExit = Animation.easeInOut(duration: 0.3)
 }
 
 // MARK: - Corner Radius Constants
