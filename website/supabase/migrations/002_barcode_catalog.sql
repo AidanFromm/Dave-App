@@ -1,8 +1,7 @@
--- Barcode catalog: maps scanned barcodes to product data for instant lookups
 CREATE TABLE IF NOT EXISTS barcode_catalog (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   barcode TEXT UNIQUE NOT NULL,
-  barcode_type TEXT NOT NULL DEFAULT 'UPC', -- UPC, EAN, STYLE_ID, CUSTOM
+  barcode_type TEXT NOT NULL DEFAULT 'UPC',
   stockx_product_id TEXT,
   stockx_variant_id TEXT,
   product_name TEXT NOT NULL,
@@ -13,7 +12,7 @@ CREATE TABLE IF NOT EXISTS barcode_catalog (
   retail_price NUMERIC(10,2),
   image_url TEXT,
   image_urls TEXT[] DEFAULT '{}',
-  product_type TEXT NOT NULL DEFAULT 'sneaker', -- sneaker, pokemon, etc.
+  product_type TEXT NOT NULL DEFAULT 'sneaker',
   scan_count INT NOT NULL DEFAULT 1,
   last_scanned_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   created_by UUID REFERENCES auth.users(id),
