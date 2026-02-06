@@ -8,9 +8,15 @@ export async function checkStockXConnection(): Promise<boolean> {
 
 export async function getStockXAuthUrl(): Promise<string> {
   const clientId = process.env.STOCKX_CLIENT_ID!;
-  const redirectUri = process.env.NEXT_PUBLIC_SITE_URL
-    ? `https://${process.env.NEXT_PUBLIC_SITE_URL}/stockx/callback`
-    : "https://securedtampa.com/stockx/callback";
+
+  // Build redirect URI, handling whether SITE_URL has protocol or not
+  let siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "securedtampa.com";
+  if (siteUrl.startsWith("http://") || siteUrl.startsWith("https://")) {
+    // Already has protocol
+  } else {
+    siteUrl = `https://${siteUrl}`;
+  }
+  const redirectUri = `${siteUrl}/stockx/callback`;
 
   const params = new URLSearchParams({
     response_type: "code",
