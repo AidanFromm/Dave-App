@@ -21,6 +21,7 @@ import {
 } from "@/lib/validators";
 import { createProduct, updateProduct } from "@/actions/inventory";
 import type { Product, Category } from "@/types/product";
+import { ImageUpload } from "@/components/admin/image-upload";
 import { Loader2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -143,6 +144,14 @@ export function ProductForm({ product, categories }: ProductFormProps) {
         <div className="space-y-2">
           <Label>Description</Label>
           <Textarea {...register("description")} rows={3} />
+        </div>
+        <div className="space-y-2">
+          <Label>Images</Label>
+          <ImageUpload
+            images={watch("images") ?? []}
+            onChange={(urls) => setValue("images", urls)}
+            maxImages={6}
+          />
         </div>
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-2">
