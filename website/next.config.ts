@@ -16,6 +16,10 @@ const nextConfig: NextConfig = {
         protocol: "https",
         hostname: "stockx-assets.imgix.net",
       },
+      {
+        protocol: "https",
+        hostname: "assets.tcgdex.net",
+      },
     ],
   },
 };
