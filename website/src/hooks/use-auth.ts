@@ -4,8 +4,11 @@ import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import type { User } from "@supabase/supabase-js";
 
+type UserRole = "customer" | "owner" | "manager" | "staff" | null;
+
 export function useAuth() {
   const [user, setUser] = useState<User | null>(null);
+  const [role, setRole] = useState<UserRole>(null);
   const [loading, setLoading] = useState(true);
   const supabase = createClient();
 
@@ -15,14 +18,41 @@ export function useAuth() {
         data: { user },
       } = await supabase.auth.getUser();
       setUser(user);
+
+      if (user) {
+        // Fetch role from profiles table
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("role")
+          .eq("auth_user_id", user.id)
+          .single();
+        setRole((profile?.role as UserRole) ?? "customer");
+      } else {
+        setRole(null);
+      }
+
       setLoading(false);
     };
     getUser();
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
+    } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      const currentUser = session?.user ?? null;
+      setUser(currentUser);
+
+      if (currentUser) {
+        // Fetch role from profiles table
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("role")
+          .eq("auth_user_id", currentUser.id)
+          .single();
+        setRole((profile?.role as UserRole) ?? "customer");
+      } else {
+        setRole(null);
+      }
+
       setLoading(false);
     });
 
@@ -32,9 +62,11 @@ export function useAuth() {
   const signOut = async () => {
     await supabase.auth.signOut();
     setUser(null);
+    setRole(null);
   };
 
-  const isAdmin = user?.user_metadata?.role === "admin";
+  // Admin = owner, manager, or staff
+  const isAdmin = role === "owner" || role === "manager" || role === "staff";
 
-  return { user, loading, signOut, isAdmin };
+  return { user, role, loading, signOut, isAdmin };
 }
