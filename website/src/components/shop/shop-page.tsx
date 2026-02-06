@@ -104,17 +104,27 @@ export function ShopPage({ initialProducts, categories }: ShopPageProps) {
   }, [initialProducts, filter, sort, debouncedSearch, pokemonCategoryId]);
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6 lg:px-8">
-      {/* Single-line controls: Filters (left) | Search (center) | Sort (right) */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
+    <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+      {/* Filter bar */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        {/* Left: Filter tabs */}
         <FilterTabs selected={filter} onChange={setFilter} />
-        <div className="flex flex-1 items-center gap-3">
-          <div className="flex-1">
+
+        {/* Right: Search + Sort */}
+        <div className="flex items-center gap-3">
+          <div className="w-48 sm:w-56">
             <SearchBar value={search} onChange={setSearch} />
           </div>
           <SortSelect value={sort} onChange={setSort} />
         </div>
       </div>
+
+      {/* Results count */}
+      {debouncedSearch && (
+        <p className="mt-4 text-sm text-muted-foreground">
+          {filteredProducts.length} result{filteredProducts.length !== 1 ? "s" : ""} for "{debouncedSearch}"
+        </p>
+      )}
 
       {/* Grid */}
       <div className="mt-6">
