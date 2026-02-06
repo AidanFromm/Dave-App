@@ -1,31 +1,16 @@
 "use server";
 
-import { isStockXConnected } from "@/lib/stockx";
+import { isStockXConnected, getStockXHeaders } from "@/lib/stockx";
 
 export async function checkStockXConnection(): Promise<boolean> {
   return isStockXConnected();
 }
 
-export async function getStockXAuthUrl(): Promise<string> {
-  const clientId = (process.env.STOCKX_CLIENT_ID || "").trim();
-
-  // Build redirect URI, handling whether SITE_URL has protocol or not
-  let siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "securedtampa.com";
-  if (siteUrl.startsWith("http://") || siteUrl.startsWith("https://")) {
-    // Already has protocol
-  } else {
-    siteUrl = `https://${siteUrl}`;
+export async function connectStockX(): Promise<{ success: boolean; error?: string }> {
+  // This triggers client credentials token fetch via getStockXHeaders
+  const headers = await getStockXHeaders();
+  if (!headers) {
+    return { success: false, error: "Failed to connect to StockX" };
   }
-  const redirectUri = `${siteUrl}/stockx/callback`;
-
-  const params = new URLSearchParams({
-    response_type: "code",
-    client_id: clientId,
-    redirect_uri: redirectUri,
-    scope: "offline_access openid",
-    audience: "urn:gateway.stockx.com",
-    state: "web",
-  });
-
-  return `https://accounts.stockx.com/authorize?${params.toString()}`;
+  return { success: true };
 }

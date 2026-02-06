@@ -23,7 +23,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { getBarcodeCatalogCount } from "@/actions/barcode";
-import { checkStockXConnection, getStockXAuthUrl } from "@/actions/stockx-auth";
+import { checkStockXConnection, connectStockX } from "@/actions/stockx-auth";
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface CloverStatus {
@@ -408,10 +408,16 @@ export default function SettingsPage() {
               onClick={async () => {
                 setConnectingStockx(true);
                 try {
-                  const url = await getStockXAuthUrl();
-                  window.location.href = url;
+                  const result = await connectStockX();
+                  if (result.success) {
+                    setStockxConnected(true);
+                    toast.success("StockX connected successfully!");
+                  } else {
+                    toast.error(result.error ?? "Failed to connect to StockX");
+                  }
                 } catch {
-                  toast.error("Failed to start StockX connection");
+                  toast.error("Failed to connect to StockX");
+                } finally {
                   setConnectingStockx(false);
                 }
               }}
@@ -419,7 +425,7 @@ export default function SettingsPage() {
               className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50"
             >
               {connectingStockx
-                ? "Redirecting..."
+                ? "Connecting..."
                 : stockxConnected
                   ? "Reconnect"
                   : "Connect StockX"}

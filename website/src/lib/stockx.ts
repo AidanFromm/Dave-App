@@ -30,7 +30,7 @@ export async function getStockXTokens(): Promise<StockXTokenRow | null> {
 
 export async function saveStockXTokens(tokens: {
   access_token: string;
-  refresh_token: string;
+  refresh_token?: string;
   token_type?: string;
   expires_in: number;
   scope?: string;
@@ -47,18 +47,15 @@ export async function saveStockXTokens(tokens: {
 
   await supabase.from("stockx_tokens").insert({
     access_token: tokens.access_token,
-    refresh_token: tokens.refresh_token,
+    refresh_token: tokens.refresh_token ?? "",
     token_type: tokens.token_type ?? "Bearer",
     expires_at: expiresAt,
     scope: tokens.scope ?? null,
   });
 }
 
-async function refreshStockXToken(
-  refreshToken: string
-): Promise<{
+async function fetchClientCredentialsToken(): Promise<{
   access_token: string;
-  refresh_token: string;
   expires_in: number;
   token_type: string;
 } | null> {
@@ -67,10 +64,10 @@ async function refreshStockXToken(
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        grant_type: "refresh_token",
+        grant_type: "client_credentials",
         client_id: (process.env.STOCKX_CLIENT_ID || "").trim(),
         client_secret: (process.env.STOCKX_CLIENT_SECRET || "").trim(),
-        refresh_token: refreshToken,
+        audience: "gateway.stockx.com",
       }),
     });
 
@@ -82,23 +79,35 @@ async function refreshStockXToken(
 }
 
 export async function getStockXHeaders(): Promise<Record<string, string> | null> {
-  const tokens = await getStockXTokens();
-  if (!tokens) return null;
+  let tokens = await getStockXTokens();
 
+  // Auto-fetch if no tokens exist
+  if (!tokens) {
+    const newTokens = await fetchClientCredentialsToken();
+    if (!newTokens) return null;
+    await saveStockXTokens({
+      access_token: newTokens.access_token,
+      expires_in: newTokens.expires_in,
+    });
+    tokens = await getStockXTokens();
+    if (!tokens) return null;
+  }
+
+  // Check expiry - fetch new token if within 5 min of expiring
   const now = new Date();
   const expiresAt = new Date(tokens.expires_at);
-
   if (expiresAt.getTime() - now.getTime() < 5 * 60 * 1000) {
-    const refreshed = await refreshStockXToken(tokens.refresh_token);
-    if (refreshed) {
-      await saveStockXTokens(refreshed);
-      return {
-        "x-api-key": (process.env.STOCKX_API_KEY || "").trim(),
-        Authorization: `Bearer ${refreshed.access_token}`,
-        Accept: "application/json",
-      };
-    }
-    return null;
+    const newTokens = await fetchClientCredentialsToken();
+    if (!newTokens) return null;
+    await saveStockXTokens({
+      access_token: newTokens.access_token,
+      expires_in: newTokens.expires_in,
+    });
+    return {
+      "x-api-key": (process.env.STOCKX_API_KEY || "").trim(),
+      Authorization: `Bearer ${newTokens.access_token}`,
+      Accept: "application/json",
+    };
   }
 
   return {
@@ -110,5 +119,10 @@ export async function getStockXHeaders(): Promise<Record<string, string> | null>
 
 export async function isStockXConnected(): Promise<boolean> {
   const tokens = await getStockXTokens();
-  return tokens !== null;
+  if (!tokens) return false;
+
+  // Check if token is still valid
+  const now = new Date();
+  const expiresAt = new Date(tokens.expires_at);
+  return expiresAt.getTime() > now.getTime();
 }
