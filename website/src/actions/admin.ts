@@ -290,3 +290,18 @@ export async function getCustomerDetail(customerId: string) {
     avg_order_value: Math.round(avgOrderValue * 100) / 100,
   };
 }
+
+export async function deleteProduct(productId: string) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Unauthorized");
+
+  const { error } = await supabase
+    .from("products")
+    .delete()
+    .eq("id", productId);
+
+  if (error) throw new Error(error.message);
+
+  return { success: true };
+}
