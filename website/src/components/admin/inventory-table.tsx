@@ -288,7 +288,7 @@ export function InventoryTable({ products, onRefresh }: InventoryTableProps) {
                           alt={product.name}
                           width={40}
                           height={40}
-                          className="rounded-md object-cover"
+                          className="rounded-md object-contain"
                         />
                       ) : (
                         <div className="w-10 h-10 rounded-md bg-muted flex items-center justify-center">
