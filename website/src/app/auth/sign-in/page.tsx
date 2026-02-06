@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { signInSchema, type SignInFormValues } from "@/lib/validators";
 import { signIn } from "@/actions/auth";
-import { Loader2 } from "lucide-react";
+import { Loader2, Eye, EyeOff } from "lucide-react";
 
 function SignInForm() {
   const router = useRouter();
@@ -18,6 +18,7 @@ function SignInForm() {
   const redirect = searchParams.get("redirect") ?? "/";
   const [serverError, setServerError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const {
     register,
@@ -81,12 +82,26 @@ function SignInForm() {
                 Forgot password?
               </Link>
             </div>
-            <Input
-              id="password"
-              type="password"
-              autoComplete="current-password"
-              {...register("password")}
-            />
+            <div className="relative">
+              <Input
+                id="password"
+                type={showPassword ? "text" : "password"}
+                autoComplete="current-password"
+                className="pr-10"
+                {...register("password")}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              >
+                {showPassword ? (
+                  <EyeOff className="h-4 w-4" />
+                ) : (
+                  <Eye className="h-4 w-4" />
+                )}
+              </button>
+            </div>
             {errors.password && (
               <p className="text-xs text-destructive">
                 {errors.password.message}

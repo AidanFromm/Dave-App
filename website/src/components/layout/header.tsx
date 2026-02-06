@@ -80,6 +80,16 @@ export function Header() {
             </Link>
           </Button>
 
+          {/* Admin button for staff/owner */}
+          {user && isAdmin && (
+            <Button variant="ghost" size="sm" asChild className="hidden sm:flex gap-1.5 h-9 px-3">
+              <Link href="/admin">
+                <Shield className="h-4 w-4" />
+                Admin
+              </Link>
+            </Button>
+          )}
+
           {/* Cart — opens drawer */}
           <Button
             variant="ghost"
