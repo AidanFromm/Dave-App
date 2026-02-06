@@ -59,21 +59,38 @@ async function fetchClientCredentialsToken(): Promise<{
   expires_in: number;
   token_type: string;
 } | null> {
+  const clientId = (process.env.STOCKX_CLIENT_ID || "").trim();
+  const clientSecret = (process.env.STOCKX_CLIENT_SECRET || "").trim();
+
+  if (!clientId || !clientSecret) {
+    console.error("StockX credentials missing: CLIENT_ID or CLIENT_SECRET not set");
+    return null;
+  }
+
   try {
     const res = await fetch(STOCKX_TOKEN_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         grant_type: "client_credentials",
-        client_id: (process.env.STOCKX_CLIENT_ID || "").trim(),
-        client_secret: (process.env.STOCKX_CLIENT_SECRET || "").trim(),
+        client_id: clientId,
+        client_secret: clientSecret,
         audience: "gateway.stockx.com",
       }),
     });
 
-    if (!res.ok) return null;
-    return await res.json();
-  } catch {
+    if (!res.ok) {
+      const errorText = await res.text();
+      console.error("StockX token fetch failed:", res.status, errorText);
+      console.error("This may indicate the OAuth app doesn't support client_credentials grant.");
+      console.error("Check StockX developer portal: https://developer.stockx.com/");
+      return null;
+    }
+    const data = await res.json();
+    console.log("StockX token fetched successfully, expires_in:", data.expires_in);
+    return data;
+  } catch (err) {
+    console.error("StockX token fetch exception:", err);
     return null;
   }
 }

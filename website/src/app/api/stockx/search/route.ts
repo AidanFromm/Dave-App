@@ -24,8 +24,10 @@ export async function GET(request: Request) {
     );
 
     if (!res.ok) {
+      const errorText = await res.text();
+      console.error("StockX API error:", res.status, errorText);
       return NextResponse.json(
-        { error: "StockX API error" },
+        { error: `StockX API error: ${res.status}`, detail: errorText },
         { status: res.status }
       );
     }
