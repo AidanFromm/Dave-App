@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import Link from "next/link";
 import {
   Package,
@@ -16,8 +17,9 @@ export default async function AccountPage() {
 
   if (!user) redirect("/auth/sign-in");
 
-  // Fetch user role from profiles
-  const { data: profile } = await supabase
+  // Fetch user role from profiles (use admin client to bypass RLS)
+  const adminSupabase = createAdminClient();
+  const { data: profile } = await adminSupabase
     .from("profiles")
     .select("role")
     .eq("auth_user_id", user.id)
