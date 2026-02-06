@@ -5,6 +5,7 @@ import {
   Package,
   Settings,
   ChevronRight,
+  ShieldCheck,
 } from "lucide-react";
 
 export default async function AccountPage() {
@@ -14,6 +15,16 @@ export default async function AccountPage() {
   } = await supabase.auth.getUser();
 
   if (!user) redirect("/auth/sign-in");
+
+  // Fetch user role from profiles
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("auth_user_id", user.id)
+    .single();
+
+  const role = profile?.role as string | null;
+  const isAdmin = role === "owner" || role === "manager" || role === "staff";
 
   const firstName = user.user_metadata?.first_name ?? "";
   const lastName = user.user_metadata?.last_name ?? "";
@@ -40,6 +51,19 @@ export default async function AccountPage() {
 
       {/* Quick links */}
       <div className="mt-6 space-y-2">
+        {isAdmin && (
+          <Link
+            href="/admin"
+            className="flex items-center justify-between rounded-xl bg-primary/10 border border-primary/20 p-4 transition-colors hover:bg-primary/20"
+          >
+            <div className="flex items-center gap-3">
+              <ShieldCheck className="h-5 w-5 text-primary" />
+              <span className="font-medium text-primary">Admin Panel</span>
+            </div>
+            <ChevronRight className="h-4 w-4 text-primary" />
+          </Link>
+        )}
+
         <Link
           href="/account/orders"
           className="flex items-center justify-between rounded-xl shadow-card bg-card p-4 transition-colors hover:bg-accent"
