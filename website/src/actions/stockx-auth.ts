@@ -23,7 +23,7 @@ export async function getStockXAuthUrl(): Promise<string> {
     client_id: clientId,
     redirect_uri: redirectUri,
     scope: "offline_access openid",
-    audience: "gateway.stockx.com",
+    audience: "urn:gateway.stockx.com",
     state: "web",
   });
 
