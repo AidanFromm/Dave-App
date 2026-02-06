@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
@@ -9,12 +9,26 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { resetPasswordSchema } from "@/lib/validators";
 import { resetPassword } from "@/actions/auth";
-import { Loader2, CheckCircle } from "lucide-react";
+import { createClient } from "@/lib/supabase/client";
+import { Loader2, CheckCircle, AlertCircle } from "lucide-react";
 
 export default function ResetPasswordPage() {
   const [serverError, setServerError] = useState("");
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [checking, setChecking] = useState(true);
+  const [hasSession, setHasSession] = useState(false);
+
+  // Check if user has a valid recovery session
+  useEffect(() => {
+    async function checkSession() {
+      const supabase = createClient();
+      const { data: { session } } = await supabase.auth.getSession();
+      setHasSession(!!session);
+      setChecking(false);
+    }
+    checkSession();
+  }, []);
 
   const {
     register,
@@ -35,6 +49,33 @@ export default function ResetPasswordPage() {
     }
     setLoading(false);
   };
+
+  if (checking) {
+    return (
+      <div className="mx-auto flex min-h-[60vh] max-w-md flex-col items-center justify-center px-4 py-12 text-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <p className="mt-4 text-sm text-muted-foreground">Verifying link...</p>
+      </div>
+    );
+  }
+
+  if (!hasSession) {
+    return (
+      <div className="mx-auto flex min-h-[60vh] max-w-md flex-col items-center justify-center px-4 py-12 text-center">
+        <div className="rounded-2xl shadow-card bg-card p-6 sm:p-8">
+          <span className="text-xl font-bold text-primary">SECURED</span>
+          <AlertCircle className="mx-auto mt-4 h-12 w-12 text-destructive" />
+          <h1 className="mt-4 text-2xl font-bold">Invalid or Expired Link</h1>
+          <p className="mt-2 text-sm text-muted-foreground">
+            This password reset link is invalid or has expired. Please request a new one.
+          </p>
+          <Button asChild className="mt-6">
+            <Link href="/auth/forgot-password">Request New Link</Link>
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   if (success) {
     return (
