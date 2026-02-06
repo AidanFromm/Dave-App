@@ -15,8 +15,8 @@ export async function POST(request: Request) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         grant_type: "authorization_code",
-        client_id: process.env.STOCKX_CLIENT_ID,
-        client_secret: process.env.STOCKX_CLIENT_SECRET,
+        client_id: (process.env.STOCKX_CLIENT_ID || "").trim(),
+        client_secret: (process.env.STOCKX_CLIENT_SECRET || "").trim(),
         code,
         redirect_uri: STOCKX_REDIRECT_URI,
       }),

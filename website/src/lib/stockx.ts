@@ -68,8 +68,8 @@ async function refreshStockXToken(
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         grant_type: "refresh_token",
-        client_id: process.env.STOCKX_CLIENT_ID,
-        client_secret: process.env.STOCKX_CLIENT_SECRET,
+        client_id: (process.env.STOCKX_CLIENT_ID || "").trim(),
+        client_secret: (process.env.STOCKX_CLIENT_SECRET || "").trim(),
         refresh_token: refreshToken,
       }),
     });
@@ -93,7 +93,7 @@ export async function getStockXHeaders(): Promise<Record<string, string> | null>
     if (refreshed) {
       await saveStockXTokens(refreshed);
       return {
-        "x-api-key": process.env.STOCKX_API_KEY!,
+        "x-api-key": (process.env.STOCKX_API_KEY || "").trim(),
         Authorization: `Bearer ${refreshed.access_token}`,
         Accept: "application/json",
       };
@@ -102,7 +102,7 @@ export async function getStockXHeaders(): Promise<Record<string, string> | null>
   }
 
   return {
-    "x-api-key": process.env.STOCKX_API_KEY!,
+    "x-api-key": (process.env.STOCKX_API_KEY || "").trim(),
     Authorization: `Bearer ${tokens.access_token}`,
     Accept: "application/json",
   };

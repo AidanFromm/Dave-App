@@ -7,7 +7,7 @@ export async function checkStockXConnection(): Promise<boolean> {
 }
 
 export async function getStockXAuthUrl(): Promise<string> {
-  const clientId = process.env.STOCKX_CLIENT_ID!;
+  const clientId = (process.env.STOCKX_CLIENT_ID || "").trim();
 
   // Build redirect URI, handling whether SITE_URL has protocol or not
   let siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "securedtampa.com";
