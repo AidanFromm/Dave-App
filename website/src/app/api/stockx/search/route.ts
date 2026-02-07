@@ -33,18 +33,24 @@ export async function GET(request: Request) {
     }
 
     const data = await res.json();
+    console.log("StockX search raw response:", JSON.stringify(data, null, 2));
 
     const products = (data.products ?? []).map((p: Record<string, unknown>) => {
       const media = p.media as Record<string, unknown> | undefined;
+      // Try multiple possible ID field names
+      const productId = p.id ?? p.productId ?? p.uuid ?? p.objectID ?? "";
+      console.log("Product mapping - raw id fields:", { id: p.id, productId: p.productId, uuid: p.uuid });
       return {
-        id: p.id,
+        id: productId,
         name: p.title ?? p.name,
         brand: p.brand,
         colorway: p.colorway,
         styleId: p.styleId,
         retailPrice: p.retailPrice ?? 0,
-        thumbnailUrl: media && "thumbUrl" in media ? media.thumbUrl : "",
-        imageUrl: media && "imageUrl" in media ? media.imageUrl : "",
+        thumbnailUrl: (media && "thumbUrl" in media ? media.thumbUrl : "") || 
+                      (media && "smallImageUrl" in media ? media.smallImageUrl : "") || "",
+        imageUrl: (media && "imageUrl" in media ? media.imageUrl : "") ||
+                  (media && "smallImageUrl" in media ? media.smallImageUrl : "") || "",
         urlSlug: p.urlSlug ?? "",
       };
     });
