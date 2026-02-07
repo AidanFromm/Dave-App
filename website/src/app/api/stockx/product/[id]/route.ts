@@ -56,11 +56,20 @@ export async function GET(
     }
 
     const media = product.media as Record<string, unknown> | undefined;
+    console.log("StockX media object:", JSON.stringify(media, null, 2));
+    
+    // Try multiple possible image fields
     const imageUrl =
-      media && "imageUrl" in media ? (media.imageUrl as string) : "";
-    const gallery = media && "gallery" in media && Array.isArray(media.gallery)
-      ? (media.gallery as string[])
-      : [];
+      (media && "imageUrl" in media ? (media.imageUrl as string) : "") ||
+      (media && "smallImageUrl" in media ? (media.smallImageUrl as string) : "") ||
+      (media && "thumbUrl" in media ? (media.thumbUrl as string) : "");
+    
+    // Try gallery, all360Images, or gallery360
+    const gallery = 
+      (media && "gallery" in media && Array.isArray(media.gallery) ? (media.gallery as string[]) : []) ||
+      (media && "all360Images" in media && Array.isArray(media.all360Images) ? (media.all360Images as string[]) : []) ||
+      [];
+    
     const imageUrls = imageUrl
       ? [imageUrl, ...gallery.filter((u) => u !== imageUrl)]
       : gallery;
