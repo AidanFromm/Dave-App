@@ -23,8 +23,13 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { getBarcodeCatalogCount } from "@/actions/barcode";
-import { checkStockXConnection, connectStockX } from "@/actions/stockx-auth";
+import { checkStockXConnection } from "@/actions/stockx-auth";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  STOCKX_AUTH_URL,
+  STOCKX_REDIRECT_URI,
+  STOCKX_AUDIENCE,
+} from "@/lib/constants";
 
 interface CloverStatus {
   isConnected: boolean;
@@ -52,7 +57,6 @@ export default function SettingsPage() {
   const [lowStockThreshold, setLowStockThreshold] = useState(5);
   const [catalogCount, setCatalogCount] = useState<number | null>(null);
   const [stockxConnected, setStockxConnected] = useState<boolean | null>(null);
-  const [connectingStockx, setConnectingStockx] = useState(false);
 
   // Placeholder staff data
   const staffMembers: StaffMember[] = [
@@ -405,30 +409,26 @@ export default function SettingsPage() {
               </div>
             </div>
             <button
-              onClick={async () => {
-                setConnectingStockx(true);
-                try {
-                  const result = await connectStockX();
-                  if (result.success) {
-                    setStockxConnected(true);
-                    toast.success("StockX connected successfully!");
-                  } else {
-                    toast.error(result.error ?? "Failed to connect to StockX");
-                  }
-                } catch {
-                  toast.error("Failed to connect to StockX");
-                } finally {
-                  setConnectingStockx(false);
-                }
+              onClick={() => {
+                // Use proper OAuth flow - redirects to StockX login
+                const state = crypto.randomUUID();
+                sessionStorage.setItem("stockx_state", state);
+                
+                const clientId = process.env.NEXT_PUBLIC_STOCKX_CLIENT_ID ?? "";
+                const params = new URLSearchParams({
+                  response_type: "code",
+                  client_id: clientId,
+                  redirect_uri: STOCKX_REDIRECT_URI,
+                  scope: "offline_access openid",
+                  audience: STOCKX_AUDIENCE,
+                  state,
+                });
+                
+                window.location.href = `${STOCKX_AUTH_URL}?${params}`;
               }}
-              disabled={connectingStockx}
-              className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50"
+              className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
             >
-              {connectingStockx
-                ? "Connecting..."
-                : stockxConnected
-                  ? "Reconnect"
-                  : "Connect StockX"}
+              {stockxConnected ? "Reconnect" : "Connect StockX"}
             </button>
           </div>
 

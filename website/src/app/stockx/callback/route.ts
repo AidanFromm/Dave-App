@@ -5,25 +5,46 @@ import { saveStockXTokens } from "@/lib/stockx";
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
+  const state = searchParams.get("state");
   const error = searchParams.get("error");
   const errorDescription = searchParams.get("error_description");
+  const userAgent = request.headers.get("user-agent") || "";
+
+  // Check if request is from iOS app (ASWebAuthenticationSession)
+  const isIOS = /iPhone|iPad|iPod/.test(userAgent) || searchParams.get("platform") === "ios";
 
   // Handle errors from StockX
   if (error) {
     console.error("StockX OAuth error:", error, errorDescription);
+    if (isIOS) {
+      // Redirect to iOS app with error
+      return NextResponse.redirect(
+        `securedapp://stockx/callback?error=${encodeURIComponent(errorDescription || error)}`
+      );
+    }
     return NextResponse.redirect(
-      `${origin}/admin/stockx?error=${encodeURIComponent(errorDescription || error)}`
+      `${origin}/admin/settings?stockx=error&error=${encodeURIComponent(errorDescription || error)}`
     );
   }
 
   if (!code) {
+    if (isIOS) {
+      return NextResponse.redirect(`securedapp://stockx/callback?error=no_code`);
+    }
     return NextResponse.redirect(
-      `${origin}/admin/stockx?error=${encodeURIComponent("No authorization code received")}`
+      `${origin}/admin/settings?stockx=error&error=${encodeURIComponent("No authorization code received")}`
     );
   }
 
+  // For iOS: redirect to app with code (app handles token exchange)
+  if (isIOS) {
+    const iosParams = new URLSearchParams({ code });
+    if (state) iosParams.set("state", state);
+    return NextResponse.redirect(`securedapp://stockx/callback?${iosParams}`);
+  }
+
+  // For web: exchange code for tokens
   try {
-    // Exchange code for tokens
     const res = await fetch(STOCKX_TOKEN_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -40,7 +61,7 @@ export async function GET(request: Request) {
       const errorText = await res.text();
       console.error("StockX token exchange failed:", res.status, errorText);
       return NextResponse.redirect(
-        `${origin}/admin/stockx?error=${encodeURIComponent("Token exchange failed")}`
+        `${origin}/admin/settings?stockx=error&error=${encodeURIComponent("Token exchange failed")}`
       );
     }
 
@@ -55,12 +76,12 @@ export async function GET(request: Request) {
       scope: tokens.scope,
     });
 
-    // Redirect back to admin with success
-    return NextResponse.redirect(`${origin}/admin/stockx?connected=true`);
+    // Redirect back to settings with success
+    return NextResponse.redirect(`${origin}/admin/settings?stockx=connected`);
   } catch (err) {
     console.error("StockX callback error:", err);
     return NextResponse.redirect(
-      `${origin}/admin/stockx?error=${encodeURIComponent("Connection failed")}`
+      `${origin}/admin/settings?stockx=error&error=${encodeURIComponent("Connection failed")}`
     );
   }
 }
