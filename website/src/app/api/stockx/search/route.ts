@@ -39,8 +39,20 @@ export async function GET(request: Request) {
       const media = p.media as Record<string, unknown> | undefined;
       const attrs = p.productAttributes as Record<string, unknown> | undefined;
       
-      // StockX uses "productId" not "id"
-      const productId = p.productId ?? p.id ?? "";
+      // StockX uses various ID field names - try them all
+      const productId = p.productId ?? p.id ?? p.uuid ?? p.objectID ?? p.productUuid ?? p.urlKey ?? "";
+      
+      // Log what we found for debugging
+      console.log("Product ID extraction:", { 
+        productId: p.productId, 
+        id: p.id, 
+        uuid: p.uuid, 
+        objectID: p.objectID,
+        productUuid: p.productUuid,
+        urlKey: p.urlKey,
+        chosen: productId,
+        allKeys: Object.keys(p)
+      });
       
       return {
         id: productId,
