@@ -414,7 +414,7 @@ export default function SettingsPage() {
                 const state = crypto.randomUUID();
                 sessionStorage.setItem("stockx_state", state);
                 
-                const clientId = process.env.NEXT_PUBLIC_STOCKX_CLIENT_ID ?? "";
+                const clientId = "6iancV9MkHjtn9dIE8VoflhwK0H3jCFc";
                 const params = new URLSearchParams({
                   response_type: "code",
                   client_id: clientId,
