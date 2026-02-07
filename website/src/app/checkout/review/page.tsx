@@ -106,24 +106,32 @@ export default function ReviewPage() {
 
     const createPaymentIntent = async () => {
       const email = sessionStorage.getItem("checkout_email") ?? "";
-      const res = await fetch("/api/checkout", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          items: toOrderItems(),
-          email,
-          fulfillmentType,
-          shippingAddress,
-          subtotal: getSubtotal(),
-          tax: getTax(),
-          shippingCost: getShippingCost(),
-          total: getTotal(),
-        }),
-      });
+      try {
+        const res = await fetch("/api/checkout", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            items: toOrderItems(),
+            email,
+            fulfillmentType,
+            shippingAddress,
+            subtotal: getSubtotal(),
+            tax: getTax(),
+            shippingCost: getShippingCost(),
+            total: getTotal(),
+          }),
+        });
 
-      const data = await res.json();
-      if (data.clientSecret) {
-        setClientSecret(data.clientSecret);
+        const data = await res.json();
+        console.log("Checkout API response:", data);
+        
+        if (data.clientSecret) {
+          setClientSecret(data.clientSecret);
+        } else {
+          console.error("Checkout failed:", data.error, data.detail, data.code);
+        }
+      } catch (err) {
+        console.error("Checkout fetch error:", err);
       }
       setLoading(false);
     };

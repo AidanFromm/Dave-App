@@ -3,12 +3,23 @@ import { getStripe } from "@/lib/stripe";
 
 export async function POST(request: Request) {
   try {
+    // Check env var first
+    if (!process.env.STRIPE_SECRET_KEY) {
+      console.error("STRIPE_SECRET_KEY is not configured");
+      return NextResponse.json(
+        { error: "Payment system not configured", code: "NO_STRIPE_KEY" },
+        { status: 500 }
+      );
+    }
+
     const body = await request.json();
     const { total, email, items, fulfillmentType, shippingAddress } = body;
 
+    console.log("Checkout request:", { total, email, fulfillmentType, itemCount: items?.length });
+
     if (!total || total <= 0) {
       return NextResponse.json(
-        { error: "Invalid order total" },
+        { error: "Invalid order total", code: "INVALID_TOTAL" },
         { status: 400 }
       );
     }
@@ -27,13 +38,25 @@ export async function POST(request: Request) {
       },
     });
 
+    console.log("PaymentIntent created:", paymentIntent.id);
+
     return NextResponse.json({
       clientSecret: paymentIntent.client_secret,
     });
   } catch (error) {
-    console.error("Checkout error:", error);
+    const err = error as Error & { type?: string; code?: string };
+    console.error("Checkout error:", {
+      message: err.message,
+      type: err.type,
+      code: err.code,
+      stack: err.stack,
+    });
     return NextResponse.json(
-      { error: "Failed to create payment" },
+      { 
+        error: "Failed to create payment", 
+        detail: err.message,
+        code: err.code || "UNKNOWN"
+      },
       { status: 500 }
     );
   }
