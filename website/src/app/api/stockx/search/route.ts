@@ -1,6 +1,17 @@
 import { NextResponse } from "next/server";
 import { getStockXHeaders } from "@/lib/stockx";
 
+// StockX CDN image URL construction
+function buildStockXImageUrl(urlKey: string): string {
+  if (!urlKey) return "";
+  return `https://images.stockx.com/images/${urlKey}.jpg?fit=fill&bg=FFFFFF&w=700&h=500&fm=webp&auto=compress&q=90&dpr=2&trim=color&updated_at=0`;
+}
+
+function buildStockXThumbUrl(urlKey: string): string {
+  if (!urlKey) return "";
+  return `https://images.stockx.com/images/${urlKey}.jpg?fit=fill&bg=FFFFFF&w=140&h=100&fm=webp&auto=compress&q=90&dpr=2&trim=color&updated_at=0`;
+}
+
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const query = searchParams.get("q");
@@ -36,11 +47,11 @@ export async function GET(request: Request) {
     console.log("StockX search raw response:", JSON.stringify(data, null, 2));
 
     const products = (data.products ?? []).map((p: Record<string, unknown>) => {
-      const media = p.media as Record<string, unknown> | undefined;
       const attrs = p.productAttributes as Record<string, unknown> | undefined;
       
       // StockX uses various ID field names - try them all
-      const productId = p.productId ?? p.id ?? p.uuid ?? p.objectID ?? p.productUuid ?? p.urlKey ?? "";
+      const productId = p.productId ?? p.id ?? p.uuid ?? p.objectID ?? p.productUuid ?? "";
+      const urlKey = (p.urlKey ?? p.urlSlug ?? "") as string;
       
       // Log what we found for debugging
       console.log("Product ID extraction:", { 
@@ -48,7 +59,6 @@ export async function GET(request: Request) {
         id: p.id, 
         uuid: p.uuid, 
         objectID: p.objectID,
-        productUuid: p.productUuid,
         urlKey: p.urlKey,
         chosen: productId,
         allKeys: Object.keys(p)
@@ -58,15 +68,15 @@ export async function GET(request: Request) {
         id: productId,
         name: p.title ?? p.name ?? "",
         brand: p.brand ?? "",
-        // Colorway can be top-level or nested in productAttributes
-        colorway: p.colorway ?? (attrs && attrs.colorway) ?? "",
+        // Colorway is nested in productAttributes
+        colorway: (attrs?.colorway as string) ?? p.colorway ?? "",
         styleId: p.styleId ?? "",
-        // RetailPrice can be top-level or nested in productAttributes
-        retailPrice: p.retailPrice ?? (attrs && attrs.retailPrice) ?? 0,
-        // Images - try multiple fields
-        thumbnailUrl: (media && media.thumbUrl) || (media && media.smallImageUrl) || "",
-        imageUrl: (media && media.imageUrl) || (media && media.smallImageUrl) || "",
-        urlSlug: p.urlKey ?? p.urlSlug ?? "",
+        // RetailPrice is nested in productAttributes
+        retailPrice: (attrs?.retailPrice as number) ?? p.retailPrice ?? 0,
+        // StockX v2 doesn't return images - construct from urlKey
+        thumbnailUrl: buildStockXThumbUrl(urlKey),
+        imageUrl: buildStockXImageUrl(urlKey),
+        urlSlug: urlKey,
       };
     });
 

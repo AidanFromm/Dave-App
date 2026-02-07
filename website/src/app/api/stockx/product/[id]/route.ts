@@ -2,6 +2,18 @@ import { NextResponse } from "next/server";
 import { STOCKX_API_BASE } from "@/lib/constants";
 import { getStockXHeaders } from "@/lib/stockx";
 
+// StockX CDN image URL construction
+function buildStockXImageUrl(urlKey: string): string {
+  if (!urlKey) return "";
+  // StockX uses this CDN pattern for product images
+  return `https://images.stockx.com/images/${urlKey}.jpg?fit=fill&bg=FFFFFF&w=700&h=500&fm=webp&auto=compress&q=90&dpr=2&trim=color&updated_at=0`;
+}
+
+function buildStockXThumbUrl(urlKey: string): string {
+  if (!urlKey) return "";
+  return `https://images.stockx.com/images/${urlKey}.jpg?fit=fill&bg=FFFFFF&w=140&h=100&fm=webp&auto=compress&q=90&dpr=2&trim=color&updated_at=0`;
+}
+
 export async function GET(
   _request: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -49,50 +61,57 @@ export async function GET(
       // Handle both array at root or nested under "variants"
       const variantsList = Array.isArray(variantsData) ? variantsData : (variantsData.variants ?? []);
       variants = variantsList.map(
-        (v: Record<string, unknown>) => ({
-          // Try multiple ID field names
-          id: v.id ?? v.variantId ?? v.productVariantId ?? "",
-          // Try multiple size field names
-          size: v.sizeUS ?? v.size ?? v.sizeTitle ?? "",
-          gtins: Array.isArray(v.gtins) ? v.gtins : (v.gtin ? [v.gtin] : []),
-        })
+        (v: Record<string, unknown>) => {
+          // GTINs are objects like {identifier: "123", type: "UPC"} - extract identifiers
+          const gtinsRaw = Array.isArray(v.gtins) ? v.gtins : [];
+          const gtins = gtinsRaw.map((g: unknown) => {
+            if (typeof g === "string") return g;
+            if (g && typeof g === "object" && "identifier" in g) return (g as { identifier: string }).identifier;
+            return "";
+          }).filter(Boolean);
+
+          // Size is in variantValue or sizeChart.defaultConversion.size
+          const sizeChart = v.sizeChart as Record<string, unknown> | undefined;
+          const defaultConversion = sizeChart?.defaultConversion as Record<string, unknown> | undefined;
+          const size = (v.variantValue as string) ?? 
+                       (defaultConversion?.size as string) ?? 
+                       (v.sizeUS as string) ?? 
+                       (v.size as string) ?? 
+                       "";
+
+          return {
+            // Variant ID is "variantId" not "id"
+            id: (v.variantId as string) ?? (v.id as string) ?? (v.productVariantId as string) ?? "",
+            size,
+            gtins,
+          };
+        }
       );
     } else {
       console.log("Variants fetch failed:", variantsRes.status);
     }
 
-    const media = product.media as Record<string, unknown> | undefined;
+    // Product attributes are nested
     const attrs = product.productAttributes as Record<string, unknown> | undefined;
-    console.log("StockX media object:", JSON.stringify(media, null, 2));
-    console.log("StockX productAttributes:", JSON.stringify(attrs, null, 2));
     
-    // Try multiple possible image fields
-    const imageUrl =
-      (media && "imageUrl" in media ? (media.imageUrl as string) : "") ||
-      (media && "smallImageUrl" in media ? (media.smallImageUrl as string) : "") ||
-      (media && "thumbUrl" in media ? (media.thumbUrl as string) : "");
-    
-    // Try gallery, all360Images, or gallery360
-    const gallery = 
-      (media && "gallery" in media && Array.isArray(media.gallery) ? (media.gallery as string[]) : []) ||
-      (media && "all360Images" in media && Array.isArray(media.all360Images) ? (media.all360Images as string[]) : []) ||
-      [];
-    
-    const imageUrls = imageUrl
-      ? [imageUrl, ...gallery.filter((u) => u !== imageUrl)]
-      : gallery;
+    // StockX v2 API doesn't return images - construct from urlKey
+    const urlKey = product.urlKey ?? product.urlSlug ?? "";
+    const imageUrl = buildStockXImageUrl(urlKey);
+    const thumbUrl = buildStockXThumbUrl(urlKey);
+    const imageUrls = imageUrl ? [imageUrl] : [];
 
     return NextResponse.json({
       id: product.productId ?? product.id,
       title: product.title ?? product.name ?? "",
       brand: product.brand ?? "",
-      colorway: product.colorway ?? (attrs && attrs.colorway) ?? "",
+      colorway: (attrs?.colorway as string) ?? product.colorway ?? "",
       styleId: product.styleId ?? "",
       description: product.description ?? "",
-      retailPrice: product.retailPrice ?? (attrs && attrs.retailPrice) ?? 0,
+      retailPrice: (attrs?.retailPrice as number) ?? product.retailPrice ?? 0,
       imageUrl,
+      thumbUrl,
       imageUrls,
-      urlSlug: product.urlKey ?? product.urlSlug ?? "",
+      urlSlug: urlKey,
       variants,
     });
   } catch {
