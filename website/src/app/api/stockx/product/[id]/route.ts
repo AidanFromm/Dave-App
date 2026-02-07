@@ -2,16 +2,25 @@ import { NextResponse } from "next/server";
 import { STOCKX_API_BASE } from "@/lib/constants";
 import { getStockXHeaders } from "@/lib/stockx";
 
+// Convert urlKey to Title-Case for StockX CDN
+function toTitleCase(str: string): string {
+  return str.split("-").map(word => 
+    word.charAt(0).toUpperCase() + word.slice(1)
+  ).join("-");
+}
+
 // StockX CDN image URL construction
+// Pattern: Title-Case slug + "-Product.jpg"
 function buildStockXImageUrl(urlKey: string): string {
   if (!urlKey) return "";
-  // StockX uses this CDN pattern - simple version works best
-  return `https://images.stockx.com/images/${urlKey}.png?fit=fill&bg=FFFFFF&w=500&h=500&fm=jpg&auto=compress&dpr=1`;
+  const titleCased = toTitleCase(urlKey);
+  return `https://images.stockx.com/images/${titleCased}-Product.jpg?fit=fill&bg=FFFFFF&w=500&h=500&fm=jpg&auto=compress`;
 }
 
 function buildStockXThumbUrl(urlKey: string): string {
   if (!urlKey) return "";
-  return `https://images.stockx.com/images/${urlKey}.png?fit=fill&bg=FFFFFF&w=200&h=200&fm=jpg&auto=compress&dpr=1`;
+  const titleCased = toTitleCase(urlKey);
+  return `https://images.stockx.com/images/${titleCased}-Product.jpg?fit=fill&bg=FFFFFF&w=200&h=200&fm=jpg&auto=compress`;
 }
 
 export async function GET(
