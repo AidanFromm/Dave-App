@@ -48,7 +48,7 @@ export async function GET(request: Request) {
   try {
     // Hardcoded credentials (same as iOS app)
     const clientId = "6iancV9MkHjtn9dlE8VoflhwK0H3jCFc";
-    const clientSecret = "oTNzarbhweQGzF2aQJn_TPWFbT5y5wvRHuQFxjH-hJ5oweeFocZJ:";
+    const clientSecret = "oTNzarbhweQGzF2aQJn_TPWFbT5y5wvRHuQFxjH-hJ5oweeFocZJx_NF6js0JI4I";
     
     const res = await fetch(STOCKX_TOKEN_URL, {
       method: "POST",
