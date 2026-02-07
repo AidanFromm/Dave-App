@@ -72,21 +72,36 @@ export async function GET(request: Request) {
 
     const tokens = await res.json();
     
+    if (!tokens.access_token) {
+      console.error("No access_token in response:", tokens);
+      return NextResponse.redirect(
+        `${origin}/admin/settings?stockx=error&error=${encodeURIComponent("No access token received")}`
+      );
+    }
+    
     // Save tokens to Supabase
-    await saveStockXTokens({
-      access_token: tokens.access_token,
-      refresh_token: tokens.refresh_token,
-      token_type: tokens.token_type,
-      expires_in: tokens.expires_in,
-      scope: tokens.scope,
-    });
+    try {
+      await saveStockXTokens({
+        access_token: tokens.access_token,
+        refresh_token: tokens.refresh_token,
+        token_type: tokens.token_type,
+        expires_in: tokens.expires_in || 43200,
+        scope: tokens.scope,
+      });
+    } catch (dbErr) {
+      console.error("Failed to save tokens to database:", dbErr);
+      return NextResponse.redirect(
+        `${origin}/admin/settings?stockx=error&error=${encodeURIComponent("Failed to save tokens - check Supabase config")}`
+      );
+    }
 
     // Redirect back to settings with success
     return NextResponse.redirect(`${origin}/admin/settings?stockx=connected`);
   } catch (err) {
     console.error("StockX callback error:", err);
+    const errMsg = err instanceof Error ? err.message : "Connection failed";
     return NextResponse.redirect(
-      `${origin}/admin/settings?stockx=error&error=${encodeURIComponent("Connection failed")}`
+      `${origin}/admin/settings?stockx=error&error=${encodeURIComponent(errMsg)}`
     );
   }
 }
