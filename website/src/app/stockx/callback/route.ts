@@ -65,8 +65,16 @@ export async function GET(request: Request) {
     if (!res.ok) {
       const errorText = await res.text();
       console.error("StockX token exchange failed:", res.status, errorText);
+      // Show the actual error from StockX
+      let errorMsg = "Token exchange failed";
+      try {
+        const errorJson = JSON.parse(errorText);
+        errorMsg = errorJson.error_description || errorJson.error || errorMsg;
+      } catch {
+        errorMsg = errorText.substring(0, 100) || errorMsg;
+      }
       return NextResponse.redirect(
-        `${origin}/admin/settings?stockx=error&error=${encodeURIComponent("Token exchange failed")}`
+        `${origin}/admin/settings?stockx=error&error=${encodeURIComponent(errorMsg)}`
       );
     }
 
