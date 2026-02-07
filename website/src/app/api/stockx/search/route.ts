@@ -37,21 +37,24 @@ export async function GET(request: Request) {
 
     const products = (data.products ?? []).map((p: Record<string, unknown>) => {
       const media = p.media as Record<string, unknown> | undefined;
-      // Try multiple possible ID field names
-      const productId = p.id ?? p.productId ?? p.uuid ?? p.objectID ?? "";
-      console.log("Product mapping - raw id fields:", { id: p.id, productId: p.productId, uuid: p.uuid });
+      const attrs = p.productAttributes as Record<string, unknown> | undefined;
+      
+      // StockX uses "productId" not "id"
+      const productId = p.productId ?? p.id ?? "";
+      
       return {
         id: productId,
-        name: p.title ?? p.name,
-        brand: p.brand,
-        colorway: p.colorway,
-        styleId: p.styleId,
-        retailPrice: p.retailPrice ?? 0,
-        thumbnailUrl: (media && "thumbUrl" in media ? media.thumbUrl : "") || 
-                      (media && "smallImageUrl" in media ? media.smallImageUrl : "") || "",
-        imageUrl: (media && "imageUrl" in media ? media.imageUrl : "") ||
-                  (media && "smallImageUrl" in media ? media.smallImageUrl : "") || "",
-        urlSlug: p.urlSlug ?? "",
+        name: p.title ?? p.name ?? "",
+        brand: p.brand ?? "",
+        // Colorway can be top-level or nested in productAttributes
+        colorway: p.colorway ?? (attrs && attrs.colorway) ?? "",
+        styleId: p.styleId ?? "",
+        // RetailPrice can be top-level or nested in productAttributes
+        retailPrice: p.retailPrice ?? (attrs && attrs.retailPrice) ?? 0,
+        // Images - try multiple fields
+        thumbnailUrl: (media && media.thumbUrl) || (media && media.smallImageUrl) || "",
+        imageUrl: (media && media.imageUrl) || (media && media.smallImageUrl) || "",
+        urlSlug: p.urlKey ?? p.urlSlug ?? "",
       };
     });
 

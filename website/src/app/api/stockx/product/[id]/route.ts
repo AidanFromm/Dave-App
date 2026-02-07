@@ -46,17 +46,25 @@ export async function GET(
     if (variantsRes.ok) {
       const variantsData = await variantsRes.json();
       console.log("StockX variants response:", JSON.stringify(variantsData, null, 2));
-      variants = (variantsData.variants ?? []).map(
+      // Handle both array at root or nested under "variants"
+      const variantsList = Array.isArray(variantsData) ? variantsData : (variantsData.variants ?? []);
+      variants = variantsList.map(
         (v: Record<string, unknown>) => ({
-          id: v.id,
-          size: v.sizeUS ?? v.size ?? "",
-          gtins: Array.isArray(v.gtins) ? v.gtins : [],
+          // Try multiple ID field names
+          id: v.id ?? v.variantId ?? v.productVariantId ?? "",
+          // Try multiple size field names
+          size: v.sizeUS ?? v.size ?? v.sizeTitle ?? "",
+          gtins: Array.isArray(v.gtins) ? v.gtins : (v.gtin ? [v.gtin] : []),
         })
       );
+    } else {
+      console.log("Variants fetch failed:", variantsRes.status);
     }
 
     const media = product.media as Record<string, unknown> | undefined;
+    const attrs = product.productAttributes as Record<string, unknown> | undefined;
     console.log("StockX media object:", JSON.stringify(media, null, 2));
+    console.log("StockX productAttributes:", JSON.stringify(attrs, null, 2));
     
     // Try multiple possible image fields
     const imageUrl =
@@ -75,16 +83,16 @@ export async function GET(
       : gallery;
 
     return NextResponse.json({
-      id: product.id,
-      title: product.title ?? product.name,
-      brand: product.brand,
-      colorway: product.colorway,
-      styleId: product.styleId,
+      id: product.productId ?? product.id,
+      title: product.title ?? product.name ?? "",
+      brand: product.brand ?? "",
+      colorway: product.colorway ?? (attrs && attrs.colorway) ?? "",
+      styleId: product.styleId ?? "",
       description: product.description ?? "",
-      retailPrice: product.retailPrice ?? 0,
+      retailPrice: product.retailPrice ?? (attrs && attrs.retailPrice) ?? 0,
       imageUrl,
       imageUrls,
-      urlSlug: product.urlSlug ?? "",
+      urlSlug: product.urlKey ?? product.urlSlug ?? "",
       variants,
     });
   } catch {
