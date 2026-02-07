@@ -10,8 +10,9 @@ export async function GET(request: Request) {
   const errorDescription = searchParams.get("error_description");
   const userAgent = request.headers.get("user-agent") || "";
 
-  // Check if request is from iOS app (ASWebAuthenticationSession)
-  const isIOS = /iPhone|iPad|iPod/.test(userAgent) || searchParams.get("platform") === "ios";
+  // Only redirect to iOS app if explicitly requested via platform=ios
+  // (iOS app should add this param, web browsers won't)
+  const isIOS = searchParams.get("platform") === "ios";
 
   // Handle errors from StockX
   if (error) {
@@ -45,16 +46,20 @@ export async function GET(request: Request) {
 
   // For web: exchange code for tokens
   try {
+    // Hardcoded credentials (same as iOS app)
+    const clientId = "6iancV9MkHjtn9dlE8VoflhwK0H3jCFc";
+    const clientSecret = "oTNzarbhweQGzF2aQJn_TPWFbT5y5wvRHuQFxjH-hJ5oweeFocZJ:";
+    
     const res = await fetch(STOCKX_TOKEN_URL, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({
         grant_type: "authorization_code",
-        client_id: process.env.STOCKX_CLIENT_ID,
-        client_secret: process.env.STOCKX_CLIENT_SECRET,
+        client_id: clientId,
+        client_secret: clientSecret,
         code,
         redirect_uri: "https://securedtampa.com/stockx/callback",
-      }),
+      }).toString(),
     });
 
     if (!res.ok) {
