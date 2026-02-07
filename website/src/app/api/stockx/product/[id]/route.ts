@@ -5,13 +5,13 @@ import { getStockXHeaders } from "@/lib/stockx";
 // StockX CDN image URL construction
 function buildStockXImageUrl(urlKey: string): string {
   if (!urlKey) return "";
-  // StockX uses this CDN pattern for product images
-  return `https://images.stockx.com/images/${urlKey}.jpg?fit=fill&bg=FFFFFF&w=700&h=500&fm=webp&auto=compress&q=90&dpr=2&trim=color&updated_at=0`;
+  // StockX uses this CDN pattern - simple version works best
+  return `https://images.stockx.com/images/${urlKey}.png?fit=fill&bg=FFFFFF&w=500&h=500&fm=jpg&auto=compress&dpr=1`;
 }
 
 function buildStockXThumbUrl(urlKey: string): string {
   if (!urlKey) return "";
-  return `https://images.stockx.com/images/${urlKey}.jpg?fit=fill&bg=FFFFFF&w=140&h=100&fm=webp&auto=compress&q=90&dpr=2&trim=color&updated_at=0`;
+  return `https://images.stockx.com/images/${urlKey}.png?fit=fill&bg=FFFFFF&w=200&h=200&fm=jpg&auto=compress&dpr=1`;
 }
 
 export async function GET(
