@@ -60,7 +60,7 @@ export default function SettingsPage() {
 
   // Placeholder staff data
   const staffMembers: StaffMember[] = [
-    { id: "1", name: "Store Owner", email: "owner@securedtampa.com", role: "owner" },
+    { id: "1", name: "Store Owner", email: "securedtampa.llc@gmail.com", role: "owner" },
   ];
 
   useEffect(() => {
@@ -234,7 +234,7 @@ export default function SettingsPage() {
               <Mail className="h-4 w-4 text-muted-foreground mt-1" />
               <div>
                 <p className="text-sm text-muted-foreground">Email</p>
-                <p className="font-medium">contact@securedtampa.com</p>
+                <p className="font-medium">securedtampa.llc@gmail.com</p>
               </div>
             </div>
           </div>

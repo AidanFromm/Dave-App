@@ -58,7 +58,7 @@ export function Footer() {
             <ul className="mt-3 space-y-2">
               <li>
                 <span className="text-sm text-muted-foreground">
-                  support@securedtampa.com
+                  securedtampa.llc@gmail.com
                 </span>
               </li>
               <li>
