@@ -4,11 +4,9 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
-import { Loader2, Plus } from "lucide-react";
+import { Loader2, Plus, Check, X, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ImageUpload } from "./image-upload";
-import { SizeVariantPicker } from "./size-variant-picker";
 import { MarketDataPanel } from "./market-data-panel";
 import type {
   ScanResult,
@@ -59,15 +57,21 @@ export function ScanForm({ result, onSubmit, onMarketDataFetch }: ScanFormProps)
   const [productName, setProductName] = useState(result.productName);
 
   const isUsed = condition !== "new";
+  
+  // Determine if size was auto-detected from barcode
+  const sizeAutoDetected = !!(result.stockxVariantId && selectedVariant);
+  const detectedSize = selectedVariant?.size ?? result.size;
 
-  const handleVariantSelect = async (variant: StockXVariant) => {
-    setSelectedVariant(variant);
-    setSelectedSize(variant.size);
-
-    // Fetch market data for this variant
-    if (result.stockxProductId && onMarketDataFetch) {
-      const data = await onMarketDataFetch(result.stockxProductId, variant.id);
-      setMarketData(data);
+  const handleSizeDropdownChange = async (variantId: string) => {
+    const variant = result.variants.find((v) => v.id === variantId);
+    if (variant) {
+      setSelectedVariant(variant);
+      setSelectedSize(variant.size);
+      // Fetch market data for this variant
+      if (result.stockxProductId && onMarketDataFetch) {
+        const data = await onMarketDataFetch(result.stockxProductId, variant.id);
+        setMarketData(data);
+      }
     }
   };
 
@@ -121,6 +125,14 @@ export function ScanForm({ result, onSubmit, onMarketDataFetch }: ScanFormProps)
     }
   };
 
+  // Sort variants by numeric size for dropdown
+  const sortedVariants = [...result.variants].sort((a, b) => {
+    const numA = parseFloat(a.size);
+    const numB = parseFloat(b.size);
+    if (isNaN(numA) || isNaN(numB)) return a.size.localeCompare(b.size);
+    return numA - numB;
+  });
+
   return (
     <div className="space-y-5">
       {/* Product Name (editable) */}
@@ -132,20 +144,55 @@ export function ScanForm({ result, onSubmit, onMarketDataFetch }: ScanFormProps)
         />
       </div>
 
-      {/* Size Picker */}
-      {result.variants.length > 0 && (
-        <SizeVariantPicker
-          variants={result.variants}
-          selectedVariantId={selectedVariant?.id ?? null}
-          matchedVariantId={result.stockxVariantId}
-          onSelect={handleVariantSelect}
-        />
-      )}
-
-      {/* If no variants but we need a size */}
-      {result.variants.length === 0 && (
+      {/* Size Display - Clean auto-detected or dropdown fallback */}
+      {sizeAutoDetected ? (
+        // Auto-detected size - clean display, no picker
         <div className="space-y-1.5">
-          <Label>Size</Label>
+          <Label className="flex items-center gap-2">
+            Size
+            <span className="inline-flex items-center gap-1 rounded-full bg-green-500/10 px-2 py-0.5 text-xs font-medium text-green-600">
+              <Check className="h-3 w-3" />
+              Auto-detected
+            </span>
+          </Label>
+          <div className="flex h-10 items-center rounded-lg border border-green-500/30 bg-green-500/5 px-4 font-semibold text-green-700">
+            {detectedSize}
+          </div>
+        </div>
+      ) : result.variants.length > 0 ? (
+        // No auto-detect but variants available - show dropdown
+        <div className="space-y-1.5">
+          <Label className="flex items-center gap-2">
+            Size
+            <span className="text-xs font-normal text-amber-600">
+              (Select size)
+            </span>
+          </Label>
+          <div className="relative">
+            <select
+              value={selectedVariant?.id ?? ""}
+              onChange={(e) => handleSizeDropdownChange(e.target.value)}
+              className="h-10 w-full appearance-none rounded-lg border border-border bg-card px-4 pr-10 text-sm font-medium focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+            >
+              <option value="">Select a size...</option>
+              {sortedVariants.map((v) => (
+                <option key={v.id} value={v.id}>
+                  {v.size}
+                </option>
+              ))}
+            </select>
+            <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          </div>
+        </div>
+      ) : (
+        // No variants at all - manual input
+        <div className="space-y-1.5">
+          <Label className="flex items-center gap-2">
+            Size
+            <span className="text-xs font-normal text-muted-foreground">
+              (Enter manually)
+            </span>
+          </Label>
           <Input
             value={selectedSize}
             onChange={(e) => setSelectedSize(e.target.value)}
@@ -185,10 +232,45 @@ export function ScanForm({ result, onSubmit, onMarketDataFetch }: ScanFormProps)
         </div>
       </div>
 
-      {/* Has Box */}
-      <div className="flex items-center justify-between">
-        <Label>Has Box</Label>
-        <Switch checked={hasBox} onCheckedChange={setHasBox} />
+      {/* Has Box - More visible toggle card */}
+      <div
+        onClick={() => setHasBox(!hasBox)}
+        className={cn(
+          "flex cursor-pointer items-center justify-between rounded-lg border-2 px-4 py-3 transition-all",
+          hasBox
+            ? "border-green-500 bg-green-500/10"
+            : "border-red-500/50 bg-red-500/5"
+        )}
+      >
+        <div className="flex items-center gap-3">
+          <div
+            className={cn(
+              "flex h-8 w-8 items-center justify-center rounded-full",
+              hasBox ? "bg-green-500 text-white" : "bg-red-500/20 text-red-500"
+            )}
+          >
+            {hasBox ? <Check className="h-4 w-4" /> : <X className="h-4 w-4" />}
+          </div>
+          <div>
+            <p className="font-semibold">Has Box</p>
+            <p className="text-xs text-muted-foreground">
+              {hasBox ? "Original box included" : "No box"}
+            </p>
+          </div>
+        </div>
+        <div
+          className={cn(
+            "flex h-6 w-11 items-center rounded-full px-0.5 transition-colors",
+            hasBox ? "bg-green-500" : "bg-muted"
+          )}
+        >
+          <div
+            className={cn(
+              "h-5 w-5 rounded-full bg-white shadow-sm transition-transform",
+              hasBox ? "translate-x-5" : "translate-x-0"
+            )}
+          />
+        </div>
       </div>
 
       {/* Images */}
