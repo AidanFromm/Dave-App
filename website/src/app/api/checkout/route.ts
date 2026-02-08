@@ -1,6 +1,15 @@
 import { NextResponse } from "next/server";
 import { getStripe } from "@/lib/stripe";
 
+interface CartItem {
+  id: string;
+  name: string;
+  price: number;
+  quantity: number;
+  size?: string;
+  image?: string;
+}
+
 export async function POST(request: Request) {
   try {
     // Check env var first
@@ -13,7 +22,13 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { total, email, items, fulfillmentType, shippingAddress } = body;
+    const { total, email, items, fulfillmentType, shippingAddress } = body as {
+      total: number;
+      email?: string;
+      items?: CartItem[];
+      fulfillmentType?: string;
+      shippingAddress?: object;
+    };
 
     console.log("Checkout request:", { total, email, fulfillmentType, itemCount: items?.length });
 
@@ -24,17 +39,38 @@ export async function POST(request: Request) {
       );
     }
 
+    if (!items || items.length === 0) {
+      return NextResponse.json(
+        { error: "No items in cart", code: "EMPTY_CART" },
+        { status: 400 }
+      );
+    }
+
     const stripe = getStripe();
 
-    // Create PaymentIntent
+    // Serialize items for metadata (Stripe metadata values must be strings, max 500 chars)
+    // Store essential info: product ID, quantity, price, size
+    const itemsData = items.map((item) => ({
+      id: item.id,
+      qty: item.quantity,
+      price: item.price,
+      size: item.size || null,
+      name: item.name.substring(0, 50), // Truncate name to save space
+    }));
+
+    // Create PaymentIntent with item data in metadata
     const paymentIntent = await stripe.paymentIntents.create({
       amount: Math.round(total * 100), // cents
       currency: "usd",
       receipt_email: email || undefined,
       metadata: {
-        fulfillmentType,
-        itemCount: items?.length?.toString() ?? "0",
+        fulfillmentType: fulfillmentType || "ship",
         email: email ?? "",
+        itemCount: items.length.toString(),
+        // Store items as JSON string (Stripe allows up to 500 chars per value)
+        items: JSON.stringify(itemsData),
+        // Store shipping address if provided
+        shippingAddress: shippingAddress ? JSON.stringify(shippingAddress) : "",
       },
     });
 
