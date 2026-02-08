@@ -48,13 +48,8 @@ export function ShopPage({ initialProducts, categories }: ShopPageProps) {
         products = products.filter((p) => isNewDrop(p));
         break;
       case "new": {
-        const fiveDaysAgo = new Date();
-        fiveDaysAgo.setDate(fiveDaysAgo.getDate() - 5);
-        products = products.filter(
-          (p) =>
-            p.condition === "new" &&
-            new Date(p.created_at) < fiveDaysAgo
-        );
+        // Show all items with condition="new" (includes drops)
+        products = products.filter((p) => p.condition === "new");
         break;
       }
       case "used":
