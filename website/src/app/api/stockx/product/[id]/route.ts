@@ -10,7 +10,7 @@ function toTitleCase(str: string): string {
 }
 
 // StockX CDN image URL construction
-// Pattern: Title-Case slug + "-Product.jpg"
+// Pattern: Title-Case slug + variations
 function buildStockXImageUrl(urlKey: string): string {
   if (!urlKey) return "";
   const titleCased = toTitleCase(urlKey);
@@ -21,6 +21,23 @@ function buildStockXThumbUrl(urlKey: string): string {
   if (!urlKey) return "";
   const titleCased = toTitleCase(urlKey);
   return `https://images.stockx.com/images/${titleCased}-Product.jpg?fit=fill&bg=FFFFFF&w=200&h=200&fm=jpg&auto=compress`;
+}
+
+// Build multiple image URLs for different angles
+function buildStockXImageUrls(urlKey: string): string[] {
+  if (!urlKey) return [];
+  const titleCased = toTitleCase(urlKey);
+  const base = "https://images.stockx.com/images/";
+  const params = "?fit=fill&bg=FFFFFF&w=500&h=500&fm=jpg&auto=compress";
+  
+  // StockX uses multiple image patterns
+  return [
+    `${base}${titleCased}-Product.jpg${params}`,        // Main product shot
+    `${base}${titleCased}.jpg${params}`,                 // Alternate angle
+    `${base}${titleCased}_02.jpg${params}`,              // Side view
+    `${base}${titleCased}_03.jpg${params}`,              // Back view
+    `${base}${titleCased}_04.jpg${params}`,              // Detail shot
+  ];
 }
 
 export async function GET(
@@ -107,7 +124,7 @@ export async function GET(
     const urlKey = product.urlKey ?? product.urlSlug ?? "";
     const imageUrl = buildStockXImageUrl(urlKey);
     const thumbUrl = buildStockXThumbUrl(urlKey);
-    const imageUrls = imageUrl ? [imageUrl] : [];
+    const imageUrls = buildStockXImageUrls(urlKey);
 
     return NextResponse.json({
       id: product.productId ?? product.id,
