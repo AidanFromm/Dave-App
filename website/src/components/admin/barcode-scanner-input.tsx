@@ -18,8 +18,10 @@ export function BarcodeScannerInput({
   const inputRef = useRef<HTMLInputElement>(null);
   const [value, setValue] = useState("");
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastKeyTimeRef = useRef<number>(0);
+  const isRapidInputRef = useRef(false);
+  const autoSubmitRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Auto-focus on mount and after every scan
   const focusInput = useCallback(() => {
     setTimeout(() => inputRef.current?.focus(), 50);
   }, []);
@@ -28,24 +30,56 @@ export function BarcodeScannerInput({
     focusInput();
   }, [focusInput]);
 
-  // Re-focus when loading state changes (scan complete)
   useEffect(() => {
     if (!loading) {
       focusInput();
     }
   }, [loading, focusInput]);
 
-  const handleSubmit = useCallback(() => {
-    const trimmed = value.trim();
+  const handleSubmit = useCallback((val: string) => {
+    const trimmed = val.trim();
     if (!trimmed || disabled || loading) return;
 
-    // 300ms debounce to prevent double-scans
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => {
       onScan(trimmed);
       setValue("");
+      isRapidInputRef.current = false;
     }, 100);
-  }, [value, disabled, loading, onScan]);
+  }, [disabled, loading, onScan]);
+
+  const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const newValue = e.target.value;
+    setValue(newValue);
+
+    const now = Date.now();
+    const timeSinceLastKey = now - lastKeyTimeRef.current;
+    lastKeyTimeRef.current = now;
+
+    // Detect rapid input (barcode scanner sends chars < 50ms apart)
+    if (timeSinceLastKey < 50 && newValue.length > 1) {
+      isRapidInputRef.current = true;
+    }
+
+    // If rapid input detected, auto-submit after 300ms of no new input
+    if (isRapidInputRef.current) {
+      if (autoSubmitRef.current) clearTimeout(autoSubmitRef.current);
+      autoSubmitRef.current = setTimeout(() => {
+        if (newValue.trim()) {
+          handleSubmit(newValue);
+        }
+        isRapidInputRef.current = false;
+      }, 300);
+    }
+  }, [handleSubmit]);
+
+  // Cleanup timeouts
+  useEffect(() => {
+    return () => {
+      if (autoSubmitRef.current) clearTimeout(autoSubmitRef.current);
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, []);
 
   return (
     <div className="relative">
@@ -59,11 +93,12 @@ export function BarcodeScannerInput({
       <Input
         ref={inputRef}
         value={value}
-        onChange={(e) => setValue(e.target.value)}
+        onChange={handleChange}
         onKeyDown={(e) => {
           if (e.key === "Enter") {
             e.preventDefault();
-            handleSubmit();
+            if (autoSubmitRef.current) clearTimeout(autoSubmitRef.current);
+            handleSubmit(value);
           }
         }}
         placeholder={loading ? "Looking up..." : "Scan barcode or type UPC..."}
@@ -72,11 +107,6 @@ export function BarcodeScannerInput({
         autoComplete="off"
         autoFocus
       />
-      {value && !loading && (
-        <p className="mt-1 text-xs text-muted-foreground">
-          Press Enter to scan
-        </p>
-      )}
     </div>
   );
 }

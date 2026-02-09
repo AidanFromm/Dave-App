@@ -57,8 +57,8 @@ export function ScanForm({ result, onSubmit, onMarketDataFetch }: ScanFormProps)
   const [productName, setProductName] = useState(result.productName);
 
   const isUsed = condition !== "new";
+  const isFromSource = result.source !== "manual";
   
-  // Determine if size was auto-detected from barcode
   const sizeAutoDetected = !!(result.stockxVariantId && selectedVariant);
   const detectedSize = selectedVariant?.size ?? result.size;
 
@@ -67,7 +67,6 @@ export function ScanForm({ result, onSubmit, onMarketDataFetch }: ScanFormProps)
     if (variant) {
       setSelectedVariant(variant);
       setSelectedSize(variant.size);
-      // Fetch market data for this variant
       if (result.stockxProductId && onMarketDataFetch) {
         const data = await onMarketDataFetch(result.stockxProductId, variant.id);
         setMarketData(data);
@@ -77,11 +76,9 @@ export function ScanForm({ result, onSubmit, onMarketDataFetch }: ScanFormProps)
 
   const handleConditionChange = (c: ProductCondition) => {
     setCondition(c);
-    // If switching to new, restore stock images
     if (c === "new" && result.imageUrls.length > 0) {
       setImages(result.imageUrls);
     }
-    // If switching to used, clear stock images so user uploads own
     if (c !== "new" && result.source !== "manual") {
       setImages([]);
     }
@@ -125,7 +122,6 @@ export function ScanForm({ result, onSubmit, onMarketDataFetch }: ScanFormProps)
     }
   };
 
-  // Sort variants by numeric size for dropdown
   const sortedVariants = [...result.variants].sort((a, b) => {
     const numA = parseFloat(a.size);
     const numB = parseFloat(b.size);
@@ -135,18 +131,31 @@ export function ScanForm({ result, onSubmit, onMarketDataFetch }: ScanFormProps)
 
   return (
     <div className="space-y-5">
-      {/* Product Name (editable) */}
+      {/* Product Name */}
       <div className="space-y-1.5">
-        <Label>Product Name</Label>
-        <Input
-          value={productName}
-          onChange={(e) => setProductName(e.target.value)}
-        />
+        <Label className="flex items-center gap-2">
+          Product Name
+          {isFromSource && (
+            <span className="inline-flex items-center gap-1 rounded-full bg-blue-500/10 px-2 py-0.5 text-xs font-medium text-blue-600">
+              <Check className="h-3 w-3" />
+              StockX
+            </span>
+          )}
+        </Label>
+        {isFromSource ? (
+          <div className="flex h-10 items-center rounded-lg border border-blue-500/30 bg-blue-500/5 px-4 text-sm font-medium text-foreground/80">
+            {productName}
+          </div>
+        ) : (
+          <Input
+            value={productName}
+            onChange={(e) => setProductName(e.target.value)}
+          />
+        )}
       </div>
 
-      {/* Size Display - Clean auto-detected or dropdown fallback */}
+      {/* Size Display */}
       {sizeAutoDetected ? (
-        // Auto-detected size - clean display, no picker
         <div className="space-y-1.5">
           <Label className="flex items-center gap-2">
             Size
@@ -160,7 +169,6 @@ export function ScanForm({ result, onSubmit, onMarketDataFetch }: ScanFormProps)
           </div>
         </div>
       ) : result.variants.length > 0 ? (
-        // No auto-detect but variants available - show dropdown
         <div className="space-y-1.5">
           <Label className="flex items-center gap-2">
             Size
@@ -185,7 +193,6 @@ export function ScanForm({ result, onSubmit, onMarketDataFetch }: ScanFormProps)
           </div>
         </div>
       ) : (
-        // No variants at all - manual input
         <div className="space-y-1.5">
           <Label className="flex items-center gap-2">
             Size
@@ -201,13 +208,7 @@ export function ScanForm({ result, onSubmit, onMarketDataFetch }: ScanFormProps)
         </div>
       )}
 
-      {/* Market Data */}
-      <MarketDataPanel
-        data={marketData}
-        onSuggestPrice={(p) => setPrice(String(p))}
-      />
-
-      {/* Condition */}
+      {/* Condition — moved up, right after product info */}
       <div className="space-y-2">
         <Label>Condition</Label>
         <div className="grid grid-cols-4 gap-2">
@@ -232,7 +233,32 @@ export function ScanForm({ result, onSubmit, onMarketDataFetch }: ScanFormProps)
         </div>
       </div>
 
-      {/* Has Box - More visible toggle card */}
+      {/* Images — immediately after condition */}
+      <div className="space-y-2">
+        <Label>
+          {isUsed ? "Upload Photos (required for used items)" : "Images"}
+        </Label>
+        {condition === "new" && images.length > 0 && result.source !== "manual" ? (
+          <div className="grid grid-cols-3 gap-2">
+            {images.slice(0, 3).map((url, i) => (
+              <div
+                key={url}
+                className="aspect-square overflow-hidden rounded-lg border border-border"
+              >
+                <img
+                  src={url}
+                  alt={`Stock ${i + 1}`}
+                  className="h-full w-full object-contain"
+                />
+              </div>
+            ))}
+          </div>
+        ) : (
+          <ImageUpload images={images} onChange={setImages} />
+        )}
+      </div>
+
+      {/* Has Box */}
       <div
         onClick={() => setHasBox(!hasBox)}
         className={cn(
@@ -273,30 +299,11 @@ export function ScanForm({ result, onSubmit, onMarketDataFetch }: ScanFormProps)
         </div>
       </div>
 
-      {/* Images */}
-      <div className="space-y-2">
-        <Label>
-          {isUsed ? "Upload Photos (required for used items)" : "Images"}
-        </Label>
-        {condition === "new" && images.length > 0 && result.source !== "manual" ? (
-          <div className="grid grid-cols-3 gap-2">
-            {images.slice(0, 3).map((url, i) => (
-              <div
-                key={url}
-                className="aspect-square overflow-hidden rounded-lg border border-border"
-              >
-                <img
-                  src={url}
-                  alt={`Stock ${i + 1}`}
-                  className="h-full w-full object-contain"
-                />
-              </div>
-            ))}
-          </div>
-        ) : (
-          <ImageUpload images={images} onChange={setImages} />
-        )}
-      </div>
+      {/* Market Data */}
+      <MarketDataPanel
+        data={marketData}
+        onSuggestPrice={(p) => setPrice(String(p))}
+      />
 
       {/* Pricing */}
       <div className="grid grid-cols-2 gap-3">
