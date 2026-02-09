@@ -2,7 +2,9 @@
 
 import Image from "next/image";
 import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { ChevronLeft, ChevronRight, ZoomIn } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface ProductGalleryProps {
@@ -11,12 +13,13 @@ interface ProductGalleryProps {
 }
 
 export function ProductGallery({ images, name }: ProductGalleryProps) {
+  const [selectedIndex, setSelectedIndex] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
 
   if (!images.length) {
     return (
-      <div className="flex aspect-square items-center justify-center rounded-xl bg-muted text-muted-foreground">
+      <div className="flex aspect-square items-center justify-center rounded-2xl bg-muted text-muted-foreground">
         No Image
       </div>
     );
@@ -27,108 +30,103 @@ export function ProductGallery({ images, name }: ProductGalleryProps) {
     setLightboxOpen(true);
   };
 
-  // Single image — full width
-  if (images.length === 1) {
-    return (
-      <>
-        {/* Mobile: horizontal scroll */}
-        <div className="md:hidden">
-          <div className="relative aspect-square overflow-hidden rounded-xl bg-muted">
-            <Image
-              src={images[0]}
-              alt={`${name} - Image 1`}
-              fill
-              sizes="100vw"
-              className="cursor-pointer object-cover"
-              priority
-              onClick={() => openLightbox(0)}
-            />
-          </div>
-        </div>
-
-        {/* Desktop: full-width single image */}
-        <div className="hidden md:block">
-          <div
-            className="relative aspect-square overflow-hidden rounded-xl bg-muted cursor-pointer"
-            onClick={() => openLightbox(0)}
-          >
-            <Image
-              src={images[0]}
-              alt={`${name} - Image 1`}
-              fill
-              sizes="50vw"
-              className="object-cover"
-              priority
-            />
-          </div>
-        </div>
-
-        <Lightbox
-          images={images}
-          name={name}
-          open={lightboxOpen}
-          onOpenChange={setLightboxOpen}
-          index={lightboxIndex}
-          setIndex={setLightboxIndex}
-        />
-      </>
-    );
-  }
+  const goToImage = (index: number) => {
+    if (index < 0) index = images.length - 1;
+    if (index >= images.length) index = 0;
+    setSelectedIndex(index);
+  };
 
   return (
     <>
-      {/* Mobile: horizontal scroll carousel */}
-      <div className="md:hidden">
-        <div className="flex gap-2 overflow-x-auto snap-x snap-mandatory scrollbar-hide -mx-4 px-4">
-          {images.map((img, i) => (
-            <div
-              key={i}
-              className="relative aspect-square w-[85vw] flex-shrink-0 snap-center overflow-hidden rounded-xl bg-muted cursor-pointer"
-              onClick={() => openLightbox(i)}
+      <div className="space-y-4">
+        {/* Main Image */}
+        <motion.div
+          className="relative aspect-square overflow-hidden rounded-2xl bg-muted cursor-zoom-in group"
+          onClick={() => openLightbox(selectedIndex)}
+          whileHover={{ scale: 1.01 }}
+          transition={{ duration: 0.2 }}
+        >
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={selectedIndex}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="relative h-full w-full"
             >
               <Image
-                src={img}
-                alt={`${name} - Image ${i + 1}`}
+                src={images[selectedIndex]}
+                alt={`${name} - Image ${selectedIndex + 1}`}
                 fill
-                sizes="85vw"
-                className="object-cover"
-                priority={i === 0}
+                sizes="(max-width: 768px) 100vw, 50vw"
+                className="object-contain p-4"
+                priority
               />
-            </div>
-          ))}
-        </div>
+            </motion.div>
+          </AnimatePresence>
+
+          {/* Zoom indicator */}
+          <div className="absolute bottom-4 right-4 flex items-center gap-2 rounded-full bg-background/80 px-3 py-1.5 text-xs font-medium opacity-0 group-hover:opacity-100 transition-opacity backdrop-blur-sm">
+            <ZoomIn className="h-3.5 w-3.5" />
+            Click to zoom
+          </div>
+
+          {/* Navigation arrows (desktop) */}
+          {images.length > 1 && (
+            <>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  goToImage(selectedIndex - 1);
+                }}
+                className="absolute left-3 top-1/2 -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-full bg-background/80 text-foreground opacity-0 group-hover:opacity-100 transition-opacity hover:bg-background shadow-lg backdrop-blur-sm"
+              >
+                <ChevronLeft className="h-5 w-5" />
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  goToImage(selectedIndex + 1);
+                }}
+                className="absolute right-3 top-1/2 -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-full bg-background/80 text-foreground opacity-0 group-hover:opacity-100 transition-opacity hover:bg-background shadow-lg backdrop-blur-sm"
+              >
+                <ChevronRight className="h-5 w-5" />
+              </button>
+            </>
+          )}
+        </motion.div>
+
+        {/* Thumbnails */}
+        {images.length > 1 && (
+          <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
+            {images.map((img, i) => (
+              <motion.button
+                key={i}
+                onClick={() => setSelectedIndex(i)}
+                className={cn(
+                  "relative h-20 w-20 flex-shrink-0 overflow-hidden rounded-xl bg-muted transition-all",
+                  i === selectedIndex
+                    ? "ring-2 ring-primary ring-offset-2"
+                    : "opacity-60 hover:opacity-100"
+                )}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                <Image
+                  src={img}
+                  alt={`${name} - Thumbnail ${i + 1}`}
+                  fill
+                  sizes="80px"
+                  className="object-cover"
+                />
+              </motion.button>
+            ))}
+          </div>
+        )}
       </div>
 
-      {/* Desktop: 2-column grid */}
-      <div className="hidden md:grid md:grid-cols-2 md:gap-2">
-        {images.map((img, i) => {
-          // Last image spans both columns if odd count
-          const isLast = i === images.length - 1;
-          const isOddCount = images.length % 2 !== 0;
-          const spanBoth = isLast && isOddCount;
-
-          return (
-            <div
-              key={i}
-              className={cn(
-                "relative aspect-square overflow-hidden rounded-xl bg-muted cursor-pointer",
-                spanBoth && "col-span-2"
-              )}
-              onClick={() => openLightbox(i)}
-            >
-              <Image
-                src={img}
-                alt={`${name} - Image ${i + 1}`}
-                fill
-                sizes={spanBoth ? "50vw" : "25vw"}
-                className="object-cover transition-opacity hover:opacity-90"
-                priority={i === 0}
-              />
-            </div>
-          );
-        })}
-      </div>
-
+      {/* Lightbox */}
       <Lightbox
         images={images}
         name={name}
@@ -156,39 +154,87 @@ function Lightbox({
   index: number;
   setIndex: (i: number) => void;
 }) {
+  const goToImage = (newIndex: number) => {
+    if (newIndex < 0) newIndex = images.length - 1;
+    if (newIndex >= images.length) newIndex = 0;
+    setIndex(newIndex);
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl p-0 overflow-hidden bg-background">
-        <div className="relative aspect-square">
-          <Image
-            src={images[index]}
-            alt={`${name} - Image ${index + 1}`}
-            fill
-            sizes="90vw"
-            className="object-contain"
-          />
-        </div>
-        {images.length > 1 && (
-          <div className="flex justify-center gap-2 p-3">
-            {images.map((img, i) => (
+      <DialogContent className="max-w-4xl p-0 overflow-hidden bg-background/95 backdrop-blur-xl border-0">
+        <div className="relative">
+          {/* Main image */}
+          <div className="relative aspect-square">
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                transition={{ duration: 0.2 }}
+                className="absolute inset-0"
+              >
+                <Image
+                  src={images[index]}
+                  alt={`${name} - Image ${index + 1}`}
+                  fill
+                  sizes="90vw"
+                  className="object-contain p-8"
+                  priority
+                />
+              </motion.div>
+            </AnimatePresence>
+          </div>
+
+          {/* Navigation arrows */}
+          {images.length > 1 && (
+            <>
               <button
+                onClick={() => goToImage(index - 1)}
+                className="absolute left-4 top-1/2 -translate-y-1/2 flex h-12 w-12 items-center justify-center rounded-full bg-background/80 text-foreground hover:bg-background shadow-lg transition-colors"
+              >
+                <ChevronLeft className="h-6 w-6" />
+              </button>
+              <button
+                onClick={() => goToImage(index + 1)}
+                className="absolute right-4 top-1/2 -translate-y-1/2 flex h-12 w-12 items-center justify-center rounded-full bg-background/80 text-foreground hover:bg-background shadow-lg transition-colors"
+              >
+                <ChevronRight className="h-6 w-6" />
+              </button>
+            </>
+          )}
+
+          {/* Image counter */}
+          <div className="absolute top-4 left-4 rounded-full bg-background/80 px-3 py-1.5 text-sm font-medium backdrop-blur-sm">
+            {index + 1} / {images.length}
+          </div>
+        </div>
+
+        {/* Thumbnails */}
+        {images.length > 1 && (
+          <div className="flex justify-center gap-2 p-4 bg-muted/50">
+            {images.map((img, i) => (
+              <motion.button
                 key={i}
                 onClick={() => setIndex(i)}
                 className={cn(
-                  "relative h-12 w-12 overflow-hidden rounded-md border-2 transition-colors",
+                  "relative h-16 w-16 overflow-hidden rounded-lg transition-all",
                   i === index
-                    ? "border-primary"
-                    : "border-transparent hover:border-muted-foreground/30"
+                    ? "ring-2 ring-primary ring-offset-2"
+                    : "opacity-50 hover:opacity-100"
                 )}
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.95 }}
               >
                 <Image
                   src={img}
                   alt={`${name} - Thumbnail ${i + 1}`}
                   fill
-                  sizes="48px"
+                  sizes="64px"
                   className="object-cover"
                 />
-              </button>
+              </motion.button>
             ))}
           </div>
         )}

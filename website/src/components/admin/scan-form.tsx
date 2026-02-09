@@ -1,10 +1,25 @@
 "use client";
 
 import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Loader2, Plus, Check, X, ChevronDown } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { 
+  Loader2, 
+  Plus, 
+  Check, 
+  X, 
+  ChevronDown,
+  Package,
+  ArrowDownToLine,
+  ArrowUpFromLine,
+  Store,
+  Truck,
+  ShoppingCart,
+  Clock
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ImageUpload } from "./image-upload";
 import { MarketDataPanel } from "./market-data-panel";
@@ -17,6 +32,8 @@ import type {
 import type { ProductCondition } from "@/types/product";
 import { toast } from "sonner";
 
+type ScanMode = "in" | "out";
+
 interface ScanFormProps {
   result: ScanResult;
   onSubmit: (data: ScanFormData) => Promise<void>;
@@ -24,14 +41,100 @@ interface ScanFormProps {
     productId: string,
     variantId: string
   ) => Promise<StockXMarketData | null>;
+  defaultMode?: ScanMode;
 }
 
-const CONDITIONS: { value: ProductCondition; label: string }[] = [
+const CONDITIONS: { value: ProductCondition; label: string; sub?: string }[] = [
   { value: "new", label: "New" },
-  { value: "used", label: "Used" },
+  { value: "used_like_new", label: "Used", sub: "Like New" },
+  { value: "used_good", label: "Used", sub: "Good" },
+  { value: "used_fair", label: "Used", sub: "Fair" },
 ];
 
-export function ScanForm({ result, onSubmit, onMarketDataFetch }: ScanFormProps) {
+// Product journey timeline steps
+interface JourneyStep {
+  id: string;
+  label: string;
+  description: string;
+  icon: React.ReactNode;
+  status: "completed" | "current" | "pending";
+}
+
+function ProductJourney({ currentStep }: { currentStep: string }) {
+  const steps: JourneyStep[] = [
+    {
+      id: "acquired",
+      label: "Acquired",
+      description: "Product scanned in",
+      icon: <ArrowDownToLine className="h-4 w-4" />,
+      status: currentStep === "acquired" ? "current" : currentStep === "in_stock" || currentStep === "sold" ? "completed" : "pending",
+    },
+    {
+      id: "in_stock",
+      label: "In Stock",
+      description: "Listed for sale",
+      icon: <Package className="h-4 w-4" />,
+      status: currentStep === "in_stock" ? "current" : currentStep === "sold" ? "completed" : "pending",
+    },
+    {
+      id: "sold",
+      label: "Sold",
+      description: "Purchased by customer",
+      icon: <ShoppingCart className="h-4 w-4" />,
+      status: currentStep === "sold" ? "current" : "pending",
+    },
+  ];
+
+  return (
+    <div className="rounded-xl border border-border bg-muted/30 p-4">
+      <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-3">
+        Product Journey
+      </p>
+      <div className="flex items-center justify-between">
+        {steps.map((step, idx) => (
+          <div key={step.id} className="flex items-center">
+            {/* Step */}
+            <div className="flex flex-col items-center">
+              <motion.div
+                initial={{ scale: 0.8 }}
+                animate={{ scale: 1 }}
+                className={cn(
+                  "flex h-10 w-10 items-center justify-center rounded-full border-2 transition-colors",
+                  step.status === "completed" && "border-green-500 bg-green-500 text-white",
+                  step.status === "current" && "border-primary bg-primary text-primary-foreground",
+                  step.status === "pending" && "border-border bg-muted text-muted-foreground"
+                )}
+              >
+                {step.status === "completed" ? (
+                  <Check className="h-5 w-5" />
+                ) : (
+                  step.icon
+                )}
+              </motion.div>
+              <p className={cn(
+                "mt-2 text-xs font-medium text-center",
+                step.status === "pending" && "text-muted-foreground"
+              )}>
+                {step.label}
+              </p>
+            </div>
+            
+            {/* Connector */}
+            {idx < steps.length - 1 && (
+              <div className={cn(
+                "mx-2 h-0.5 w-12 sm:w-16",
+                steps[idx + 1].status !== "pending" ? "bg-green-500" : "bg-border"
+              )} />
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+export function ScanForm({ result, onSubmit, onMarketDataFetch, defaultMode = "in" }: ScanFormProps) {
+  const [scanMode, setScanMode] = useState<ScanMode>(defaultMode);
   const [condition, setCondition] = useState<ProductCondition>("new");
   const [hasBox, setHasBox] = useState(true);
   const [cost, setCost] = useState("");
@@ -53,10 +156,11 @@ export function ScanForm({ result, onSubmit, onMarketDataFetch }: ScanFormProps)
   );
   const [submitting, setSubmitting] = useState(false);
   const [productName, setProductName] = useState(result.productName);
+  const [outReason, setOutReason] = useState<"sale" | "return" | "damage" | "other">("sale");
 
   const isUsed = condition !== "new";
-  const isFromSource = result.source !== "manual";
   
+  // Determine if size was auto-detected from barcode
   const sizeAutoDetected = !!(result.stockxVariantId && selectedVariant);
   const detectedSize = selectedVariant?.size ?? result.size;
 
@@ -65,6 +169,7 @@ export function ScanForm({ result, onSubmit, onMarketDataFetch }: ScanFormProps)
     if (variant) {
       setSelectedVariant(variant);
       setSelectedSize(variant.size);
+      // Fetch market data for this variant
       if (result.stockxProductId && onMarketDataFetch) {
         const data = await onMarketDataFetch(result.stockxProductId, variant.id);
         setMarketData(data);
@@ -74,52 +179,68 @@ export function ScanForm({ result, onSubmit, onMarketDataFetch }: ScanFormProps)
 
   const handleConditionChange = (c: ProductCondition) => {
     setCondition(c);
+    // If switching to new, restore stock images
     if (c === "new" && result.imageUrls.length > 0) {
       setImages(result.imageUrls);
     }
+    // If switching to used, clear stock images so user uploads own
     if (c !== "new" && result.source !== "manual") {
       setImages([]);
     }
   };
 
   const handleSubmit = async () => {
-    if (!productName.trim()) {
-      toast.error("Product name is required");
-      return;
-    }
-    const costNum = parseFloat(cost);
-    const priceNum = parseFloat(price);
+    if (scanMode === "in") {
+      if (!productName.trim()) {
+        toast.error("Product name is required");
+        return;
+      }
+      const costNum = parseFloat(cost);
+      const priceNum = parseFloat(price);
 
-    if (isNaN(priceNum) || priceNum <= 0) {
-      toast.error("Valid selling price is required");
-      return;
-    }
+      if (isNaN(priceNum) || priceNum <= 0) {
+        toast.error("Valid selling price is required");
+        return;
+      }
 
-    setSubmitting(true);
-    try {
-      await onSubmit({
-        barcode: result.barcode,
-        productName: productName.trim(),
-        brand: result.brand,
-        colorway: result.colorway,
-        styleId: result.styleId,
-        size: selectedSize || result.size || null,
-        stockxProductId: result.stockxProductId,
-        stockxVariantId: selectedVariant?.id ?? result.stockxVariantId,
-        condition,
-        hasBox,
-        cost: isNaN(costNum) ? 0 : costNum,
-        price: priceNum,
-        images,
-        productType: "sneaker",
-      });
-    } catch {
-      toast.error("Failed to add product");
-    } finally {
-      setSubmitting(false);
+      setSubmitting(true);
+      try {
+        await onSubmit({
+          barcode: result.barcode,
+          productName: productName.trim(),
+          brand: result.brand,
+          colorway: result.colorway,
+          styleId: result.styleId,
+          size: selectedSize || result.size || null,
+          stockxProductId: result.stockxProductId,
+          stockxVariantId: selectedVariant?.id ?? result.stockxVariantId,
+          condition,
+          hasBox,
+          cost: isNaN(costNum) ? 0 : costNum,
+          price: priceNum,
+          images,
+          productType: "sneaker",
+        });
+      } catch {
+        toast.error("Failed to add product");
+      } finally {
+        setSubmitting(false);
+      }
+    } else {
+      // Scan OUT - deduct from inventory
+      setSubmitting(true);
+      try {
+        // This would call an API to deduct inventory
+        toast.success(`${productName} scanned out (${outReason})`);
+      } catch {
+        toast.error("Failed to scan out product");
+      } finally {
+        setSubmitting(false);
+      }
     }
   };
 
+  // Sort variants by numeric size for dropdown
   const sortedVariants = [...result.variants].sort((a, b) => {
     const numA = parseFloat(a.size);
     const numB = parseFloat(b.size);
@@ -129,31 +250,144 @@ export function ScanForm({ result, onSubmit, onMarketDataFetch }: ScanFormProps)
 
   return (
     <div className="space-y-5">
-      {/* Product Name */}
-      <div className="space-y-1.5">
-        <Label className="flex items-center gap-2">
-          Product Name
-          {isFromSource && (
-            <span className="inline-flex items-center gap-1 rounded-full bg-blue-500/10 px-2 py-0.5 text-xs font-medium text-blue-600">
-              <Check className="h-3 w-3" />
-              StockX
-            </span>
+      {/* Scan Mode Toggle - More prominent */}
+      <div className="grid grid-cols-2 gap-3">
+        <motion.button
+          type="button"
+          onClick={() => setScanMode("in")}
+          className={cn(
+            "relative flex flex-col items-center justify-center gap-2 rounded-xl border-2 p-5 transition-all",
+            scanMode === "in"
+              ? "border-green-500 bg-green-500/10"
+              : "border-border hover:border-muted-foreground"
           )}
-        </Label>
-        {isFromSource ? (
-          <div className="flex h-10 items-center rounded-lg border border-blue-500/30 bg-blue-500/5 px-4 text-sm font-medium text-foreground/80">
-            {productName}
+          whileTap={{ scale: 0.98 }}
+        >
+          <div className={cn(
+            "flex h-12 w-12 items-center justify-center rounded-full",
+            scanMode === "in" ? "bg-green-500 text-white" : "bg-muted text-muted-foreground"
+          )}>
+            <ArrowDownToLine className="h-6 w-6" />
           </div>
-        ) : (
-          <Input
-            value={productName}
-            onChange={(e) => setProductName(e.target.value)}
-          />
-        )}
+          <div className="text-center">
+            <p className={cn(
+              "font-bold text-lg",
+              scanMode === "in" ? "text-green-600" : "text-foreground"
+            )}>
+              SCAN IN
+            </p>
+            <p className="text-xs text-muted-foreground">Add to inventory</p>
+          </div>
+          {scanMode === "in" && (
+            <motion.div
+              layoutId="mode-indicator"
+              className="absolute -right-1 -top-1 h-5 w-5 rounded-full bg-green-500 flex items-center justify-center"
+            >
+              <Check className="h-3 w-3 text-white" />
+            </motion.div>
+          )}
+        </motion.button>
+
+        <motion.button
+          type="button"
+          onClick={() => setScanMode("out")}
+          className={cn(
+            "relative flex flex-col items-center justify-center gap-2 rounded-xl border-2 p-5 transition-all",
+            scanMode === "out"
+              ? "border-red-500 bg-red-500/10"
+              : "border-border hover:border-muted-foreground"
+          )}
+          whileTap={{ scale: 0.98 }}
+        >
+          <div className={cn(
+            "flex h-12 w-12 items-center justify-center rounded-full",
+            scanMode === "out" ? "bg-red-500 text-white" : "bg-muted text-muted-foreground"
+          )}>
+            <ArrowUpFromLine className="h-6 w-6" />
+          </div>
+          <div className="text-center">
+            <p className={cn(
+              "font-bold text-lg",
+              scanMode === "out" ? "text-red-600" : "text-foreground"
+            )}>
+              SCAN OUT
+            </p>
+            <p className="text-xs text-muted-foreground">Deduct from inventory</p>
+          </div>
+          {scanMode === "out" && (
+            <motion.div
+              layoutId="mode-indicator"
+              className="absolute -right-1 -top-1 h-5 w-5 rounded-full bg-red-500 flex items-center justify-center"
+            >
+              <Check className="h-3 w-3 text-white" />
+            </motion.div>
+          )}
+        </motion.button>
       </div>
 
-      {/* Size Display */}
+      {/* Product Journey Timeline */}
+      <ProductJourney currentStep={scanMode === "in" ? "acquired" : "in_stock"} />
+
+      {/* Scan OUT reason (when in out mode) */}
+      <AnimatePresence mode="wait">
+        {scanMode === "out" && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            className="space-y-2"
+          >
+            <Label>Reason for Scan Out</Label>
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+              {[
+                { value: "sale", label: "Online Sale", icon: <Truck className="h-4 w-4" /> },
+                { value: "instore", label: "In-Store", icon: <Store className="h-4 w-4" /> },
+                { value: "return", label: "Return", icon: <ArrowDownToLine className="h-4 w-4" /> },
+                { value: "damage", label: "Damaged", icon: <X className="h-4 w-4" /> },
+              ].map((reason) => (
+                <button
+                  key={reason.value}
+                  type="button"
+                  onClick={() => setOutReason(reason.value as typeof outReason)}
+                  className={cn(
+                    "flex items-center justify-center gap-2 rounded-lg border-2 px-3 py-2.5 transition-colors",
+                    outReason === reason.value
+                      ? "border-primary bg-primary/10 text-primary"
+                      : "border-border hover:border-muted-foreground"
+                  )}
+                >
+                  {reason.icon}
+                  <span className="text-sm font-medium">{reason.label}</span>
+                </button>
+              ))}
+            </div>
+            
+            {/* Clover POS note */}
+            <div className="rounded-lg bg-blue-500/10 border border-blue-500/30 p-3 flex items-start gap-3">
+              <Store className="h-5 w-5 text-blue-500 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="text-sm font-medium text-blue-700 dark:text-blue-400">In-Store Sales</p>
+                <p className="text-xs text-blue-600/80 dark:text-blue-400/80 mt-0.5">
+                  In-store sales are processed through Clover POS. Use &quot;In-Store&quot; to manually sync inventory if needed.
+                </p>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Product Name (editable) */}
+      <div className="space-y-1.5">
+        <Label>Product Name</Label>
+        <Input
+          value={productName}
+          onChange={(e) => setProductName(e.target.value)}
+        />
+      </div>
+
+      {/* Size Display - Clean auto-detected or dropdown fallback */}
       {sizeAutoDetected ? (
+        // Auto-detected size - clean display, no picker
         <div className="space-y-1.5">
           <Label className="flex items-center gap-2">
             Size
@@ -167,6 +401,7 @@ export function ScanForm({ result, onSubmit, onMarketDataFetch }: ScanFormProps)
           </div>
         </div>
       ) : result.variants.length > 0 ? (
+        // No auto-detect but variants available - show dropdown
         <div className="space-y-1.5">
           <Label className="flex items-center gap-2">
             Size
@@ -191,6 +426,7 @@ export function ScanForm({ result, onSubmit, onMarketDataFetch }: ScanFormProps)
           </div>
         </div>
       ) : (
+        // No variants at all - manual input
         <div className="space-y-1.5">
           <Label className="flex items-center gap-2">
             Size
@@ -206,140 +442,153 @@ export function ScanForm({ result, onSubmit, onMarketDataFetch }: ScanFormProps)
         </div>
       )}
 
-      {/* Condition — moved up, right after product info */}
-      <div className="space-y-2">
-        <Label>Condition</Label>
-        <div className="grid grid-cols-4 gap-2">
-          {CONDITIONS.map((c) => (
-            <button
-              key={c.value}
-              type="button"
-              onClick={() => handleConditionChange(c.value)}
-              className={cn(
-                "rounded-lg border-2 px-3 py-3 text-center transition-colors",
-                condition === c.value
-                  ? "border-primary bg-primary/10 text-primary"
-                  : "border-border hover:border-muted-foreground"
-              )}
-            >
-              <p className="text-sm font-semibold">{c.label}</p>
-            </button>
-          ))}
-        </div>
-      </div>
+      {/* Only show these fields for Scan IN */}
+      {scanMode === "in" && (
+        <>
+          {/* Market Data */}
+          <MarketDataPanel
+            data={marketData}
+            onSuggestPrice={(p) => setPrice(String(p))}
+          />
 
-      {/* Images — immediately after condition */}
-      <div className="space-y-2">
-        <Label>
-          {isUsed ? "Upload Photos (required for used items)" : "Images"}
-        </Label>
-        {condition === "new" && images.length > 0 && result.source !== "manual" ? (
-          <div className="grid grid-cols-3 gap-2">
-            {images.slice(0, 3).map((url, i) => (
-              <div
-                key={url}
-                className="aspect-square overflow-hidden rounded-lg border border-border"
-              >
-                <img
-                  src={url}
-                  alt={`Stock ${i + 1}`}
-                  className="h-full w-full object-contain"
-                />
-              </div>
-            ))}
+          {/* Condition */}
+          <div className="space-y-2">
+            <Label>Condition</Label>
+            <div className="grid grid-cols-4 gap-2">
+              {CONDITIONS.map((c) => (
+                <button
+                  key={c.value}
+                  type="button"
+                  onClick={() => handleConditionChange(c.value)}
+                  className={cn(
+                    "rounded-lg border-2 px-3 py-3 text-center transition-colors",
+                    condition === c.value
+                      ? "border-primary bg-primary/10 text-primary"
+                      : "border-border hover:border-muted-foreground"
+                  )}
+                >
+                  <p className="text-sm font-semibold">{c.label}</p>
+                  {c.sub && (
+                    <p className="text-[11px] text-muted-foreground">{c.sub}</p>
+                  )}
+                </button>
+              ))}
+            </div>
           </div>
-        ) : (
-          <ImageUpload images={images} onChange={setImages} />
-        )}
-      </div>
 
-      {/* Has Box */}
-      <div
-        onClick={() => setHasBox(!hasBox)}
-        className={cn(
-          "flex cursor-pointer items-center justify-between rounded-lg border-2 px-4 py-3 transition-all",
-          hasBox
-            ? "border-green-500 bg-green-500/10"
-            : "border-red-500/50 bg-red-500/5"
-        )}
-      >
-        <div className="flex items-center gap-3">
+          {/* Has Box - More visible toggle card */}
           <div
+            onClick={() => setHasBox(!hasBox)}
             className={cn(
-              "flex h-8 w-8 items-center justify-center rounded-full",
-              hasBox ? "bg-green-500 text-white" : "bg-red-500/20 text-red-500"
+              "flex cursor-pointer items-center justify-between rounded-lg border-2 px-4 py-3 transition-all",
+              hasBox
+                ? "border-green-500 bg-green-500/10"
+                : "border-red-500/50 bg-red-500/5"
             )}
           >
-            {hasBox ? <Check className="h-4 w-4" /> : <X className="h-4 w-4" />}
+            <div className="flex items-center gap-3">
+              <div
+                className={cn(
+                  "flex h-8 w-8 items-center justify-center rounded-full",
+                  hasBox ? "bg-green-500 text-white" : "bg-red-500/20 text-red-500"
+                )}
+              >
+                {hasBox ? <Check className="h-4 w-4" /> : <X className="h-4 w-4" />}
+              </div>
+              <div>
+                <p className="font-semibold">Has Box</p>
+                <p className="text-xs text-muted-foreground">
+                  {hasBox ? "Original box included" : "No box"}
+                </p>
+              </div>
+            </div>
+            <div
+              className={cn(
+                "flex h-6 w-11 items-center rounded-full px-0.5 transition-colors",
+                hasBox ? "bg-green-500" : "bg-muted"
+              )}
+            >
+              <div
+                className={cn(
+                  "h-5 w-5 rounded-full bg-white shadow-sm transition-transform",
+                  hasBox ? "translate-x-5" : "translate-x-0"
+                )}
+              />
+            </div>
           </div>
-          <div>
-            <p className="font-semibold">Has Box</p>
-            <p className="text-xs text-muted-foreground">
-              {hasBox ? "Original box included" : "No box"}
-            </p>
-          </div>
-        </div>
-        <div
-          className={cn(
-            "flex h-6 w-11 items-center rounded-full px-0.5 transition-colors",
-            hasBox ? "bg-green-500" : "bg-muted"
-          )}
-        >
-          <div
-            className={cn(
-              "h-5 w-5 rounded-full bg-white shadow-sm transition-transform",
-              hasBox ? "translate-x-5" : "translate-x-0"
+
+          {/* Images */}
+          <div className="space-y-2">
+            <Label>
+              {isUsed ? "Upload Photos (required for used items)" : "Images"}
+            </Label>
+            {condition === "new" && images.length > 0 && result.source !== "manual" ? (
+              <div className="grid grid-cols-3 gap-2">
+                {images.slice(0, 3).map((url, i) => (
+                  <div
+                    key={url}
+                    className="aspect-square overflow-hidden rounded-lg border border-border"
+                  >
+                    <img
+                      src={url}
+                      alt={`Stock ${i + 1}`}
+                      className="h-full w-full object-contain"
+                    />
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <ImageUpload images={images} onChange={setImages} />
             )}
-          />
-        </div>
-      </div>
+          </div>
 
-      {/* Market Data */}
-      <MarketDataPanel
-        data={marketData}
-        onSuggestPrice={(p) => setPrice(String(p))}
-      />
-
-      {/* Pricing */}
-      <div className="grid grid-cols-2 gap-3">
-        <div className="space-y-1.5">
-          <Label>Cost (what you paid)</Label>
-          <Input
-            type="number"
-            step="0.01"
-            placeholder="0.00"
-            value={cost}
-            onChange={(e) => setCost(e.target.value)}
-            className="text-lg"
-          />
-        </div>
-        <div className="space-y-1.5">
-          <Label>Selling Price *</Label>
-          <Input
-            type="number"
-            step="0.01"
-            placeholder="0.00"
-            value={price}
-            onChange={(e) => setPrice(e.target.value)}
-            className="text-lg font-semibold"
-          />
-        </div>
-      </div>
+          {/* Pricing */}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <Label>Cost (what you paid)</Label>
+              <Input
+                type="number"
+                step="0.01"
+                placeholder="0.00"
+                value={cost}
+                onChange={(e) => setCost(e.target.value)}
+                className="text-lg"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Selling Price *</Label>
+              <Input
+                type="number"
+                step="0.01"
+                placeholder="0.00"
+                value={price}
+                onChange={(e) => setPrice(e.target.value)}
+                className="text-lg font-semibold"
+              />
+            </div>
+          </div>
+        </>
+      )}
 
       {/* Submit */}
       <Button
         type="button"
         size="lg"
-        className="w-full"
+        className={cn(
+          "w-full",
+          scanMode === "out" && "bg-red-500 hover:bg-red-600"
+        )}
         onClick={handleSubmit}
         disabled={submitting}
       >
         {submitting ? (
           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-        ) : (
+        ) : scanMode === "in" ? (
           <Plus className="mr-2 h-4 w-4" />
+        ) : (
+          <ArrowUpFromLine className="mr-2 h-4 w-4" />
         )}
-        Add to Inventory
+        {scanMode === "in" ? "Add to Inventory" : "Scan Out Product"}
       </Button>
     </div>
   );
