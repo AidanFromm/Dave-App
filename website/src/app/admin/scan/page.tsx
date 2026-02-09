@@ -77,12 +77,7 @@ interface SavedSession {
 
 const SESSION_KEY = "dave-scan-session";
 
-const CONDITIONS: { value: ProductCondition; label: string; sub?: string }[] = [
-  { value: "new", label: "New" },
-  { value: "used_like_new", label: "Used", sub: "Like New" },
-  { value: "used_good", label: "Used", sub: "Good" },
-  { value: "used_fair", label: "Used", sub: "Fair" },
-];
+// Conditions simplified to just New and Used
 
 // ─── Component ───────────────────────────────────────────────
 
@@ -884,66 +879,72 @@ export default function ScanPage() {
                             </div>
                           )}
 
-                          {/* Condition */}
+                          {/* Condition Toggle */}
                           <div className="space-y-2">
                             <Label>Condition</Label>
-                            <div className="grid grid-cols-4 gap-2">
-                              {CONDITIONS.map((c) => (
-                                <button
-                                  key={c.value}
-                                  type="button"
-                                  onClick={() => {
-                                    const updates: Partial<ScannedItem> = { condition: c.value };
-                                    if (c.value === "new" && item.result.imageUrls.length > 0) {
-                                      updates.images = item.result.imageUrls;
-                                    } else if (c.value !== "new" && item.result.source !== "manual") {
-                                      updates.images = [];
-                                    }
-                                    updateItem(item.id, updates);
-                                  }}
-                                  className={cn(
-                                    "rounded-lg border-2 px-3 py-3 text-center transition-colors",
-                                    item.condition === c.value
-                                      ? "border-primary bg-primary/10 text-primary"
-                                      : "border-border hover:border-muted-foreground"
-                                  )}
-                                >
-                                  <p className="text-sm font-semibold">{c.label}</p>
-                                  {c.sub && <p className="text-[11px] text-muted-foreground">{c.sub}</p>}
-                                </button>
-                              ))}
+                            <div
+                              onClick={() => {
+                                const newCondition: ProductCondition = item.condition === "new" ? "used" : "new";
+                                const updates: Partial<ScannedItem> = { condition: newCondition };
+                                if (newCondition === "new") {
+                                  updates.hasBox = true;
+                                  if (item.result.imageUrls.length > 0) updates.images = item.result.imageUrls;
+                                } else {
+                                  if (item.result.source !== "manual") updates.images = [];
+                                }
+                                updateItem(item.id, updates);
+                              }}
+                              className="flex cursor-pointer items-center justify-between rounded-lg border-2 border-border px-4 py-3 transition-all hover:border-muted-foreground"
+                            >
+                              <span className="text-sm font-semibold">{item.condition === "new" ? "New" : "Used"}</span>
+                              <div className={cn("flex h-6 w-11 items-center rounded-full px-0.5 transition-colors", item.condition === "new" ? "bg-green-500" : "bg-amber-500")}>
+                                <div className={cn("h-5 w-5 rounded-full bg-white shadow-sm transition-transform", item.condition === "new" ? "translate-x-0" : "translate-x-5")} />
+                              </div>
                             </div>
                           </div>
 
-                          {/* Has Box Toggle */}
-                          <div
-                            onClick={() => updateItem(item.id, { hasBox: !item.hasBox })}
-                            className={cn(
-                              "flex cursor-pointer items-center justify-between rounded-lg border-2 px-4 py-3 transition-all",
-                              item.hasBox ? "border-green-500 bg-green-500/10" : "border-red-500/50 bg-red-500/5"
-                            )}
-                          >
-                            <div className="flex items-center gap-3">
-                              <div className={cn("flex h-8 w-8 items-center justify-center rounded-full", item.hasBox ? "bg-green-500 text-white" : "bg-red-500/20 text-red-500")}>
-                                {item.hasBox ? <Check className="h-4 w-4" /> : <X className="h-4 w-4" />}
-                              </div>
-                              <div>
-                                <p className="font-semibold">Has Box</p>
-                                <p className="text-xs text-muted-foreground">{item.hasBox ? "Original box included" : "No box"}</p>
-                              </div>
-                            </div>
-                            <div className={cn("flex h-6 w-11 items-center rounded-full px-0.5 transition-colors", item.hasBox ? "bg-green-500" : "bg-muted")}>
-                              <div className={cn("h-5 w-5 rounded-full bg-white shadow-sm transition-transform", item.hasBox ? "translate-x-5" : "translate-x-0")} />
-                            </div>
-                          </div>
-
-                          {/* Images for used items */}
+                          {/* Has Box Toggle — only for Used */}
                           {isUsed && (
+                            <div
+                              onClick={() => updateItem(item.id, { hasBox: !item.hasBox })}
+                              className={cn(
+                                "flex cursor-pointer items-center justify-between rounded-lg border-2 px-4 py-3 transition-all",
+                                item.hasBox ? "border-green-500 bg-green-500/10" : "border-red-500/50 bg-red-500/5"
+                              )}
+                            >
+                              <div className="flex items-center gap-3">
+                                <div className={cn("flex h-8 w-8 items-center justify-center rounded-full", item.hasBox ? "bg-green-500 text-white" : "bg-red-500/20 text-red-500")}>
+                                  {item.hasBox ? <Check className="h-4 w-4" /> : <X className="h-4 w-4" />}
+                                </div>
+                                <div>
+                                  <p className="font-semibold">Has Box</p>
+                                  <p className="text-xs text-muted-foreground">{item.hasBox ? "Original box included" : "No box"}</p>
+                                </div>
+                              </div>
+                              <div className={cn("flex h-6 w-11 items-center rounded-full px-0.5 transition-colors", item.hasBox ? "bg-green-500" : "bg-muted")}>
+                                <div className={cn("h-5 w-5 rounded-full bg-white shadow-sm transition-transform", item.hasBox ? "translate-x-5" : "translate-x-0")} />
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Images: thumbnails for New, upload for Used */}
+                          {isUsed ? (
                             <div className="space-y-2">
                               <Label>Upload Photos (required for used items)</Label>
                               <ImageUpload images={item.images} onChange={(imgs) => updateItem(item.id, { images: imgs })} />
                             </div>
-                          )}
+                          ) : item.result.imageUrls.length > 0 ? (
+                            <div className="space-y-2">
+                              <Label>Product Images</Label>
+                              <div className="flex gap-2 overflow-x-auto pb-1">
+                                {item.result.imageUrls.slice(0, 5).map((url, idx) => (
+                                  <div key={idx} className="h-16 w-16 flex-shrink-0 overflow-hidden rounded-md border border-border bg-muted">
+                                    <img src={url} alt="" className="h-full w-full object-contain p-1" />
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          ) : null}
 
                           {/* Market Data */}
                           {item.marketData && (

@@ -194,9 +194,7 @@ export function ProductForm({ product, categories }: ProductFormProps) {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="new">New</SelectItem>
-              <SelectItem value="used_like_new">Like New</SelectItem>
-              <SelectItem value="used_good">Good</SelectItem>
-              <SelectItem value="used_fair">Fair</SelectItem>
+              <SelectItem value="used">Used</SelectItem>
             </SelectContent>
           </Select>
         </div>

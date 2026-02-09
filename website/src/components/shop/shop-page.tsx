@@ -53,9 +53,7 @@ export function ShopPage({ initialProducts, categories }: ShopPageProps) {
         break;
       }
       case "used":
-        products = products.filter((p) =>
-          ["used_like_new", "used_good", "used_fair"].includes(p.condition)
-        );
+        products = products.filter((p) => p.condition === "used");
         break;
       case "pokemon":
         if (pokemonCategoryId) {

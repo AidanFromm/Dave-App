@@ -1,10 +1,8 @@
-export type ProductCondition = "new" | "used_like_new" | "used_good" | "used_fair";
+export type ProductCondition = "new" | "used";
 
 export const CONDITION_LABELS: Record<ProductCondition, string> = {
   new: "New",
-  used_like_new: "Like New",
-  used_good: "Good",
-  used_fair: "Fair",
+  used: "Used",
 };
 
 export interface Product {
