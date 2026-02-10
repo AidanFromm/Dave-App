@@ -12,6 +12,16 @@ export function useAuth() {
   const [loading, setLoading] = useState(true);
   const supabase = createClient();
 
+  const fetchRole = async () => {
+    try {
+      const res = await fetch("/api/auth/role");
+      const data = await res.json();
+      setRole(data.role as UserRole);
+    } catch {
+      setRole(null);
+    }
+  };
+
   useEffect(() => {
     const getUser = async () => {
       const {
@@ -20,13 +30,7 @@ export function useAuth() {
       setUser(user);
 
       if (user) {
-        // Fetch role from profiles table
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("role")
-          .eq("auth_user_id", user.id)
-          .single();
-        setRole((profile?.role as UserRole) ?? "customer");
+        await fetchRole();
       } else {
         setRole(null);
       }
@@ -42,13 +46,7 @@ export function useAuth() {
       setUser(currentUser);
 
       if (currentUser) {
-        // Fetch role from profiles table
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("role")
-          .eq("auth_user_id", currentUser.id)
-          .single();
-        setRole((profile?.role as UserRole) ?? "customer");
+        await fetchRole();
       } else {
         setRole(null);
       }
@@ -65,7 +63,6 @@ export function useAuth() {
     setRole(null);
   };
 
-  // Admin = owner, manager, or staff
   const isAdmin = role === "owner" || role === "manager" || role === "staff";
 
   return { user, role, loading, signOut, isAdmin };

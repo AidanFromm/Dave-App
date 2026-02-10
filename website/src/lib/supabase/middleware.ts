@@ -96,31 +96,11 @@ export async function updateSession(request: NextRequest) {
       return supabaseResponse;
     }
 
+    // Just check if user is authenticated — role check happens in the admin layout
     if (!user) {
       const url = request.nextUrl.clone();
-      url.pathname = "/auth/sign-in";
+      url.pathname = "/admin/login";
       return NextResponse.redirect(url);
-    }
-
-    // Check admin role from user metadata
-    const isAdmin = user.user_metadata?.role === "admin" ||
-      user.user_metadata?.role === "owner" ||
-      user.user_metadata?.role === "staff";
-
-    if (!isAdmin) {
-      // Fall back to checking profiles table
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("role")
-        .eq("auth_user_id", user.id)
-        .single();
-
-      const profileRole = profile?.role;
-      if (!profileRole || profileRole === "customer") {
-        const url = request.nextUrl.clone();
-        url.pathname = "/";
-        return NextResponse.redirect(url);
-      }
     }
   }
 
