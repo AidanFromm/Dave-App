@@ -46,7 +46,9 @@ interface ScanFormProps {
 
 const CONDITIONS: { value: ProductCondition; label: string }[] = [
   { value: "new", label: "New" },
-  { value: "used", label: "Used" },
+  { value: "used_like_new", label: "Like New" },
+  { value: "used_good", label: "Good" },
+  { value: "used_fair", label: "Fair" },
 ];
 
 // Product journey timeline steps

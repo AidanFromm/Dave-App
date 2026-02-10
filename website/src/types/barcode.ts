@@ -168,7 +168,7 @@ export interface PokemonCardDetail {
 // Pokemon card condition labels (TCG standard)
 export const POKEMON_CONDITION_MAP: Record<string, { label: string; dbValue: import("./product").ProductCondition }> = {
   near_mint: { label: "Near Mint", dbValue: "new" },
-  lightly_played: { label: "Lightly Played", dbValue: "used" },
-  moderately_played: { label: "Moderately Played", dbValue: "used" },
-  heavily_played: { label: "Heavily Played / Damaged", dbValue: "used" },
+  lightly_played: { label: "Lightly Played", dbValue: "used_like_new" },
+  moderately_played: { label: "Moderately Played", dbValue: "used_good" },
+  heavily_played: { label: "Heavily Played / Damaged", dbValue: "used_fair" },
 };
