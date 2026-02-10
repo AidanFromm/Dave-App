@@ -19,7 +19,9 @@ export function ScanResultCard({ result }: ScanResultCardProps) {
     manual: { label: "Manual", className: "bg-yellow-500/10 text-yellow-600 border-yellow-500/20" },
   }[result.source];
 
-  const hasImage = result.imageUrl && !imageError;
+  // Fall back to first image in imageUrls array if imageUrl is empty
+  const displayImage = result.imageUrl || (result.imageUrls && result.imageUrls.length > 0 ? result.imageUrls[0] : null);
+  const hasImage = displayImage && !imageError;
 
   return (
     <div className="overflow-hidden rounded-xl border border-border bg-card">
@@ -33,7 +35,7 @@ export function ScanResultCard({ result }: ScanResultCardProps) {
               </div>
             )}
             <img
-              src={result.imageUrl!}
+              src={displayImage!}
               alt={result.productName}
               className={`h-full w-full object-contain p-4 transition-opacity duration-300 ${
                 imageLoading ? "opacity-0" : "opacity-100"

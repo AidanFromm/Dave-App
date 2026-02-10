@@ -246,7 +246,13 @@ export default function ScanPage() {
             if (productRes.ok) {
               const productData = await productRes.json();
               result.variants = productData.variants ?? [];
-              result.imageUrls = productData.imageUrls?.length > 0 ? productData.imageUrls : result.imageUrls;
+              // Update both imageUrl and imageUrls from fresh StockX data
+              if (productData.imageUrls?.length > 0) {
+                result.imageUrls = productData.imageUrls;
+                result.imageUrl = productData.imageUrl || productData.imageUrls[0];
+              } else if (productData.imageUrl) {
+                result.imageUrl = productData.imageUrl;
+              }
               if (cached.stockx_variant_id) {
                 try {
                   const mdRes = await fetch(`/api/stockx/market-data/${cached.stockx_product_id}/${cached.stockx_variant_id}`);
@@ -365,7 +371,7 @@ export default function ScanPage() {
         hasBox: true,
         cost: "",
         price: "",
-        images: result.imageUrls.length > 0 ? result.imageUrls : [],
+        images: result.imageUrls?.length > 0 ? result.imageUrls : (result.imageUrl ? [result.imageUrl] : []),
         selectedVariant: defaultVariant,
         selectedSize: defaultVariant?.size ?? result.size ?? "",
         marketData: result.marketData,
@@ -415,7 +421,7 @@ export default function ScanPage() {
         setItems((prev) => [...prev, {
           id: crypto.randomUUID(), barcode: pendingBarcode, result, quantity: 1,
           condition: "new", hasBox: true, cost: "", price: "",
-          images: result.imageUrls, selectedVariant: null, selectedSize: "",
+          images: result.imageUrls?.length > 0 ? result.imageUrls : (result.imageUrl ? [result.imageUrl] : []), selectedVariant: null, selectedSize: "",
           marketData: null, expanded: false,
         }]);
         setScanState("idle");
@@ -434,7 +440,7 @@ export default function ScanPage() {
     setItems((prev) => [...prev, {
       id: crypto.randomUUID(), barcode: pendingBarcode, result, quantity: 1,
       condition: "new", hasBox: true, cost: "", price: "",
-      images: result.imageUrls, selectedVariant: null, selectedSize: "",
+      images: result.imageUrls?.length > 0 ? result.imageUrls : (result.imageUrl ? [result.imageUrl] : []), selectedVariant: null, selectedSize: "",
       marketData: null, expanded: false,
     }]);
     setScanState("idle");
@@ -740,7 +746,7 @@ export default function ScanPage() {
                         className="flex items-center gap-4 rounded-xl border border-border bg-card p-4 transition-colors hover:bg-muted/30"
                       >
                         {/* Thumbnail */}
-                        <ProductImage src={item.result.imageUrl} size="md" />
+                        <ProductImage src={item.result.imageUrl || item.result.imageUrls?.[0]} size="md" />
 
                         {/* Info */}
                         <div className="min-w-0 flex-1">
@@ -854,7 +860,7 @@ export default function ScanPage() {
                         className="flex cursor-pointer items-center gap-4 p-4 transition-colors hover:bg-muted/50"
                         onClick={() => updateItem(item.id, { expanded: !item.expanded })}
                       >
-                        <ProductImage src={item.result.imageUrl} size="lg" />
+                        <ProductImage src={item.result.imageUrl || item.result.imageUrls?.[0]} size="lg" />
 
                         <div className="min-w-0 flex-1">
                           <p className="truncate text-lg font-bold">
@@ -960,7 +966,10 @@ export default function ScanPage() {
                                 const updates: Partial<ScannedItem> = { condition: newCondition };
                                 if (newCondition === "new") {
                                   updates.hasBox = true;
-                                  if (item.result.imageUrls.length > 0) updates.images = item.result.imageUrls;
+                                  const stockImages = item.result.imageUrls?.length > 0 
+                                    ? item.result.imageUrls 
+                                    : (item.result.imageUrl ? [item.result.imageUrl] : []);
+                                  if (stockImages.length > 0) updates.images = stockImages;
                                 } else {
                                   if (item.result.source !== "manual") updates.images = [];
                                 }
