@@ -61,7 +61,7 @@ export default function AdminDashboardPage() {
         setRevenueData(revenueResult);
         setTopProducts(productsResult);
       } catch (error) {
-        console.error("Failed to fetch dashboard data:", error);
+        // Failed to fetch dashboard data
       } finally {
         setLoading(false);
       }
@@ -77,7 +77,7 @@ export default function AdminDashboardPage() {
         const data = await getInventoryStats();
         setInventoryStats(data);
       } catch (error) {
-        console.error("Failed to fetch inventory stats:", error);
+        // Failed to fetch inventory stats
       } finally {
         setInvLoading(false);
       }

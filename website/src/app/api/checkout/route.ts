@@ -30,8 +30,6 @@ export async function POST(request: Request) {
       shippingAddress?: object;
     };
 
-    console.log("Checkout request:", { total, email, fulfillmentType, itemCount: items?.length });
-
     if (!total || total <= 0) {
       return NextResponse.json(
         { error: "Invalid order total", code: "INVALID_TOTAL" },
@@ -74,19 +72,11 @@ export async function POST(request: Request) {
       },
     });
 
-    console.log("PaymentIntent created:", paymentIntent.id);
-
     return NextResponse.json({
       clientSecret: paymentIntent.client_secret,
     });
   } catch (error) {
     const err = error as Error & { type?: string; code?: string };
-    console.error("Checkout error:", {
-      message: err.message,
-      type: err.type,
-      code: err.code,
-      stack: err.stack,
-    });
     return NextResponse.json(
       { 
         error: "Failed to create payment", 

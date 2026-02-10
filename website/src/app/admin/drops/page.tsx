@@ -308,7 +308,7 @@ export default function AdminDropsPage() {
                 product: p,
                 dropDate,
                 status,
-                notifyCount: Math.floor(Math.random() * 200) + 10, // TODO: Real count
+                notifyCount: 0, // TODO: Fetch real subscriber count from API
               };
             });
 
@@ -329,7 +329,7 @@ export default function AdminDropsPage() {
           );
         }
       } catch (error) {
-        console.error("Failed to load drops data", error);
+        // Failed to load drops data
       } finally {
         setLoading(false);
       }

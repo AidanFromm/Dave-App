@@ -116,7 +116,7 @@ export default function AnalyticsPage() {
         setRevenueData(revenueResult);
         setTopProducts(productsResult);
       } catch (error) {
-        console.error("Failed to fetch analytics data:", error);
+        // Failed to fetch analytics data
       } finally {
         setLoading(false);
       }

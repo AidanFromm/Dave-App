@@ -84,8 +84,6 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    console.log(`Clover OAuth complete for merchant ${merchantId}`);
-
     return NextResponse.redirect(
       new URL("/admin/settings?clover=connected", request.url)
     );

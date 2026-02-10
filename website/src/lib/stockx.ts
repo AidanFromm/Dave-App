@@ -87,7 +87,7 @@ async function fetchClientCredentialsToken(): Promise<{
       return null;
     }
     const data = await res.json();
-    console.log("StockX token fetched successfully, expires_in:", data.expires_in);
+    // Token fetched successfully
     return data;
   } catch (err) {
     console.error("StockX token fetch exception:", err);

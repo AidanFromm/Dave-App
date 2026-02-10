@@ -26,7 +26,7 @@ interface ShopPageProps {
 }
 
 export function ShopPage({ initialProducts, categories }: ShopPageProps) {
-  const [filter, setFilter] = useState<ShopFilter>("drops");
+  const [filter, setFilter] = useState<ShopFilter>("all");
   const [sort, setSort] = useState<SortOption>("newest");
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, 300);

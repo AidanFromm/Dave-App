@@ -51,7 +51,6 @@ export async function GET(
   }
 
   const headers = await getStockXHeaders();
-  console.log("StockX headers available:", !!headers);
   if (!headers) {
     return NextResponse.json(
       { error: "StockX not connected - no valid tokens found" },
@@ -73,7 +72,6 @@ export async function GET(
     }
 
     const product = await productRes.json();
-    console.log("StockX product response:", JSON.stringify(product, null, 2));
 
     const variantsRes = await fetch(
       `${STOCKX_API_BASE}/v2/catalog/products/${id}/variants?limit=100`,
@@ -83,7 +81,6 @@ export async function GET(
     let variants: Array<{ id: string; size: string; gtins: string[] }> = [];
     if (variantsRes.ok) {
       const variantsData = await variantsRes.json();
-      console.log("StockX variants response:", JSON.stringify(variantsData, null, 2));
       // Handle both array at root or nested under "variants"
       const variantsList = Array.isArray(variantsData) ? variantsData : (variantsData.variants ?? []);
       variants = variantsList.map(
@@ -114,7 +111,7 @@ export async function GET(
         }
       );
     } else {
-      console.log("Variants fetch failed:", variantsRes.status);
+      // Variants fetch failed
     }
 
     // Product attributes are nested

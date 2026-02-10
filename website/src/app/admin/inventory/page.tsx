@@ -106,7 +106,7 @@ export default function InventoryPage() {
       setProducts(data as Product[]);
       setStats(invStats);
     } catch {
-      console.error("Failed to fetch inventory");
+      // Failed to fetch inventory
     } finally {
       setLoading(false);
       setRefreshing(false);

@@ -39,8 +39,6 @@ export async function POST(request: NextRequest) {
       objectId: string;
     };
 
-    console.log(`Clover webhook received: type=${type}, merchantId=${merchantId}, objectId=${objectId}`);
-
     const supabase = createAdminClient();
 
     // Fetch Clover settings to get the access token
@@ -62,11 +60,11 @@ export async function POST(request: NextRequest) {
     if (type === "order" || type === "CREATE" || type === "UPDATE") {
       await handleOrderWebhook(supabase, clover, objectId);
     } else if (type === "inventory") {
-      console.log(`Inventory webhook for item ${objectId} - sync triggered`);
+      // Inventory webhook - sync triggered
     } else if (type === "payment") {
-      console.log(`Payment webhook for ${objectId} - logged`);
+      // Payment webhook - logged
     } else {
-      console.log(`Unhandled Clover webhook type: ${type}`);
+      // Unhandled webhook type
     }
 
     return NextResponse.json({ received: true }, { status: 200 });
@@ -93,7 +91,7 @@ async function handleOrderWebhook(
 
   // Only process completed/paid orders
   if (cloverOrder.state !== "locked" && cloverOrder.state !== "paid") {
-    console.log(`Skipping Clover order ${orderId} with state: ${cloverOrder.state}`);
+    // Skipping non-completed order
     return;
   }
 
@@ -105,7 +103,7 @@ async function handleOrderWebhook(
     .single();
 
   if (existingOrder) {
-    console.log(`Clover order ${orderId} already synced, skipping`);
+    // Already synced
     return;
   }
 
@@ -150,7 +148,7 @@ async function handleOrderWebhook(
     return;
   }
 
-  console.log(`Clover order ${orderId} synced as ${orderNumber}`);
+  // Order synced successfully
 
   // Decrement product stock for each line item
   for (const item of lineItems) {
@@ -184,7 +182,7 @@ async function handleOrderWebhook(
         source: "clover_webhook",
       });
 
-      console.log(`Stock decremented for product ${product.id}: ${product.quantity} -> ${newQuantity}`);
+      // Stock decremented
     }
   }
 }

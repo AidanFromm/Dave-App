@@ -10,13 +10,17 @@ import {
   Settings,
   Box,
   ScanBarcode,
+  Package,
+  Flame,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const NAV_ITEMS = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/admin/products", label: "Products", icon: Package },
   { href: "/admin/inventory", label: "Inventory", icon: Box },
   { href: "/admin/scan", label: "Scan In", icon: ScanBarcode },
+  { href: "/admin/drops", label: "Drops", icon: Flame },
   { href: "/admin/orders", label: "Orders", icon: ShoppingCart },
   { href: "/admin/customers", label: "Customers", icon: Users },
   { href: "/admin/analytics", label: "Analytics", icon: BarChart3 },

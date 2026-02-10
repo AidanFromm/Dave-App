@@ -93,8 +93,6 @@ export async function POST(request: Request) {
 
     if (orderError) {
       console.error("Failed to create order:", orderError.message);
-    } else {
-      console.log(`Order ${orderNumber} created from Stripe payment ${paymentIntent.id}`);
     }
 
     // Decrement inventory for each item
@@ -142,7 +140,7 @@ export async function POST(request: Request) {
         source: "stripe_webhook",
       });
 
-      console.log(`Stock decremented for ${product.name}: ${previousQuantity} -> ${newQuantity}`);
+      // Stock decremented
     }
   }
 

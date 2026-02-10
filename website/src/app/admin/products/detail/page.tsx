@@ -85,7 +85,7 @@ function ProductDetailPage() {
       const data = await getProductVariants(productName);
       setVariants(data);
     } catch {
-      console.error("Failed to load variants");
+      // Failed to load variants
     } finally {
       setLoading(false);
     }

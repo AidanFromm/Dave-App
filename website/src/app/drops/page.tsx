@@ -110,7 +110,7 @@ export default function DropsPage() {
           setRecentDrops(data.products ?? []);
         }
       } catch {
-        console.error("Failed to load drops");
+        // Failed to load drops
       } finally {
         setLoading(false);
       }

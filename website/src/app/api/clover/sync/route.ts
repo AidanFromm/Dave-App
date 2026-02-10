@@ -116,9 +116,6 @@ export async function POST() {
       }
 
       result.updated += 1;
-      console.log(
-        `Synced ${matchedProduct.name}: ${currentQuantity} -> ${cloverQuantity}`
-      );
     }
 
     // Update last_sync_at
@@ -126,8 +123,6 @@ export async function POST() {
       .from("clover_settings")
       .update({ last_sync_at: now, updated_at: now })
       .eq("id", settings.id);
-
-    console.log(`Clover sync complete: ${result.updated} updated, ${result.matched} matched, ${result.skipped} skipped`);
 
     return NextResponse.json({
       success: true,

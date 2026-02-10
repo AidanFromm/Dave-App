@@ -29,7 +29,7 @@ export default function AdminProductsPage() {
         const data = await getGroupedProducts();
         setProducts(data);
       } catch (err) {
-        console.error("Failed to load products:", err);
+        // Failed to load products
       } finally {
         setLoading(false);
       }

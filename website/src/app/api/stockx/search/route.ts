@@ -63,7 +63,6 @@ export async function GET(request: Request) {
 
     if (!res.ok) {
       const errorText = await res.text();
-      console.error("StockX API error:", res.status, errorText);
       return NextResponse.json(
         { error: `StockX API error: ${res.status}`, detail: errorText },
         { status: res.status }
@@ -71,7 +70,6 @@ export async function GET(request: Request) {
     }
 
     const data = await res.json();
-    console.log("StockX search raw response:", JSON.stringify(data, null, 2));
 
     const products = (data.products ?? []).map((p: Record<string, unknown>) => {
       const attrs = p.productAttributes as Record<string, unknown> | undefined;

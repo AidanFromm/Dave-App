@@ -154,15 +154,12 @@ export default function ReviewPage() {
         });
 
         const data = await res.json();
-        console.log("Checkout API response:", data);
         
         if (data.clientSecret) {
           setClientSecret(data.clientSecret);
-        } else {
-          console.error("Checkout failed:", data.error, data.detail, data.code);
         }
-      } catch (err) {
-        console.error("Checkout fetch error:", err);
+      } catch {
+        // Payment initialization failed
       }
       setLoading(false);
     };
@@ -339,9 +336,9 @@ export default function ReviewPage() {
           {/* Terms */}
           <p className="text-center text-xs text-muted-foreground">
             By placing your order, you agree to our{" "}
-            <Link href="#terms" className="text-primary hover:underline">terms</Link>
+            <Link href="/terms" className="text-primary hover:underline">terms</Link>
             {" "}and{" "}
-            <Link href="#privacy" className="text-primary hover:underline">privacy policy</Link>.
+            <Link href="/privacy" className="text-primary hover:underline">privacy policy</Link>.
           </p>
         </motion.div>
       </div>
