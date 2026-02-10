@@ -277,6 +277,8 @@ export function ProductDetailClient({ product: initialProduct, sizeVariants = []
                       key={m.size ?? m.id}
                       onClick={() => handleSizeClick(m)}
                       disabled={isSoldOut}
+                      aria-label={`Size ${m.size}${isSoldOut ? ", sold out" : `, ${formatCurrency(m.price)}, ${m.quantity} left`}`}
+                      aria-pressed={m.variantIds.includes(product.id)}
                       className={cn(
                         "flex flex-col items-center rounded-xl border-2 px-4 py-2.5 text-sm font-medium transition-all min-w-[60px] cursor-pointer",
                         isActive

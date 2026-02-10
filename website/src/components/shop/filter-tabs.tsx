@@ -25,6 +25,8 @@ export function FilterTabs({ selected, onChange }: FilterTabsProps) {
         <button
           key={f.key}
           onClick={() => onChange(f.key)}
+          aria-label={`Filter by ${f.label}`}
+          aria-pressed={selected === f.key}
           className={cn(
             "whitespace-nowrap rounded-full px-4 py-1.5 text-sm font-medium transition-colors",
             selected === f.key

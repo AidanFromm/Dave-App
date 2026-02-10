@@ -1,3 +1,4 @@
+import { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -14,6 +15,15 @@ import {
   User,
   LogOut,
 } from "lucide-react";
+
+export const metadata: Metadata = {
+  title: "My Account",
+  description: "Manage your Secured Tampa account, view orders, and update settings.",
+  openGraph: {
+    title: "My Account | Secured Tampa",
+    description: "Manage your Secured Tampa account.",
+  },
+};
 
 export default async function AccountPage() {
   const supabase = await createClient();

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useState } from "react";
 import {
   LayoutDashboard,
   ShoppingCart,
@@ -14,6 +15,8 @@ import {
   Flame,
   Sparkles,
   Store,
+  Menu,
+  X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -33,6 +36,7 @@ const NAV_ITEMS = [
 
 export function AdminSidebar() {
   const pathname = usePathname();
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
     <>
@@ -67,28 +71,67 @@ export function AdminSidebar() {
         </nav>
       </aside>
 
-      {/* Mobile nav */}
-      <div className="flex gap-1 overflow-x-auto border-b border-border bg-card p-2 scrollbar-hide md:hidden">
-        {NAV_ITEMS.map((item) => {
-          const isActive = pathname === item.href ||
-            (item.href !== "/admin" && pathname.startsWith(item.href));
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={cn(
-                "flex items-center gap-1.5 whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-medium transition-colors",
-                isActive
-                  ? "bg-primary text-primary-foreground"
-                  : "text-muted-foreground hover:bg-accent"
-              )}
-            >
-              <item.icon className="h-3.5 w-3.5" />
-              {item.label}
-            </Link>
-          );
-        })}
+      {/* Mobile hamburger + slide-out drawer */}
+      <div className="flex items-center border-b border-border bg-card p-2 md:hidden">
+        <button
+          onClick={() => setMobileOpen(true)}
+          className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-accent"
+          aria-label="Open admin menu"
+        >
+          <Menu className="h-5 w-5" />
+          <span className="text-lg font-bold text-primary">SECURED</span>
+          <span className="text-xs font-medium text-muted-foreground">Admin</span>
+        </button>
       </div>
+
+      {/* Mobile drawer overlay */}
+      {mobileOpen && (
+        <div className="fixed inset-0 z-50 md:hidden">
+          {/* Backdrop */}
+          <div
+            className="absolute inset-0 bg-black/50"
+            onClick={() => setMobileOpen(false)}
+          />
+          {/* Drawer */}
+          <aside className="absolute left-0 top-0 h-full w-64 bg-card shadow-xl animate-in slide-in-from-left duration-200">
+            <div className="flex h-14 items-center justify-between border-b border-border px-4">
+              <Link href="/admin" className="flex items-center gap-2" onClick={() => setMobileOpen(false)}>
+                <span className="text-lg font-bold text-primary">SECURED</span>
+                <span className="text-xs font-medium text-muted-foreground">Admin</span>
+              </Link>
+              <button
+                onClick={() => setMobileOpen(false)}
+                className="rounded-lg p-1 text-muted-foreground hover:bg-accent"
+                aria-label="Close admin menu"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <nav className="space-y-1 p-3">
+              {NAV_ITEMS.map((item) => {
+                const isActive = pathname === item.href ||
+                  (item.href !== "/admin" && pathname.startsWith(item.href));
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    onClick={() => setMobileOpen(false)}
+                    className={cn(
+                      "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                      isActive
+                        ? "bg-primary/10 text-primary"
+                        : "text-muted-foreground hover:bg-accent hover:text-foreground"
+                    )}
+                  >
+                    <item.icon className="h-4 w-4" />
+                    {item.label}
+                  </Link>
+                );
+              })}
+            </nav>
+          </aside>
+        </div>
+      )}
     </>
   );
 }

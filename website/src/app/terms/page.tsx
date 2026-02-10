@@ -1,111 +1,113 @@
-import { Metadata } from "next";
+import type { Metadata } from "next";
+import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: "Terms of Service | Secured Tampa",
-  description: "Terms and conditions for using Secured Tampa's website and services.",
+  title: "Terms of Service",
 };
 
 export default function TermsPage() {
   return (
     <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6 lg:px-8">
       <h1 className="text-3xl font-bold">Terms of Service</h1>
-      <p className="mt-2 text-sm text-muted-foreground">Last updated: February 2026</p>
+      <p className="mt-2 text-sm text-muted-foreground">Last updated: February 10, 2026</p>
 
-      <div className="mt-8 prose prose-neutral dark:prose-invert max-w-none">
-        <p>
-          Welcome to Secured Tampa. By accessing or using our website (securedtampa.com), you agree 
-          to be bound by these Terms of Service. Please read them carefully.
-        </p>
+      <div className="mt-8 space-y-8 text-sm leading-relaxed text-muted-foreground">
+        <section>
+          <h2 className="text-lg font-semibold text-foreground">1. Overview</h2>
+          <p className="mt-2">
+            These Terms of Service ("Terms") govern your use of the Secured Tampa website and online store
+            operated by Secured Tampa, located in Tampa, Florida. By accessing or purchasing from our site,
+            you agree to be bound by these Terms.
+          </p>
+        </section>
 
-        <h2>1. Acceptance of Terms</h2>
-        <p>
-          By using our website or making a purchase, you agree to these Terms of Service and our 
-          Privacy Policy. If you do not agree, please do not use our services.
-        </p>
+        <section>
+          <h2 className="text-lg font-semibold text-foreground">2. Products</h2>
+          <p className="mt-2">
+            Secured Tampa sells premium sneakers, streetwear, Pokémon cards, and related collectibles.
+            All products are described as accurately as possible; however, we do not warrant that product
+            descriptions, images, or pricing are error-free. We reserve the right to correct errors and
+            cancel orders placed at incorrect prices.
+          </p>
+        </section>
 
-        <h2>2. Products and Authenticity</h2>
-        <p>
-          All sneakers and collectibles sold by Secured Tampa are guaranteed 100% authentic. We 
-          carefully verify every item before listing. If you believe you have received an 
-          inauthentic item, contact us immediately for a full refund.
-        </p>
+        <section>
+          <h2 className="text-lg font-semibold text-foreground">3. Orders &amp; Payment</h2>
+          <p className="mt-2">
+            All payments are processed securely via Stripe. By placing an order you represent that you are
+            authorized to use the payment method provided. We reserve the right to refuse or cancel any order
+            for any reason, including suspected fraud.
+          </p>
+        </section>
 
-        <h2>3. Pricing and Payment</h2>
-        <ul>
-          <li>All prices are in USD and subject to change without notice</li>
-          <li>Prices do not include shipping unless stated otherwise</li>
-          <li>Payment is processed securely through Stripe</li>
-          <li>Orders are confirmed only after successful payment</li>
-        </ul>
+        <section>
+          <h2 className="text-lg font-semibold text-foreground">4. Shipping &amp; Pickup</h2>
+          <p className="mt-2">
+            We offer standard shipping (3–5 business days) and local store pickup in Tampa, FL.
+            Shipping costs and delivery estimates are provided at checkout. Risk of loss passes to the
+            buyer upon delivery to the carrier.
+          </p>
+        </section>
 
-        <h2>4. Orders and Availability</h2>
-        <ul>
-          <li>All orders are subject to product availability</li>
-          <li>We reserve the right to limit quantities or refuse orders</li>
-          <li>Order confirmation emails do not guarantee fulfillment</li>
-          <li>If an item is unavailable, we will notify you and issue a full refund</li>
-        </ul>
+        <section>
+          <h2 className="text-lg font-semibold text-foreground">5. Returns &amp; Exchanges</h2>
+          <p className="mt-2">
+            Items may be returned within 14 days of delivery in their original, unworn condition with tags
+            attached. Pokémon cards and sealed collectibles are final sale unless received damaged. Refunds
+            are issued to the original payment method within 5–7 business days of receiving the return.
+            Shipping costs are non-refundable.
+          </p>
+        </section>
 
-        <h2>5. Shipping</h2>
-        <p>
-          Please refer to our <a href="/shipping" className="text-primary hover:underline">Shipping Policy</a> for 
-          detailed information about shipping methods, timeframes, and costs.
-        </p>
+        <section>
+          <h2 className="text-lg font-semibold text-foreground">6. Authenticity Guarantee</h2>
+          <p className="mt-2">
+            All sneakers sold by Secured Tampa are guaranteed authentic. If you believe you have received
+            a non-authentic item, contact us within 7 days and we will investigate and provide a full refund
+            if verified.
+          </p>
+        </section>
 
-        <h2>6. Returns and Refunds</h2>
-        <p>
-          Please refer to our <a href="/returns" className="text-primary hover:underline">Return Policy</a> for 
-          detailed information about returns, exchanges, and refunds.
-        </p>
+        <section>
+          <h2 className="text-lg font-semibold text-foreground">7. Intellectual Property</h2>
+          <p className="mt-2">
+            All content on this site, including logos, text, graphics, and software, is the property of
+            Secured Tampa or its licensors and is protected by copyright and trademark laws.
+          </p>
+        </section>
 
-        <h2>7. User Accounts</h2>
-        <ul>
-          <li>You are responsible for maintaining the security of your account</li>
-          <li>You must provide accurate and complete information</li>
-          <li>You are responsible for all activity under your account</li>
-          <li>We reserve the right to suspend or terminate accounts for violations</li>
-        </ul>
+        <section>
+          <h2 className="text-lg font-semibold text-foreground">8. Limitation of Liability</h2>
+          <p className="mt-2">
+            To the maximum extent permitted by law, Secured Tampa shall not be liable for any indirect,
+            incidental, or consequential damages arising from your use of the site or purchase of products.
+          </p>
+        </section>
 
-        <h2>8. Intellectual Property</h2>
-        <p>
-          All content on this website, including images, text, logos, and design, is owned by 
-          Secured Tampa LLC or its licensors. You may not copy, reproduce, or distribute our 
-          content without written permission.
-        </p>
+        <section>
+          <h2 className="text-lg font-semibold text-foreground">9. Governing Law</h2>
+          <p className="mt-2">
+            These Terms are governed by the laws of the State of Florida. Any disputes shall be resolved
+            in the courts of Hillsborough County, Florida.
+          </p>
+        </section>
 
-        <h2>9. Limitation of Liability</h2>
-        <p>
-          Secured Tampa LLC shall not be liable for any indirect, incidental, special, or 
-          consequential damages arising from the use of our website or products. Our total 
-          liability shall not exceed the amount you paid for the product in question.
-        </p>
+        <section>
+          <h2 className="text-lg font-semibold text-foreground">10. Contact</h2>
+          <p className="mt-2">
+            Questions about these Terms? Contact us at{" "}
+            <a href="mailto:support@securedtampa.com" className="text-primary hover:underline">
+              support@securedtampa.com
+            </a>{" "}
+            or visit us in Tampa, FL.
+          </p>
+        </section>
+      </div>
 
-        <h2>10. Indemnification</h2>
-        <p>
-          You agree to indemnify and hold harmless Secured Tampa LLC from any claims, damages, 
-          or expenses arising from your use of our website or violation of these terms.
-        </p>
-
-        <h2>11. Governing Law</h2>
-        <p>
-          These Terms shall be governed by the laws of the State of Florida, without regard to 
-          conflict of law principles.
-        </p>
-
-        <h2>12. Changes to Terms</h2>
-        <p>
-          We reserve the right to modify these Terms at any time. Changes will be posted on this 
-          page. Continued use of our website after changes constitutes acceptance.
-        </p>
-
-        <h2>13. Contact</h2>
-        <p>
-          For questions about these Terms, contact us at:
-        </p>
-        <ul>
-          <li>Email: securedtampa.llc@gmail.com</li>
-          <li>Location: Tampa, FL</li>
-        </ul>
+      <div className="mt-12 border-t pt-6">
+        <Link href="/privacy" className="text-sm text-primary hover:underline">
+          Privacy Policy →
+        </Link>
       </div>
     </div>
   );

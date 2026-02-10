@@ -7,14 +7,12 @@ import {
   MapPin,
   Phone,
   Mail,
-  Users,
   Link2,
   RefreshCw,
   CheckCircle,
   AlertCircle,
   Bell,
   Pencil,
-  Shield,
   Clock,
   ExternalLink,
   ScanBarcode,
@@ -37,13 +35,6 @@ interface CloverStatus {
   lastSyncAt: string | null;
 }
 
-interface StaffMember {
-  id: string;
-  name: string;
-  email: string;
-  role: string;
-}
-
 const CLOVER_APP_ID = process.env.NEXT_PUBLIC_CLOVER_APP_ID ?? "";
 
 export default function SettingsPage() {
@@ -58,12 +49,37 @@ export default function SettingsPage() {
   const [catalogCount, setCatalogCount] = useState<number | null>(null);
   const [stockxConnected, setStockxConnected] = useState<boolean | null>(null);
 
-  // Placeholder staff data
-  const staffMembers: StaffMember[] = [
-    { id: "1", name: "Store Owner", email: "securedtampa.llc@gmail.com", role: "owner" },
-  ];
+  // Store settings state
+  const [storeEditing, setStoreEditing] = useState(false);
+  const [storeName, setStoreName] = useState("Secured Tampa");
+  const [storeAddress, setStoreAddress] = useState("Tampa, FL");
+  const [storePhone, setStorePhone] = useState("");
+  const [storeEmail, setStoreEmail] = useState("securedtampa.llc@gmail.com");
+
+  // Notification preferences state
+  const [emailNotifications, setEmailNotifications] = useState(true);
+  const [orderAlerts, setOrderAlerts] = useState(true);
 
   useEffect(() => {
+    // Load store settings from localStorage
+    try {
+      const saved = localStorage.getItem("secured_store_settings");
+      if (saved) {
+        const s = JSON.parse(saved);
+        if (s.storeName) setStoreName(s.storeName);
+        if (s.storeAddress) setStoreAddress(s.storeAddress);
+        if (s.storePhone !== undefined) setStorePhone(s.storePhone);
+        if (s.storeEmail) setStoreEmail(s.storeEmail);
+      }
+      const notifSaved = localStorage.getItem("secured_notification_prefs");
+      if (notifSaved) {
+        const n = JSON.parse(notifSaved);
+        if (n.emailNotifications !== undefined) setEmailNotifications(n.emailNotifications);
+        if (n.orderAlerts !== undefined) setOrderAlerts(n.orderAlerts);
+        if (n.lowStockThreshold !== undefined) setLowStockThreshold(n.lowStockThreshold);
+      }
+    } catch {}
+
     async function fetchSettings() {
       try {
         const res = await fetch("/api/admin/settings/clover");
@@ -156,19 +172,6 @@ export default function SettingsPage() {
     });
   }
 
-  function getRoleBadgeClasses(role: string): string {
-    switch (role) {
-      case "owner":
-        return "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400";
-      case "manager":
-        return "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400";
-      case "staff":
-        return "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300";
-      default:
-        return "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400";
-    }
-  }
-
   if (loading) {
     return (
       <div className="space-y-6">
@@ -196,115 +199,99 @@ export default function SettingsPage() {
             <Store className="h-5 w-5 text-primary" />
             <h3 className="text-lg font-semibold">Store Settings</h3>
           </div>
-          <button
-            className="flex items-center gap-1.5 text-sm text-primary hover:text-primary/80 transition-colors"
-            onClick={() => toast.info("Store settings editing coming soon")}
-          >
-            <Pencil className="h-4 w-4" />
-            Edit
-          </button>
+          {!storeEditing ? (
+            <button
+              className="flex items-center gap-1.5 text-sm text-primary hover:text-primary/80 transition-colors"
+              onClick={() => setStoreEditing(true)}
+            >
+              <Pencil className="h-4 w-4" />
+              Edit
+            </button>
+          ) : (
+            <div className="flex gap-2">
+              <button
+                className="rounded-lg border border-border px-3 py-1.5 text-sm font-medium hover:bg-muted transition-colors"
+                onClick={() => setStoreEditing(false)}
+              >
+                Cancel
+              </button>
+              <button
+                className="rounded-lg bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
+                onClick={() => {
+                  const settings = { storeName, storeAddress, storePhone, storeEmail };
+                  localStorage.setItem("secured_store_settings", JSON.stringify(settings));
+                  setStoreEditing(false);
+                  toast.success("Store settings saved!");
+                }}
+              >
+                Save
+              </button>
+            </div>
+          )}
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="space-y-4">
-            <div className="flex items-start gap-3">
-              <Store className="h-4 w-4 text-muted-foreground mt-1" />
-              <div>
-                <p className="text-sm text-muted-foreground">Store Name</p>
-                <p className="font-medium">Secured Tampa</p>
+        {storeEditing ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-4">
+              <div className="space-y-1.5">
+                <label className="text-sm text-muted-foreground flex items-center gap-2"><Store className="h-4 w-4" /> Store Name</label>
+                <input value={storeName} onChange={(e) => setStoreName(e.target.value)} className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50" />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-sm text-muted-foreground flex items-center gap-2"><MapPin className="h-4 w-4" /> Address</label>
+                <input value={storeAddress} onChange={(e) => setStoreAddress(e.target.value)} className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50" />
               </div>
             </div>
-            <div className="flex items-start gap-3">
-              <MapPin className="h-4 w-4 text-muted-foreground mt-1" />
-              <div>
-                <p className="text-sm text-muted-foreground">Address</p>
-                <p className="font-medium">Tampa, FL</p>
+            <div className="space-y-4">
+              <div className="space-y-1.5">
+                <label className="text-sm text-muted-foreground flex items-center gap-2"><Phone className="h-4 w-4" /> Phone</label>
+                <input value={storePhone} onChange={(e) => setStorePhone(e.target.value)} placeholder="(555) 555-5555" className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50" />
               </div>
-            </div>
-          </div>
-          <div className="space-y-4">
-            <div className="flex items-start gap-3">
-              <Phone className="h-4 w-4 text-muted-foreground mt-1" />
-              <div>
-                <p className="text-sm text-muted-foreground">Phone</p>
-                <p className="font-medium">--</p>
-              </div>
-            </div>
-            <div className="flex items-start gap-3">
-              <Mail className="h-4 w-4 text-muted-foreground mt-1" />
-              <div>
-                <p className="text-sm text-muted-foreground">Email</p>
-                <p className="font-medium">securedtampa.llc@gmail.com</p>
+              <div className="space-y-1.5">
+                <label className="text-sm text-muted-foreground flex items-center gap-2"><Mail className="h-4 w-4" /> Email</label>
+                <input value={storeEmail} onChange={(e) => setStoreEmail(e.target.value)} className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50" />
               </div>
             </div>
           </div>
-        </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-4">
+              <div className="flex items-start gap-3">
+                <Store className="h-4 w-4 text-muted-foreground mt-1" />
+                <div>
+                  <p className="text-sm text-muted-foreground">Store Name</p>
+                  <p className="font-medium">{storeName}</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3">
+                <MapPin className="h-4 w-4 text-muted-foreground mt-1" />
+                <div>
+                  <p className="text-sm text-muted-foreground">Address</p>
+                  <p className="font-medium">{storeAddress}</p>
+                </div>
+              </div>
+            </div>
+            <div className="space-y-4">
+              <div className="flex items-start gap-3">
+                <Phone className="h-4 w-4 text-muted-foreground mt-1" />
+                <div>
+                  <p className="text-sm text-muted-foreground">Phone</p>
+                  <p className="font-medium">{storePhone || "--"}</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3">
+                <Mail className="h-4 w-4 text-muted-foreground mt-1" />
+                <div>
+                  <p className="text-sm text-muted-foreground">Email</p>
+                  <p className="font-medium">{storeEmail}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* Staff Management */}
-      <div className="rounded-xl shadow-card bg-card p-6">
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-2">
-            <Users className="h-5 w-5 text-primary" />
-            <h3 className="text-lg font-semibold">Staff Management</h3>
-          </div>
-          <button
-            className="flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
-            onClick={() => toast.info("Staff invitations coming soon")}
-          >
-            Invite Staff
-          </button>
-        </div>
-
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-border">
-                <th className="pb-3 text-left font-medium text-muted-foreground">
-                  Name
-                </th>
-                <th className="pb-3 text-left font-medium text-muted-foreground">
-                  Email
-                </th>
-                <th className="pb-3 text-left font-medium text-muted-foreground">
-                  Role
-                </th>
-                <th className="pb-3 text-right font-medium text-muted-foreground">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {staffMembers.map((member) => (
-                <tr key={member.id} className="border-b border-border/50">
-                  <td className="py-3 font-medium">{member.name}</td>
-                  <td className="py-3 text-muted-foreground">{member.email}</td>
-                  <td className="py-3">
-                    <span
-                      className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium capitalize ${getRoleBadgeClasses(member.role)}`}
-                    >
-                      <Shield className="h-3 w-3 mr-1" />
-                      {member.role}
-                    </span>
-                  </td>
-                  <td className="py-3 text-right">
-                    <button
-                      className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-                      onClick={() => toast.info("Staff management coming soon")}
-                    >
-                      Manage
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        <p className="mt-4 text-xs text-muted-foreground">
-          Staff management and role-based permissions are coming soon.
-        </p>
-      </div>
+      {/* Staff Management - hidden for now (solo operator) */}
 
       {/* Clover Integration */}
       <div className="rounded-xl shadow-card bg-card p-6">
@@ -477,6 +464,48 @@ export default function SettingsPage() {
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <div>
+              <p className="font-medium">Email Notifications</p>
+              <p className="text-sm text-muted-foreground">
+                Receive email notifications for important updates
+              </p>
+            </div>
+            <button
+              onClick={() => {
+                const next = !emailNotifications;
+                setEmailNotifications(next);
+                const prefs = { emailNotifications: next, orderAlerts, lowStockThreshold };
+                localStorage.setItem("secured_notification_prefs", JSON.stringify(prefs));
+                toast.success(next ? "Email notifications enabled" : "Email notifications disabled");
+              }}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${emailNotifications ? "bg-primary" : "bg-muted-foreground/30"}`}
+            >
+              <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${emailNotifications ? "translate-x-6" : "translate-x-1"}`} />
+            </button>
+          </div>
+
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="font-medium">Order Alerts</p>
+              <p className="text-sm text-muted-foreground">
+                Get notified when new orders come in
+              </p>
+            </div>
+            <button
+              onClick={() => {
+                const next = !orderAlerts;
+                setOrderAlerts(next);
+                const prefs = { emailNotifications, orderAlerts: next, lowStockThreshold };
+                localStorage.setItem("secured_notification_prefs", JSON.stringify(prefs));
+                toast.success(next ? "Order alerts enabled" : "Order alerts disabled");
+              }}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${orderAlerts ? "bg-primary" : "bg-muted-foreground/30"}`}
+            >
+              <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${orderAlerts ? "translate-x-6" : "translate-x-1"}`} />
+            </button>
+          </div>
+
+          <div className="flex items-center justify-between">
+            <div>
               <p className="font-medium">Low Stock Alert Threshold</p>
               <p className="text-sm text-muted-foreground">
                 Get notified when product stock falls below this number
@@ -494,19 +523,17 @@ export default function SettingsPage() {
                 className="w-20 rounded-lg border border-border bg-background px-3 py-1.5 text-sm text-center focus:outline-none focus:ring-2 focus:ring-primary/50"
               />
               <button
-                onClick={() =>
-                  toast.info("Notification settings will be saved automatically in a future update")
-                }
+                onClick={() => {
+                  const prefs = { emailNotifications, orderAlerts, lowStockThreshold };
+                  localStorage.setItem("secured_notification_prefs", JSON.stringify(prefs));
+                  toast.success("Threshold saved!");
+                }}
                 className="rounded-lg border border-border px-3 py-1.5 text-sm font-medium hover:bg-muted transition-colors"
               >
                 Save
               </button>
             </div>
           </div>
-
-          <p className="text-xs text-muted-foreground">
-            Email and push notification preferences are coming soon.
-          </p>
         </div>
       </div>
     </div>

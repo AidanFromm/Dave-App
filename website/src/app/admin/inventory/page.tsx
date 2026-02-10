@@ -322,6 +322,8 @@ export default function InventoryPage() {
                       setActiveFilter(tab.value);
                       setConditionFilter("all");
                     }}
+                    aria-label={`Filter by ${tab.label}`}
+                    aria-pressed={activeFilter === tab.value}
                     className={`
                       px-3 py-1.5 text-sm font-medium rounded-md transition-all
                       ${
@@ -354,6 +356,8 @@ export default function InventoryPage() {
                   <button
                     key={tab.value}
                     onClick={() => setConditionFilter(tab.value)}
+                    aria-label={`Filter by condition: ${tab.label}`}
+                    aria-pressed={conditionFilter === tab.value}
                     className={`
                       px-2.5 py-1 text-xs font-medium rounded-full transition-all
                       ${

@@ -1,104 +1,130 @@
-import { Metadata } from "next";
+import type { Metadata } from "next";
+import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: "Privacy Policy | Secured Tampa",
-  description: "Learn how Secured Tampa collects, uses, and protects your personal information.",
+  title: "Privacy Policy",
 };
 
 export default function PrivacyPage() {
   return (
     <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6 lg:px-8">
       <h1 className="text-3xl font-bold">Privacy Policy</h1>
-      <p className="mt-2 text-sm text-muted-foreground">Last updated: February 2026</p>
+      <p className="mt-2 text-sm text-muted-foreground">Last updated: February 10, 2026</p>
 
-      <div className="mt-8 prose prose-neutral dark:prose-invert max-w-none">
-        <p>
-          Secured Tampa LLC ("we," "us," or "our") operates securedtampa.com. This Privacy Policy 
-          explains how we collect, use, disclose, and safeguard your information when you visit our 
-          website or make a purchase.
-        </p>
+      <div className="mt-8 space-y-8 text-sm leading-relaxed text-muted-foreground">
+        <section>
+          <h2 className="text-lg font-semibold text-foreground">1. Information We Collect</h2>
+          <p className="mt-2">
+            When you visit or make a purchase on securedtampa.com, we collect the following information:
+          </p>
+          <ul className="mt-2 list-disc pl-6 space-y-1">
+            <li>Name, email address, and phone number</li>
+            <li>Shipping and billing address</li>
+            <li>Payment information (processed securely by Stripe — we never store card numbers)</li>
+            <li>Order history and preferences</li>
+            <li>Device and browser information via cookies and analytics</li>
+          </ul>
+        </section>
 
-        <h2>Information We Collect</h2>
-        <h3>Personal Information</h3>
-        <p>When you make a purchase or create an account, we may collect:</p>
-        <ul>
-          <li>Name and contact information (email, phone, address)</li>
-          <li>Billing and shipping addresses</li>
-          <li>Payment information (processed securely via Stripe)</li>
-          <li>Order history and preferences</li>
-        </ul>
+        <section>
+          <h2 className="text-lg font-semibold text-foreground">2. How We Use Your Information</h2>
+          <ul className="mt-2 list-disc pl-6 space-y-1">
+            <li>Process and fulfill your orders</li>
+            <li>Send order confirmations and shipping updates</li>
+            <li>Provide customer support</li>
+            <li>Notify you about new drops and promotions (with your consent)</li>
+            <li>Improve our website and services</li>
+            <li>Prevent fraud</li>
+          </ul>
+        </section>
 
-        <h3>Automatically Collected Information</h3>
-        <p>When you visit our site, we automatically collect:</p>
-        <ul>
-          <li>Device and browser information</li>
-          <li>IP address and location data</li>
-          <li>Pages visited and time spent on site</li>
-          <li>Referring website information</li>
-        </ul>
+        <section>
+          <h2 className="text-lg font-semibold text-foreground">3. Cookies</h2>
+          <p className="mt-2">
+            We use essential cookies to operate the site (e.g., cart, authentication) and analytics
+            cookies to understand how visitors use our site. You can disable cookies in your browser
+            settings, but some site features may not function properly.
+          </p>
+        </section>
 
-        <h2>How We Use Your Information</h2>
-        <p>We use your information to:</p>
-        <ul>
-          <li>Process and fulfill your orders</li>
-          <li>Send order confirmations and shipping updates</li>
-          <li>Respond to customer service requests</li>
-          <li>Send promotional emails (with your consent)</li>
-          <li>Improve our website and services</li>
-          <li>Prevent fraud and unauthorized transactions</li>
-        </ul>
+        <section>
+          <h2 className="text-lg font-semibold text-foreground">4. Payment Processing</h2>
+          <p className="mt-2">
+            All payments are processed by Stripe, Inc. Your payment card details are sent directly to
+            Stripe's secure servers and are never stored on our systems. Please review{" "}
+            <a
+              href="https://stripe.com/privacy"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-primary hover:underline"
+            >
+              Stripe's Privacy Policy
+            </a>{" "}
+            for more information.
+          </p>
+        </section>
 
-        <h2>Information Sharing</h2>
-        <p>We do not sell your personal information. We may share your data with:</p>
-        <ul>
-          <li><strong>Service Providers:</strong> Payment processors (Stripe), shipping carriers, email services</li>
-          <li><strong>Legal Requirements:</strong> When required by law or to protect our rights</li>
-        </ul>
+        <section>
+          <h2 className="text-lg font-semibold text-foreground">5. Data Sharing</h2>
+          <p className="mt-2">
+            We do not sell your personal information. We share data only with:
+          </p>
+          <ul className="mt-2 list-disc pl-6 space-y-1">
+            <li>Payment processors (Stripe) to complete transactions</li>
+            <li>Shipping carriers to deliver your orders</li>
+            <li>Analytics providers to improve our services</li>
+            <li>Law enforcement when required by law</li>
+          </ul>
+        </section>
 
-        <h2>Data Security</h2>
-        <p>
-          We implement industry-standard security measures to protect your information. All payment 
-          data is encrypted and processed through Stripe's secure payment infrastructure. However, 
-          no method of transmission over the Internet is 100% secure.
-        </p>
+        <section>
+          <h2 className="text-lg font-semibold text-foreground">6. Data Security</h2>
+          <p className="mt-2">
+            We implement industry-standard security measures including SSL encryption, secure
+            authentication, and regular security reviews to protect your personal information.
+          </p>
+        </section>
 
-        <h2>Your Rights</h2>
-        <p>You have the right to:</p>
-        <ul>
-          <li>Access, update, or delete your personal information</li>
-          <li>Opt-out of marketing communications</li>
-          <li>Request a copy of your data</li>
-        </ul>
-        <p>
-          To exercise these rights, contact us at securedtampa.llc@gmail.com
-        </p>
+        <section>
+          <h2 className="text-lg font-semibold text-foreground">7. Your Rights</h2>
+          <p className="mt-2">
+            You may request access to, correction of, or deletion of your personal data at any time
+            by contacting us. Florida residents may have additional rights under applicable state law.
+          </p>
+        </section>
 
-        <h2>Cookies</h2>
-        <p>
-          We use cookies to improve your browsing experience, remember your preferences, and 
-          analyze site traffic. You can control cookies through your browser settings.
-        </p>
+        <section>
+          <h2 className="text-lg font-semibold text-foreground">8. Children's Privacy</h2>
+          <p className="mt-2">
+            Our site is not intended for children under 13. We do not knowingly collect personal
+            information from children under 13.
+          </p>
+        </section>
 
-        <h2>Children's Privacy</h2>
-        <p>
-          Our website is not intended for children under 13. We do not knowingly collect 
-          information from children under 13.
-        </p>
+        <section>
+          <h2 className="text-lg font-semibold text-foreground">9. Changes to This Policy</h2>
+          <p className="mt-2">
+            We may update this Privacy Policy from time to time. Changes will be posted on this page
+            with an updated date.
+          </p>
+        </section>
 
-        <h2>Changes to This Policy</h2>
-        <p>
-          We may update this Privacy Policy from time to time. Changes will be posted on this 
-          page with an updated revision date.
-        </p>
+        <section>
+          <h2 className="text-lg font-semibold text-foreground">10. Contact Us</h2>
+          <p className="mt-2">
+            For privacy-related questions, contact us at{" "}
+            <a href="mailto:support@securedtampa.com" className="text-primary hover:underline">
+              support@securedtampa.com
+            </a>{" "}
+            or visit us in Tampa, FL.
+          </p>
+        </section>
+      </div>
 
-        <h2>Contact Us</h2>
-        <p>
-          If you have questions about this Privacy Policy, contact us at:
-        </p>
-        <ul>
-          <li>Email: securedtampa.llc@gmail.com</li>
-          <li>Location: Tampa, FL</li>
-        </ul>
+      <div className="mt-12 border-t pt-6">
+        <Link href="/terms" className="text-sm text-primary hover:underline">
+          ← Terms of Service
+        </Link>
       </div>
     </div>
   );

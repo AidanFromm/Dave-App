@@ -13,11 +13,46 @@ import confetti from "canvas-confetti";
 
 function ConfirmationContent() {
   const clearCart = useCartStore((s) => s.clearCart);
+  const items = useCartStore((s) => s.items);
+  const fulfillmentType = useCartStore((s) => s.fulfillmentType);
+  const shippingAddress = useCartStore((s) => s.shippingAddress);
+  const getSubtotal = useCartStore((s) => s.getSubtotal);
+  const getTax = useCartStore((s) => s.getTax);
+  const getShippingCost = useCartStore((s) => s.getShippingCost);
+  const getTotal = useCartStore((s) => s.getTotal);
   const searchParams = useSearchParams();
   const paymentIntent = searchParams.get("payment_intent");
   const [showConfetti, setShowConfetti] = useState(false);
 
   useEffect(() => {
+    // Send confirmation email before clearing cart
+    const email = sessionStorage.getItem("checkout_email") ?? "";
+    if (email && paymentIntent && items.length > 0) {
+      const orderNumber = paymentIntent.slice(-8).toUpperCase();
+      fetch("/api/send-confirmation", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email,
+          orderNumber,
+          items: items.map((item) => ({
+            name: item.product.name,
+            price: item.product.price,
+            quantity: item.quantity,
+            size: item.product.size || undefined,
+          })),
+          subtotal: getSubtotal(),
+          tax: getTax(),
+          shippingCost: getShippingCost(),
+          total: getTotal(),
+          fulfillmentType,
+          shippingAddress: shippingAddress || undefined,
+        }),
+      }).catch(() => {
+        // Email send failed silently — order is still confirmed
+      });
+    }
+
     // Clear cart after successful payment
     clearCart();
     sessionStorage.removeItem("checkout_email");
@@ -169,11 +204,33 @@ function ConfirmationContent() {
             Share your excitement!
           </p>
           <div className="mt-3 flex justify-center gap-3">
-            <Button variant="ghost" size="sm" className="text-muted-foreground">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-muted-foreground"
+              onClick={() =>
+                window.open(
+                  "https://twitter.com/intent/tweet?text=Just+copped+from+Secured+Tampa!&url=https://securedtampa.com",
+                  "_blank",
+                  "noopener,noreferrer"
+                )
+              }
+            >
               Share on X
             </Button>
-            <Button variant="ghost" size="sm" className="text-muted-foreground">
-              Share on Instagram
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-muted-foreground"
+              onClick={() =>
+                window.open(
+                  "https://instagram.com/securedtampa",
+                  "_blank",
+                  "noopener,noreferrer"
+                )
+              }
+            >
+              Follow us on Instagram
             </Button>
           </div>
         </motion.div>
