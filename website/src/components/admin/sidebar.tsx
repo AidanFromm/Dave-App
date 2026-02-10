@@ -13,6 +13,7 @@ import {
   Package,
   Flame,
   Sparkles,
+  Store,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -26,6 +27,7 @@ const NAV_ITEMS = [
   { href: "/admin/orders", label: "Orders", icon: ShoppingCart },
   { href: "/admin/customers", label: "Customers", icon: Users },
   { href: "/admin/analytics", label: "Analytics", icon: BarChart3 },
+  { href: "/admin/clover", label: "Clover POS", icon: Store },
   { href: "/admin/settings", label: "Settings", icon: Settings },
 ];
 

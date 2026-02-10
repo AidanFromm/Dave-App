@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getStripe } from "@/lib/stripe";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { generateOrderNumber } from "@/lib/constants";
+import { handleWebsiteSale } from "@/lib/clover-sync";
 import type Stripe from "stripe";
 
 interface OrderItem {
@@ -140,7 +141,8 @@ export async function POST(request: Request) {
         source: "stripe_webhook",
       });
 
-      // Stock decremented
+      // Sync stock to Clover (fire-and-forget)
+      handleWebsiteSale(item.id, item.qty).catch(() => {});
     }
   }
 

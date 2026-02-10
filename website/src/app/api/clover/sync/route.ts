@@ -1,143 +1,124 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+import {
+  syncFromClover,
+  syncToClover,
+  fullSync,
+  getSyncStatus,
+} from "@/lib/clover-sync";
+import { getCloverClient } from "@/lib/clover";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { CloverClient } from "@/lib/clover";
 
-interface SyncResult {
-  total: number;
-  matched: number;
-  updated: number;
-  skipped: number;
-  errors: string[];
+export async function GET(request: NextRequest) {
+  const action = request.nextUrl.searchParams.get("action");
+
+  if (action === "test") {
+    try {
+      const client = await getCloverClient();
+      if (!client) {
+        return NextResponse.json({
+          ok: false,
+          error: "Clover not configured. Add API keys or connect via OAuth.",
+        });
+      }
+      const result = await client.testConnection();
+      return NextResponse.json(result);
+    } catch (err) {
+      return NextResponse.json({
+        ok: false,
+        error: err instanceof Error ? err.message : "Unknown error",
+      });
+    }
+  }
+
+  if (action === "status") {
+    try {
+      const status = await getSyncStatus();
+      return NextResponse.json(status);
+    } catch (err) {
+      return NextResponse.json({
+        isConnected: false,
+        lastSyncAt: null,
+        mismatches: [],
+        error: err instanceof Error ? err.message : "Unknown error",
+      });
+    }
+  }
+
+  return NextResponse.json({ error: "Invalid action" }, { status: 400 });
 }
 
-export async function POST() {
+export async function POST(request: NextRequest) {
   try {
-    const supabase = createAdminClient();
+    const body = await request.json();
+    const direction = body.direction as string;
+    const productId = body.productId as string | undefined;
 
-    // Fetch active Clover settings
-    const { data: settings, error: settingsError } = await supabase
-      .from("clover_settings")
-      .select("*")
-      .eq("is_active", true)
-      .single();
-
-    if (settingsError || !settings || !settings.merchant_id || !settings.access_token) {
-      return NextResponse.json(
-        { error: "Clover not connected. Please connect Clover first." },
-        { status: 400 }
-      );
-    }
-
-    const clover = new CloverClient(settings.merchant_id, settings.access_token);
-
-    // Fetch all items from Clover
-    const cloverItems = await clover.getItems();
-
-    if (cloverItems.length === 0) {
-      return NextResponse.json(
-        { error: "No items found in Clover inventory" },
-        { status: 404 }
-      );
-    }
-
-    // Fetch all products from Supabase
-    const { data: products } = await supabase.from("products").select("*");
-
-    if (!products || products.length === 0) {
-      return NextResponse.json(
-        { error: "No products found in database" },
-        { status: 404 }
-      );
-    }
-
-    const result: SyncResult = {
-      total: cloverItems.length,
-      matched: 0,
-      updated: 0,
-      skipped: 0,
-      errors: [],
-    };
-
-    const now = new Date().toISOString();
-
-    for (const cloverItem of cloverItems) {
-      // Try to match product by SKU or barcode
-      const matchedProduct = products.find((p) => {
-        if (cloverItem.sku && p.sku && cloverItem.sku === p.sku) return true;
-        if (cloverItem.code && p.barcode && cloverItem.code === p.barcode) return true;
-        return false;
+    if (direction === "from") {
+      const result = await syncFromClover();
+      return NextResponse.json({
+        success: result.success,
+        summary: result,
       });
-
-      if (!matchedProduct) {
-        result.skipped += 1;
-        continue;
-      }
-
-      result.matched += 1;
-
-      const cloverQuantity = cloverItem.stockCount ?? 0;
-      const currentQuantity = matchedProduct.quantity ?? 0;
-
-      // Only update if quantities differ
-      if (cloverQuantity === currentQuantity) {
-        result.skipped += 1;
-        continue;
-      }
-
-      const quantityChange = cloverQuantity - currentQuantity;
-
-      // Update product quantity
-      const { error: updateError } = await supabase
-        .from("products")
-        .update({ quantity: cloverQuantity, updated_at: now })
-        .eq("id", matchedProduct.id);
-
-      if (updateError) {
-        result.errors.push(`Failed to update ${matchedProduct.name}: ${updateError.message}`);
-        continue;
-      }
-
-      // Log inventory adjustment
-      const { error: logError } = await supabase
-        .from("inventory_adjustments")
-        .insert({
-          product_id: matchedProduct.id,
-          quantity_change: quantityChange,
-          reason: "adjustment",
-          previous_quantity: currentQuantity,
-          new_quantity: cloverQuantity,
-          notes: `Clover sync - Item: ${cloverItem.name}`,
-          adjusted_by: "clover_sync",
-          source: "clover_webhook",
-        });
-
-      if (logError) {
-        console.error(`Failed to log adjustment for ${matchedProduct.name}:`, logError.message);
-      }
-
-      result.updated += 1;
     }
 
-    // Update last_sync_at
-    await supabase
-      .from("clover_settings")
-      .update({ last_sync_at: now, updated_at: now })
-      .eq("id", settings.id);
+    if (direction === "to") {
+      if (productId) {
+        const result = await syncToClover(productId);
+        return NextResponse.json(result);
+      }
+      // Sync all products to Clover
+      const supabase = createAdminClient();
+      const { data: products } = await supabase
+        .from("products")
+        .select("id")
+        .eq("is_active", true);
 
-    return NextResponse.json({
-      success: true,
-      summary: {
-        total: result.total,
-        matched: result.matched,
-        updated: result.updated,
-        skipped: result.skipped,
-        errors: result.errors,
-      },
-    });
+      if (!products || products.length === 0) {
+        return NextResponse.json({
+          success: true,
+          summary: { total: 0, matched: 0, updated: 0, created: 0, skipped: 0, errors: [] },
+        });
+      }
+
+      let updated = 0;
+      let created = 0;
+      const errors: string[] = [];
+
+      for (const p of products) {
+        const r = await syncToClover(p.id);
+        if (r.success) {
+          updated += 1;
+        } else {
+          errors.push(r.error ?? "Unknown");
+        }
+      }
+
+      return NextResponse.json({
+        success: errors.length === 0,
+        summary: {
+          total: products.length,
+          matched: updated,
+          updated,
+          created,
+          skipped: 0,
+          errors,
+        },
+      });
+    }
+
+    if (direction === "full") {
+      const result = await fullSync();
+      return NextResponse.json({
+        success: result.success,
+        summary: result,
+      });
+    }
+
+    return NextResponse.json({ error: "Invalid direction" }, { status: 400 });
   } catch (error) {
     console.error("Clover sync error:", error);
     return NextResponse.json(
-      { error: "Failed to sync with Clover" },
+      { success: false, error: "Failed to sync with Clover" },
       { status: 500 }
     );
   }

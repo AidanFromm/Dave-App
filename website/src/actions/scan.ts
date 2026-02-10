@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { saveBarcodeCatalogEntry } from "./barcode";
+import { syncToClover } from "@/lib/clover-sync";
 import type { ScanFormData } from "@/types/barcode";
 
 export async function addScannedProductToInventory(data: ScanFormData): Promise<{
@@ -84,6 +85,9 @@ export async function addScannedProductToInventory(data: ScanFormData): Promise<
       });
     }
 
+    // Push updated stock to Clover (fire-and-forget)
+    syncToClover(existing.id).catch(() => {});
+
     return { productId: existing.id, error: null };
   }
 
@@ -164,6 +168,9 @@ export async function addScannedProductToInventory(data: ScanFormData): Promise<
       product_type: data.productType,
     });
   }
+
+  // Push new product to Clover (fire-and-forget)
+  syncToClover(product.id).catch(() => {});
 
   return { productId: product.id, error: null };
 }
