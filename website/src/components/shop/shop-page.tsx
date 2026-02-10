@@ -61,7 +61,7 @@ export function ShopPage({ initialProducts, categories }: ShopPageProps) {
         products = products.filter((p) => p.condition === "new");
         break;
       case "used":
-        products = products.filter((p) => p.condition === "used");
+        products = products.filter((p) => p.condition !== "new");
         break;
       case "pokemon":
         if (pokemonCategoryId) {

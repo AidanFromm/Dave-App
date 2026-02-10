@@ -435,17 +435,17 @@ export default function InventoryPage() {
                         <tr className="border-b last:border-b-0 hover:bg-muted/20 transition-colors cursor-pointer">
                           <td className="px-5 py-4 align-middle">
                             {row.image ? (
-                              <div className="w-[76px] h-[76px] rounded-lg bg-muted/30 flex items-center justify-center p-1.5">
+                              <div className="w-[76px] h-[76px] rounded-xl bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 flex items-center justify-center p-2 shadow-sm border border-gray-100 dark:border-gray-700">
                                 <Image
                                   src={row.image}
                                   alt={row.name}
                                   width={76}
                                   height={76}
-                                  className="rounded-md object-contain w-full h-full"
+                                  className="rounded-md object-contain w-full h-full mix-blend-multiply dark:mix-blend-normal"
                                 />
                               </div>
                             ) : (
-                              <div className="w-[76px] h-[76px] rounded-lg bg-muted/30 flex items-center justify-center">
+                              <div className="w-[76px] h-[76px] rounded-xl bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 flex items-center justify-center border border-gray-100 dark:border-gray-700">
                                 <Package className="h-6 w-6 text-muted-foreground/50" />
                               </div>
                             )}

@@ -246,7 +246,13 @@ export default function ScanPage() {
             if (productRes.ok) {
               const productData = await productRes.json();
               result.variants = productData.variants ?? [];
-              result.imageUrls = productData.imageUrls?.length > 0 ? productData.imageUrls : result.imageUrls;
+              // Update both imageUrl and imageUrls from fresh StockX data
+              if (productData.imageUrls?.length > 0) {
+                result.imageUrls = productData.imageUrls;
+                result.imageUrl = productData.imageUrl || productData.imageUrls[0];
+              } else if (productData.imageUrl) {
+                result.imageUrl = productData.imageUrl;
+              }
               if (cached.stockx_variant_id) {
                 try {
                   const mdRes = await fetch(`/api/stockx/market-data/${cached.stockx_product_id}/${cached.stockx_variant_id}`);
@@ -365,7 +371,7 @@ export default function ScanPage() {
         hasBox: true,
         cost: "",
         price: "",
-        images: result.imageUrls.length > 0 ? result.imageUrls : [],
+        images: result.imageUrls?.length > 0 ? result.imageUrls : (result.imageUrl ? [result.imageUrl] : []),
         selectedVariant: defaultVariant,
         selectedSize: defaultVariant?.size ?? result.size ?? "",
         marketData: result.marketData,
@@ -415,7 +421,7 @@ export default function ScanPage() {
         setItems((prev) => [...prev, {
           id: crypto.randomUUID(), barcode: pendingBarcode, result, quantity: 1,
           condition: "new", hasBox: true, cost: "", price: "",
-          images: result.imageUrls, selectedVariant: null, selectedSize: "",
+          images: result.imageUrls?.length > 0 ? result.imageUrls : (result.imageUrl ? [result.imageUrl] : []), selectedVariant: null, selectedSize: "",
           marketData: null, expanded: false,
         }]);
         setScanState("idle");
@@ -434,7 +440,7 @@ export default function ScanPage() {
     setItems((prev) => [...prev, {
       id: crypto.randomUUID(), barcode: pendingBarcode, result, quantity: 1,
       condition: "new", hasBox: true, cost: "", price: "",
-      images: result.imageUrls, selectedVariant: null, selectedSize: "",
+      images: result.imageUrls?.length > 0 ? result.imageUrls : (result.imageUrl ? [result.imageUrl] : []), selectedVariant: null, selectedSize: "",
       marketData: null, expanded: false,
     }]);
     setScanState("idle");
@@ -740,7 +746,7 @@ export default function ScanPage() {
                         className="flex items-center gap-4 rounded-xl border border-border bg-card p-4 transition-colors hover:bg-muted/30"
                       >
                         {/* Thumbnail */}
-                        <ProductImage src={item.result.imageUrl} size="md" />
+                        <ProductImage src={item.result.imageUrl || item.result.imageUrls?.[0]} size="md" />
 
                         {/* Info */}
                         <div className="min-w-0 flex-1">
@@ -854,7 +860,7 @@ export default function ScanPage() {
                         className="flex cursor-pointer items-center gap-4 p-4 transition-colors hover:bg-muted/50"
                         onClick={() => updateItem(item.id, { expanded: !item.expanded })}
                       >
-                        <ProductImage src={item.result.imageUrl} size="lg" />
+                        <ProductImage src={item.result.imageUrl || item.result.imageUrls?.[0]} size="lg" />
 
                         <div className="min-w-0 flex-1">
                           <p className="truncate text-lg font-bold">
@@ -951,27 +957,71 @@ export default function ScanPage() {
                             </div>
                           )}
 
-                          {/* Condition Toggle */}
-                          <div className="space-y-2">
-                            <Label>Condition</Label>
+                          {/* Condition & Images Section */}
+                          <div className="rounded-xl border-2 border-border overflow-hidden">
+                            {/* Condition Toggle Header */}
                             <div
                               onClick={() => {
-                                const newCondition: ProductCondition = item.condition === "new" ? "used" : "new";
+                                const newCondition: ProductCondition = item.condition === "new" ? "used_like_new" : "new";
                                 const updates: Partial<ScannedItem> = { condition: newCondition };
                                 if (newCondition === "new") {
                                   updates.hasBox = true;
-                                  if (item.result.imageUrls.length > 0) updates.images = item.result.imageUrls;
+                                  const stockImages = item.result.imageUrls?.length > 0 
+                                    ? item.result.imageUrls 
+                                    : (item.result.imageUrl ? [item.result.imageUrl] : []);
+                                  if (stockImages.length > 0) updates.images = stockImages;
                                 } else {
                                   if (item.result.source !== "manual") updates.images = [];
                                 }
                                 updateItem(item.id, updates);
                               }}
-                              className="flex cursor-pointer items-center justify-between rounded-lg border-2 border-border px-4 py-3 transition-all hover:border-muted-foreground"
+                              className={cn(
+                                "flex cursor-pointer items-center justify-between px-4 py-3 transition-all",
+                                item.condition === "new" 
+                                  ? "bg-gradient-to-r from-green-500/10 to-green-500/5" 
+                                  : "bg-gradient-to-r from-amber-500/10 to-amber-500/5"
+                              )}
                             >
-                              <span className="text-sm font-semibold">{item.condition === "new" ? "New" : "Used"}</span>
-                              <div className={cn("flex h-6 w-11 items-center rounded-full px-0.5 transition-colors", item.condition === "new" ? "bg-green-500" : "bg-amber-500")}>
-                                <div className={cn("h-5 w-5 rounded-full bg-white shadow-sm transition-transform", item.condition === "new" ? "translate-x-0" : "translate-x-5")} />
+                              <div className="flex items-center gap-3">
+                                <div className={cn(
+                                  "flex h-8 w-8 items-center justify-center rounded-full text-white",
+                                  item.condition === "new" ? "bg-green-500" : "bg-amber-500"
+                                )}>
+                                  {item.condition === "new" ? <Sparkles className="h-4 w-4" /> : <Package className="h-4 w-4" />}
+                                </div>
+                                <div>
+                                  <p className="font-semibold">{item.condition === "new" ? "New Condition" : "Used Condition"}</p>
+                                  <p className="text-xs text-muted-foreground">
+                                    {item.condition === "new" ? "Stock images will be used" : "Upload your own photos"}
+                                  </p>
+                                </div>
                               </div>
+                              <div className={cn("flex h-7 w-12 items-center rounded-full px-0.5 transition-colors shadow-inner", item.condition === "new" ? "bg-green-500" : "bg-amber-500")}>
+                                <div className={cn("h-6 w-6 rounded-full bg-white shadow-md transition-transform", item.condition === "new" ? "translate-x-0" : "translate-x-5")} />
+                              </div>
+                            </div>
+                            
+                            {/* Images Section */}
+                            <div className="p-4 bg-muted/20">
+                              {item.condition === "new" ? (
+                                /* Stock Images for New */
+                                (item.result.imageUrls?.length > 0 || item.result.imageUrl) ? (
+                                  <div className="flex gap-2 overflow-x-auto pb-1">
+                                    {(item.result.imageUrls?.length > 0 ? item.result.imageUrls : [item.result.imageUrl]).slice(0, 4).map((url, idx) => (
+                                      <div key={idx} className="h-20 w-20 flex-shrink-0 overflow-hidden rounded-lg border border-border bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 p-1">
+                                        <img src={url!} alt="" className="h-full w-full object-contain mix-blend-multiply dark:mix-blend-normal" />
+                                      </div>
+                                    ))}
+                                  </div>
+                                ) : (
+                                  <p className="text-sm text-muted-foreground text-center py-4">No stock images available</p>
+                                )
+                              ) : (
+                                /* Upload Section for Used */
+                                <div className="space-y-3">
+                                  <ImageUpload images={item.images} onChange={(imgs) => updateItem(item.id, { images: imgs })} />
+                                </div>
+                              )}
                             </div>
                           </div>
 
@@ -996,14 +1046,6 @@ export default function ScanPage() {
                               <div className={cn("flex h-6 w-11 items-center rounded-full px-0.5 transition-colors", item.hasBox ? "bg-green-500" : "bg-muted")}>
                                 <div className={cn("h-5 w-5 rounded-full bg-white shadow-sm transition-transform", item.hasBox ? "translate-x-5" : "translate-x-0")} />
                               </div>
-                            </div>
-                          )}
-
-                          {/* Image Upload - Only for Used condition */}
-                          {isUsed && (
-                            <div className="space-y-2">
-                              <Label>Upload Photos (required for used items)</Label>
-                              <ImageUpload images={item.images} onChange={(imgs) => updateItem(item.id, { images: imgs })} />
                             </div>
                           )}
 
