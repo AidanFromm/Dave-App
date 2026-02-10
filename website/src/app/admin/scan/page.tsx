@@ -962,7 +962,7 @@ export default function ScanPage() {
                             {/* Condition Toggle Header */}
                             <div
                               onClick={() => {
-                                const newCondition: ProductCondition = item.condition === "new" ? "used" : "new";
+                                const newCondition: ProductCondition = item.condition === "new" ? "used_like_new" : "new";
                                 const updates: Partial<ScannedItem> = { condition: newCondition };
                                 if (newCondition === "new") {
                                   updates.hasBox = true;
