@@ -25,7 +25,7 @@ const staggerContainer = {
 };
 
 export default function WishlistPage() {
-  const { productIds, clearAll } = useWishlistStore();
+  const { productIds, clearWishlist } = useWishlistStore();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -116,7 +116,7 @@ export default function WishlistPage() {
         </div>
         
         <div className="flex gap-3">
-          <Button variant="outline" onClick={clearAll}>
+          <Button variant="outline" onClick={clearWishlist}>
             Clear All
           </Button>
           <Button asChild>

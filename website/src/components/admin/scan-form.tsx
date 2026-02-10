@@ -44,11 +44,9 @@ interface ScanFormProps {
   defaultMode?: ScanMode;
 }
 
-const CONDITIONS: { value: ProductCondition; label: string; sub?: string }[] = [
+const CONDITIONS: { value: ProductCondition; label: string }[] = [
   { value: "new", label: "New" },
-  { value: "used_like_new", label: "Used", sub: "Like New" },
-  { value: "used_good", label: "Used", sub: "Good" },
-  { value: "used_fair", label: "Used", sub: "Fair" },
+  { value: "used", label: "Used" },
 ];
 
 // Product journey timeline steps
@@ -468,9 +466,6 @@ export function ScanForm({ result, onSubmit, onMarketDataFetch, defaultMode = "i
                   )}
                 >
                   <p className="text-sm font-semibold">{c.label}</p>
-                  {c.sub && (
-                    <p className="text-[11px] text-muted-foreground">{c.sub}</p>
-                  )}
                 </button>
               ))}
             </div>
