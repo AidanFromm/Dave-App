@@ -230,10 +230,30 @@ export function ScanForm({ result, onSubmit, onMarketDataFetch, defaultMode = "i
       // Scan OUT - deduct from inventory
       setSubmitting(true);
       try {
-        // This would call an API to deduct inventory
+        // Look up product by barcode to get productId, then adjust
+        const lookupRes = await fetch(`/api/products?barcode=${encodeURIComponent(result.barcode)}`);
+        const lookupData = await lookupRes.json();
+        const product = lookupData.products?.[0];
+        if (!product) throw new Error("Product not found in inventory");
+
+        const reason = outReason === "instore" ? "sold_instore" : outReason === "sale" ? "sold_instore" : outReason === "return" ? "returned" : outReason === "damage" ? "damaged" : "adjustment";
+        const res = await fetch("/api/admin/inventory/adjust", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            productId: product.id,
+            quantityChange: -1,
+            reason,
+            notes: `Scanned out: ${outReason}`,
+          }),
+        });
+        if (!res.ok) {
+          const data = await res.json();
+          throw new Error(data.error || "Failed to scan out");
+        }
         toast.success(`${productName} scanned out (${outReason})`);
-      } catch {
-        toast.error("Failed to scan out product");
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : "Failed to scan out product");
       } finally {
         setSubmitting(false);
       }

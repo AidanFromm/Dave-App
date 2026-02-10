@@ -53,7 +53,7 @@ export default function StockXPage() {
     const state = crypto.randomUUID();
     sessionStorage.setItem("stockx_state", state);
 
-    const clientId = "6iancV9MkHjtn9dlE8VoflhwK0H3jCFc";
+    const clientId = process.env.NEXT_PUBLIC_STOCKX_CLIENT_ID ?? "";
     const params = new URLSearchParams({
       response_type: "code",
       client_id: clientId,

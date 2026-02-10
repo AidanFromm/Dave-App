@@ -48,13 +48,6 @@ export default function ShippingPage() {
           <li><strong>Carrier:</strong> USPS Priority Mail or UPS Ground</li>
         </ul>
 
-        <h3>Express Shipping</h3>
-        <ul>
-          <li><strong>Cost:</strong> $25</li>
-          <li><strong>Delivery Time:</strong> 1-2 business days</li>
-          <li><strong>Carrier:</strong> UPS Next Day Air or USPS Express</li>
-        </ul>
-
         <h3>Local Pickup (Tampa, FL)</h3>
         <ul>
           <li><strong>Cost:</strong> FREE</li>

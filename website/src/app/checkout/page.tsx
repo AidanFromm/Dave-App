@@ -12,7 +12,7 @@ import { Separator } from "@/components/ui/separator";
 import { useCartStore } from "@/stores/cart-store";
 import { shippingFormSchema, type ShippingFormValues } from "@/lib/validators";
 import { formatCurrency } from "@/lib/utils";
-import { ArrowRight, Loader2, ShoppingBag, Truck, MapPin, Package, Lock, CreditCard } from "lucide-react";
+import { ArrowRight, Loader2, ShoppingBag, Truck, MapPin, Package, Lock, CreditCard, Phone } from "lucide-react";
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
@@ -144,6 +144,25 @@ export default function CheckoutPage() {
                   We'll send your order confirmation here
                 </p>
               </div>
+              {watchFulfillment === "pickup" && (
+                <div className="space-y-2">
+                  <Label htmlFor="phone" className="text-sm font-medium">Phone Number (optional)</Label>
+                  <div className="relative">
+                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="phone"
+                      type="tel"
+                      placeholder="(555) 123-4567"
+                      autoComplete="tel"
+                      className="h-12 pl-10"
+                      {...register("phone")}
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    We'll text you when your order is ready for pickup
+                  </p>
+                </div>
+              )}
             </div>
           </motion.div>
 

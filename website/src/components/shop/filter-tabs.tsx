@@ -2,7 +2,7 @@
 
 import { cn } from "@/lib/utils";
 
-export type ShopFilter = "all" | "drops" | "new" | "used" | "pokemon";
+export type ShopFilter = "all" | "drops" | "sneakers" | "new" | "used" | "pokemon";
 
 interface FilterTabsProps {
   selected: ShopFilter;
@@ -12,6 +12,7 @@ interface FilterTabsProps {
 const FILTERS: { key: ShopFilter; label: string }[] = [
   { key: "all", label: "All" },
   { key: "drops", label: "Drops" },
+  { key: "sneakers", label: "Sneakers" },
   { key: "new", label: "New" },
   { key: "used", label: "Used" },
   { key: "pokemon", label: "Pokemon" },

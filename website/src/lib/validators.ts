@@ -19,8 +19,17 @@ export const shippingFormSchema = z.object({
   email: z.string().email("Invalid email address"),
   fulfillmentType: z.enum(["ship", "pickup"]),
   address: addressSchema.optional(),
+  phone: z.string().optional(),
   customerNotes: z.string().optional(),
-});
+}).refine(
+  (data) => {
+    if (data.fulfillmentType === "ship") {
+      return !!data.address;
+    }
+    return true;
+  },
+  { message: "Shipping address is required", path: ["address"] }
+);
 
 export const signInSchema = z.object({
   email: z.string().email("Invalid email address"),

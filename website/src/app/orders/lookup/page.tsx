@@ -60,6 +60,10 @@ export default function OrderLookupPage() {
     setLoading(true);
     setError("");
     setSearchedEmail(data.email);
+    // NOTE: This query uses the Supabase client-side client.
+    // Ensure RLS policies are enabled on the "orders" table so users
+    // can only access their own orders. Consider moving to an API route
+    // (e.g. /api/orders/lookup) for additional server-side validation.
     const supabase = createClient();
     const { data: results, error: err } = await supabase
       .from("orders")

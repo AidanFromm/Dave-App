@@ -84,7 +84,7 @@ export default function WishlistPage() {
             Tap the heart icon on products you love to save them here for later.
           </p>
           <Button asChild size="lg" className="mt-8">
-            <Link href="/?filter=all">
+            <Link href="/">
               <Sparkles className="mr-2 h-4 w-4" />
               Discover Products
             </Link>
@@ -120,7 +120,7 @@ export default function WishlistPage() {
             Clear All
           </Button>
           <Button asChild>
-            <Link href="/?filter=all">
+            <Link href="/">
               <ShoppingBag className="mr-2 h-4 w-4" />
               Continue Shopping
             </Link>
@@ -150,7 +150,7 @@ export default function WishlistPage() {
           Add your favorites to cart and complete your order
         </p>
         <Button size="lg" className="mt-4" asChild>
-          <Link href="/?filter=all">
+          <Link href="/">
             Shop Now
             <ArrowRight className="ml-2 h-4 w-4" />
           </Link>

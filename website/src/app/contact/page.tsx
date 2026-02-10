@@ -16,13 +16,34 @@ export default function ContactPage() {
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
-    
-    // In production, this would send to an API endpoint
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    
-    setSent(true);
-    toast.success("Message sent! We'll get back to you soon.");
-    setLoading(false);
+
+    const formData = new FormData(e.currentTarget);
+    const data = {
+      name: formData.get("name") as string,
+      email: formData.get("email") as string,
+      subject: formData.get("subject") as string,
+      message: formData.get("message") as string,
+    };
+
+    try {
+      const res = await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || "Failed to send message");
+      }
+
+      setSent(true);
+      toast.success("Message sent! We'll get back to you soon.");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to send message");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -118,23 +139,24 @@ export default function ContactPage() {
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
                   <Label htmlFor="name">Name</Label>
-                  <Input id="name" placeholder="Your name" required />
+                  <Input id="name" name="name" placeholder="Your name" required />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="email">Email</Label>
-                  <Input id="email" type="email" placeholder="you@example.com" required />
+                  <Input id="email" name="email" type="email" placeholder="you@example.com" required />
                 </div>
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="subject">Subject</Label>
-                <Input id="subject" placeholder="What's this about?" required />
+                <Input id="subject" name="subject" placeholder="What's this about?" required />
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="message">Message</Label>
                 <Textarea 
                   id="message" 
+                  name="message"
                   placeholder="How can we help you?" 
                   rows={5}
                   required 

@@ -10,11 +10,12 @@ import { Input } from "@/components/ui/input";
 import { useDebounce } from "@/hooks/use-debounce";
 import { cn } from "@/lib/utils";
 
-type ShopFilter = "all" | "drops" | "new" | "used" | "pokemon";
+type ShopFilter = "all" | "drops" | "sneakers" | "new" | "used" | "pokemon";
 
 const FILTERS: { key: ShopFilter; label: string }[] = [
-  { key: "drops", label: "Drops" },
   { key: "all", label: "All" },
+  { key: "drops", label: "Drops" },
+  { key: "sneakers", label: "Sneakers" },
   { key: "new", label: "New" },
   { key: "used", label: "Used" },
   { key: "pokemon", label: "Pokémon" },
@@ -38,7 +39,7 @@ export function ShopPage({ initialProducts, categories }: ShopPageProps) {
     return cat?.id ?? null;
   }, [categories]);
 
-  const filteredProducts = useMemo(() => {
+  const filterResult = useMemo(() => {
     let products = [...initialProducts];
 
     // Search filter
@@ -63,6 +64,17 @@ export function ShopPage({ initialProducts, categories }: ShopPageProps) {
       case "used":
         products = products.filter((p) => p.condition !== "new");
         break;
+      case "sneakers":
+        if (pokemonCategoryId) {
+          products = products.filter((p) => p.category_id !== pokemonCategoryId);
+        } else {
+          products = products.filter(
+            (p) =>
+              !p.name.toLowerCase().includes("pokemon") &&
+              !p.tags?.some((t) => t.toLowerCase().includes("pokemon"))
+          );
+        }
+        break;
       case "pokemon":
         if (pokemonCategoryId) {
           products = products.filter((p) => p.category_id === pokemonCategoryId);
@@ -78,9 +90,12 @@ export function ShopPage({ initialProducts, categories }: ShopPageProps) {
 
     // Group by product name — show one card per unique name (lowest price, summed quantity)
     const grouped = new Map<string, Product>();
+    const sizesMap = new Map<string, Set<string>>();
     for (const p of products) {
       const key = p.name.toLowerCase().trim();
       const existing = grouped.get(key);
+      if (!sizesMap.has(key)) sizesMap.set(key, new Set());
+      if (p.size) sizesMap.get(key)!.add(p.size);
       if (!existing) {
         grouped.set(key, { ...p, quantity: p.quantity });
       } else {
@@ -113,8 +128,11 @@ export function ShopPage({ initialProducts, categories }: ShopPageProps) {
         break;
     }
 
-    return products;
+    return { products, sizesMap };
   }, [initialProducts, filter, sort, debouncedSearch, pokemonCategoryId]);
+
+  const filteredProducts = filterResult.products;
+  const sizesByName = filterResult.sizesMap;
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6 lg:px-8">
@@ -163,7 +181,7 @@ export function ShopPage({ initialProducts, categories }: ShopPageProps) {
       </div>
 
       {/* Products grid */}
-      <ProductGrid products={filteredProducts} />
+      <ProductGrid products={filteredProducts} sizesByName={sizesByName} />
     </div>
   );
 }

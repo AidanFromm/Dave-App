@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/sheet";
 import { useCartStore } from "@/stores/cart-store";
 import { useCartDrawerStore } from "@/stores/cart-drawer-store";
-import { formatCurrency } from "@/types/product";
+import { formatCurrency } from "@/lib/utils";
 import { FREE_SHIPPING_THRESHOLD } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 

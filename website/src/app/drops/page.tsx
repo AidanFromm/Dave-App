@@ -118,12 +118,21 @@ export default function DropsPage() {
     loadDrops();
   }, []);
 
-  const handleNotify = (e: React.FormEvent) => {
+  const handleNotify = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email) return;
-    // In production, this would call an API to save the email
-    setSubscribed(true);
-    toast.success("You're on the list! We'll notify you for upcoming drops.");
+    try {
+      const res = await fetch("/api/drops/subscribe", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      if (!res.ok) throw new Error("Failed to subscribe");
+      setSubscribed(true);
+      toast.success("You're on the list! We'll notify you for upcoming drops.");
+    } catch {
+      toast.error("Failed to subscribe. Please try again.");
+    }
   };
 
   return (

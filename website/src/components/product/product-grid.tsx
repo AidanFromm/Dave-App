@@ -6,9 +6,10 @@ import { ProductCard } from "./product-card";
 
 interface ProductGridProps {
   products: Product[];
+  sizesByName?: Map<string, Set<string>>;
 }
 
-export function ProductGrid({ products }: ProductGridProps) {
+export function ProductGrid({ products, sizesByName }: ProductGridProps) {
   if (products.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-16">
@@ -23,9 +24,16 @@ export function ProductGrid({ products }: ProductGridProps) {
 
   return (
     <div className="grid grid-cols-2 gap-4 sm:gap-5 md:grid-cols-3 md:gap-6 lg:grid-cols-4">
-      {products.map((product) => (
-        <ProductCard key={product.id} product={product} />
-      ))}
+      {products.map((product) => {
+        const sizes = sizesByName?.get(product.name.toLowerCase().trim());
+        return (
+          <ProductCard
+            key={product.id}
+            product={product}
+            availableSizes={sizes && sizes.size > 1 ? Array.from(sizes) : undefined}
+          />
+        );
+      })}
     </div>
   );
 }

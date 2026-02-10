@@ -308,9 +308,22 @@ export default function AdminDropsPage() {
                 product: p,
                 dropDate,
                 status,
-                notifyCount: 0, // TODO: Fetch real subscriber count from API
+                notifyCount: 0, // Will be updated with real subscriber data below
               };
             });
+
+          // Load subscribers first, then update drops with real counts
+          const subsRes2 = await fetch("/api/admin/drop-subscribers");
+          let subsByDrop: Record<string, number> = {};
+          if (subsRes2.ok) {
+            const subsData = await subsRes2.json();
+            for (const s of subsData.subscribers ?? []) {
+              subsByDrop[s.drop_id] = (subsByDrop[s.drop_id] || 0) + 1;
+            }
+          }
+          dropsData.forEach((d) => {
+            d.notifyCount = subsByDrop[d.id] || 0;
+          });
 
           setDrops(dropsData);
         }
@@ -547,7 +560,7 @@ export default function AdminDropsPage() {
               {/* Notify count */}
               <div className="flex items-center gap-2 text-sm">
                 <Users className="h-4 w-4 text-muted-foreground" />
-                <span>{drop.notifyCount} waiting</span>
+                <span>{drop.notifyCount > 0 ? `${drop.notifyCount} waiting` : "N/A"}</span>
               </div>
 
               {/* Actions */}

@@ -22,9 +22,10 @@ import { toast } from "sonner";
 
 interface ProductCardProps {
   product: Product;
+  availableSizes?: string[];
 }
 
-export function ProductCard({ product }: ProductCardProps) {
+export function ProductCard({ product, availableSizes }: ProductCardProps) {
   const { isWishlisted, toggleProduct } = useWishlistStore();
   const addItem = useCartStore((s) => s.addItem);
   const openDrawer = useCartDrawerStore((s) => s.open);
@@ -189,6 +190,13 @@ export function ProductCard({ product }: ProductCardProps) {
         <h3 className="mt-1 line-clamp-2 text-sm font-semibold leading-snug group-hover:text-primary transition-colors">
           {product.name}
         </h3>
+
+        {/* Available Sizes */}
+        {availableSizes && availableSizes.length > 1 && (
+          <p className="mt-1 text-xs text-muted-foreground">
+            {availableSizes.length} sizes available
+          </p>
+        )}
         
         {/* Price and Condition */}
         <div className="mt-auto pt-3 flex items-center justify-between gap-2">
