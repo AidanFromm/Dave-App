@@ -1,15 +1,6 @@
 import { NextResponse } from "next/server";
 
-const TCGDEX_BASE = "https://api.tcgdex.net/v2/en";
-
-interface TCGPlayerPriceEntry {
-  productId?: number;
-  lowPrice?: number | null;
-  midPrice?: number | null;
-  highPrice?: number | null;
-  marketPrice?: number | null;
-  directLowPrice?: number | null;
-}
+const POKEMON_TCG_API = "https://api.pokemontcg.io/v2/cards";
 
 export async function GET(
   _request: Request,
@@ -25,7 +16,7 @@ export async function GET(
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 15000);
 
-    const res = await fetch(`${TCGDEX_BASE}/cards/${id}`, {
+    const res = await fetch(`${POKEMON_TCG_API}/${id}`, {
       headers: { Accept: "application/json" },
       signal: controller.signal,
     });
@@ -39,27 +30,25 @@ export async function GET(
       );
     }
 
-    const card = await res.json();
-
-    const image = card.image as string | undefined;
+    const { data: card } = await res.json();
+    const images = card.images as Record<string, string> | undefined;
     const set = card.set as Record<string, unknown> | undefined;
-    const pricing = card.pricing as Record<string, unknown> | undefined;
-    const tcgplayer = pricing?.tcgplayer as Record<string, unknown> | undefined;
+    const setImages = set?.images as Record<string, string> | undefined;
+    const tcgplayer = card.tcgplayer as Record<string, unknown> | undefined;
+    const tcgPrices = tcgplayer?.prices as Record<string, Record<string, number | null>> | undefined;
 
     const variantPrices: Record<
       string,
       { low: number | null; mid: number | null; high: number | null; market: number | null }
     > = {};
 
-    if (tcgplayer) {
-      for (const [variant, priceData] of Object.entries(tcgplayer)) {
-        if (variant === "updated" || variant === "unit") continue;
-        const p = priceData as TCGPlayerPriceEntry;
+    if (tcgPrices) {
+      for (const [variant, priceData] of Object.entries(tcgPrices)) {
         variantPrices[variant] = {
-          low: p.lowPrice ?? null,
-          mid: p.midPrice ?? null,
-          high: p.highPrice ?? null,
-          market: p.marketPrice ?? null,
+          low: priceData.low ?? null,
+          mid: priceData.mid ?? null,
+          high: priceData.high ?? null,
+          market: priceData.market ?? null,
         };
       }
     }
@@ -67,24 +56,24 @@ export async function GET(
     return NextResponse.json({
       id: card.id,
       name: card.name,
-      supertype: card.category ?? "",
-      subtypes: card.stage ? [card.stage] : [],
-      hp: card.hp != null ? String(card.hp) : null,
+      supertype: card.supertype ?? "",
+      subtypes: card.subtypes ?? [],
+      hp: card.hp ?? null,
       types: card.types ?? [],
-      number: card.localId ?? "",
+      number: card.number ?? "",
       rarity: card.rarity ?? "Unknown",
-      artist: card.illustrator ?? null,
-      imageSmall: image ? `${image}/low.png` : "",
-      imageLarge: image ? `${image}/high.png` : "",
+      artist: card.artist ?? null,
+      imageSmall: images?.small ?? "",
+      imageLarge: images?.large ?? "",
       set: {
         id: set?.id ?? "",
         name: set?.name ?? "",
-        series: "",
-        releaseDate: "",
-        symbol: set?.symbol ? `${set.symbol}.png` : "",
-        logo: set?.logo ? `${set.logo}.png` : "",
+        series: set?.series ?? "",
+        releaseDate: set?.releaseDate ?? "",
+        symbol: setImages?.symbol ?? "",
+        logo: setImages?.logo ?? "",
       },
-      tcgplayerUrl: null,
+      tcgplayerUrl: (tcgplayer?.url as string) ?? null,
       variantPrices,
       regulationMark: card.regulationMark ?? null,
     });

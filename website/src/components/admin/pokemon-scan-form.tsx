@@ -10,10 +10,18 @@ import { cn } from "@/lib/utils";
 import { ImageUpload } from "./image-upload";
 import { toast } from "sonner";
 import {
-  POKEMON_CONDITION_MAP,
-  type PokemonCardSearchResult,
-  type PokemonCardDetail,
-  type ScanFormData,
+  GRADING_SCALES,
+  RAW_CONDITIONS,
+  BGS_SUBGRADE_FIELDS,
+  BGS_SUBGRADE_VALUES,
+  getGradeLabel,
+  getGradesForCompany,
+} from "@/lib/gradingScales";
+import type {
+  PokemonCardSearchResult,
+  PokemonCardDetail,
+  ScanFormData,
+  PokemonGradingData,
 } from "@/types/barcode";
 
 interface PokemonScanFormProps {
@@ -22,18 +30,33 @@ interface PokemonScanFormProps {
   onBack: () => void;
 }
 
-const CONDITIONS = Object.entries(POKEMON_CONDITION_MAP);
+const GRADING_COMPANIES = Object.entries(GRADING_SCALES).map(([key, scale]) => ({
+  key,
+  name: scale.name,
+  fullName: scale.fullName,
+}));
 
 export function PokemonScanForm({ card, onSubmit, onBack }: PokemonScanFormProps) {
   const [detail, setDetail] = useState<PokemonCardDetail | null>(null);
   const [loadingDetail, setLoadingDetail] = useState(true);
-  const [condition, setCondition] = useState("near_mint");
   const [cost, setCost] = useState("");
   const [price, setPrice] = useState("");
   const [images, setImages] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
 
-  // Fetch full card details on mount
+  // Grading state
+  const [conditionType, setConditionType] = useState<"raw" | "graded">("raw");
+  const [rawCondition, setRawCondition] = useState("NM");
+  const [gradingCompany, setGradingCompany] = useState("psa");
+  const [grade, setGrade] = useState<number>(10);
+  const [isBlackLabel, setIsBlackLabel] = useState(false);
+  const [subgrades, setSubgrades] = useState<Record<string, number>>({
+    centering: 9.5,
+    corners: 9.5,
+    edges: 9.5,
+    surface: 9.5,
+  });
+
   useEffect(() => {
     async function fetchDetail() {
       try {
@@ -48,13 +71,11 @@ export function PokemonScanForm({ card, onSubmit, onBack }: PokemonScanFormProps
     fetchDetail();
   }, [card.id]);
 
-  // Determine best market price for suggestion
   const getBestPrice = (): number | null => {
     if (!detail?.variantPrices) return card.marketPrice;
     for (const variant of [
-      "holofoil", "reverse-holofoil", "normal",
-      "1st-edition-holofoil", "1st-edition-normal",
-      "reverseHolofoil", "1stEditionHolofoil",
+      "holofoil", "reverseHolofoil", "normal",
+      "1stEditionHolofoil", "1stEditionNormal",
     ]) {
       const p = detail.variantPrices[variant];
       if (p?.market != null) return p.market;
@@ -63,6 +84,37 @@ export function PokemonScanForm({ card, onSubmit, onBack }: PokemonScanFormProps
   };
 
   const bestPrice = getBestPrice();
+
+  const currentScale = GRADING_SCALES[gradingCompany];
+  const availableGrades = currentScale ? getGradesForCompany(gradingCompany) : [];
+
+  // Build grade label for display
+  const getGradeBadge = (): string => {
+    if (conditionType === "raw") {
+      const cond = RAW_CONDITIONS.find((c) => c.value === rawCondition);
+      return cond ? `Raw - ${cond.abbrev}` : "Raw";
+    }
+    const company = GRADING_SCALES[gradingCompany];
+    if (!company) return "";
+    const label = getGradeLabel(gradingCompany, grade, isBlackLabel);
+    if (isBlackLabel && gradingCompany === "bgs") {
+      return `BGS 10 Black Label`;
+    }
+    return `${company.name} ${grade} - ${label}`;
+  };
+
+  // Map condition to DB value
+  const getConditionDbValue = () => {
+    if (conditionType === "graded") return "new" as const;
+    switch (rawCondition) {
+      case "NM": return "new" as const;
+      case "LP": return "used_like_new" as const;
+      case "MP": return "used_good" as const;
+      case "HP":
+      case "DMG": return "used_fair" as const;
+      default: return "new" as const;
+    }
+  };
 
   const handleSubmit = async () => {
     const priceNum = parseFloat(price);
@@ -73,25 +125,43 @@ export function PokemonScanForm({ card, onSubmit, onBack }: PokemonScanFormProps
       return;
     }
 
-    const conditionEntry = POKEMON_CONDITION_MAP[condition];
+    const gradingData: PokemonGradingData = {
+      conditionType,
+      ...(conditionType === "raw"
+        ? { rawCondition }
+        : {
+            gradingCompany,
+            grade,
+            isBlackLabel: gradingCompany === "bgs" && grade === 10 && isBlackLabel,
+            ...(gradingCompany === "bgs"
+              ? { subgrades: { ...subgrades } as { centering: number; corners: number; edges: number; surface: number } }
+              : {}),
+          }),
+    };
+
+    const gradeBadge = getGradeBadge();
+    const productName = conditionType === "graded"
+      ? `${card.name} - ${card.setName} #${card.number} [${gradeBadge}]`
+      : `${card.name} - ${card.setName} #${card.number}`;
 
     setSubmitting(true);
     try {
       await onSubmit({
-        barcode: card.id, // Use card ID as barcode identifier
-        productName: `${card.name} - ${card.setName} #${card.number}`,
+        barcode: card.id,
+        productName,
         brand: "Pokemon TCG",
         colorway: card.rarity,
         styleId: `${card.setId}-${card.number}`,
         size: null,
         stockxProductId: null,
         stockxVariantId: null,
-        condition: conditionEntry.dbValue,
+        condition: getConditionDbValue(),
         hasBox: false,
         cost: isNaN(costNum) ? 0 : costNum,
         price: priceNum,
         images: images.length > 0 ? images : [card.imageLarge || card.imageSmall],
         productType: "pokemon",
+        grading: gradingData,
       });
     } catch {
       toast.error("Failed to add card");
@@ -112,7 +182,6 @@ export function PokemonScanForm({ card, onSubmit, onBack }: PokemonScanFormProps
           &larr; Back to search
         </button>
 
-        {/* Card image */}
         <div className="mx-auto max-w-xs">
           <img
             src={card.imageLarge || card.imageSmall}
@@ -121,7 +190,6 @@ export function PokemonScanForm({ card, onSubmit, onBack }: PokemonScanFormProps
           />
         </div>
 
-        {/* Card meta */}
         <div className="space-y-2 text-center">
           <h2 className="text-xl font-bold">{card.name}</h2>
           <div className="flex flex-wrap items-center justify-center gap-2">
@@ -129,7 +197,7 @@ export function PokemonScanForm({ card, onSubmit, onBack }: PokemonScanFormProps
               <img src={card.setSymbol} alt="" className="h-4 w-4" />
             )}
             <span className="text-sm text-muted-foreground">
-              {card.setName} · #{card.number}
+              {card.setName} - #{card.number}
             </span>
           </div>
           <div className="flex flex-wrap justify-center gap-1.5">
@@ -199,31 +267,190 @@ export function PokemonScanForm({ card, onSubmit, onBack }: PokemonScanFormProps
 
       {/* Right: Form */}
       <div className="space-y-5">
-        {/* Condition */}
+        {/* Condition Type Toggle */}
         <div className="space-y-2">
-          <Label>Condition</Label>
+          <Label>Condition Type</Label>
           <div className="grid grid-cols-2 gap-2">
-            {CONDITIONS.map(([key, { label }]) => (
-              <button
-                key={key}
-                type="button"
-                onClick={() => setCondition(key)}
-                className={cn(
-                  "rounded-lg border-2 px-3 py-3 text-center transition-colors",
-                  condition === key
-                    ? "border-primary bg-primary/10 text-primary"
-                    : "border-border hover:border-muted-foreground"
-                )}
-              >
-                <p className="text-sm font-semibold">{label}</p>
-              </button>
-            ))}
+            <button
+              type="button"
+              onClick={() => setConditionType("raw")}
+              className={cn(
+                "rounded-lg border-2 px-4 py-3 text-center transition-colors",
+                conditionType === "raw"
+                  ? "border-primary bg-primary/10 text-primary"
+                  : "border-border hover:border-muted-foreground"
+              )}
+            >
+              <p className="text-sm font-semibold">Raw</p>
+              <p className="text-xs text-muted-foreground">Ungraded card</p>
+            </button>
+            <button
+              type="button"
+              onClick={() => setConditionType("graded")}
+              className={cn(
+                "rounded-lg border-2 px-4 py-3 text-center transition-colors",
+                conditionType === "graded"
+                  ? "border-primary bg-primary/10 text-primary"
+                  : "border-border hover:border-muted-foreground"
+              )}
+            >
+              <p className="text-sm font-semibold">Graded</p>
+              <p className="text-xs text-muted-foreground">Professional slab</p>
+            </button>
           </div>
         </div>
 
+        {/* Raw Condition Selector */}
+        {conditionType === "raw" && (
+          <div className="space-y-2">
+            <Label>Condition</Label>
+            <div className="grid grid-cols-2 gap-2">
+              {RAW_CONDITIONS.map((cond) => (
+                <button
+                  key={cond.value}
+                  type="button"
+                  onClick={() => setRawCondition(cond.value)}
+                  className={cn(
+                    "rounded-lg border-2 px-3 py-3 text-left transition-colors",
+                    rawCondition === cond.value
+                      ? "border-primary bg-primary/10 text-primary"
+                      : "border-border hover:border-muted-foreground"
+                  )}
+                >
+                  <p className="text-sm font-semibold">
+                    {cond.label} ({cond.abbrev})
+                  </p>
+                  <p className="text-xs text-muted-foreground line-clamp-1">
+                    {cond.description}
+                  </p>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Graded Card Selector */}
+        {conditionType === "graded" && (
+          <div className="space-y-4">
+            {/* Grading Company */}
+            <div className="space-y-2">
+              <Label>Grading Company</Label>
+              <div className="grid grid-cols-3 gap-2">
+                {GRADING_COMPANIES.map((company) => (
+                  <button
+                    key={company.key}
+                    type="button"
+                    onClick={() => {
+                      setGradingCompany(company.key);
+                      setIsBlackLabel(false);
+                      // Reset grade to highest for this company
+                      const grades = getGradesForCompany(company.key);
+                      if (grades.length > 0) setGrade(grades[0].value);
+                    }}
+                    className={cn(
+                      "rounded-lg border-2 px-3 py-2.5 text-center transition-colors",
+                      gradingCompany === company.key
+                        ? "border-primary bg-primary/10 text-primary"
+                        : "border-border hover:border-muted-foreground"
+                    )}
+                  >
+                    <p className="text-sm font-bold">{company.name}</p>
+                    <p className="text-[10px] text-muted-foreground truncate">
+                      {company.fullName}
+                    </p>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Grade Selection */}
+            <div className="space-y-2">
+              <Label>Grade</Label>
+              <div className="grid grid-cols-4 gap-1.5 sm:grid-cols-5">
+                {availableGrades.map((g) => {
+                  const isSelected =
+                    grade === g.value && (g.isBlackLabel ? isBlackLabel : !isBlackLabel);
+                  return (
+                    <button
+                      key={`${g.value}-${g.isBlackLabel}`}
+                      type="button"
+                      onClick={() => {
+                        setGrade(g.value);
+                        setIsBlackLabel(!!g.isBlackLabel);
+                      }}
+                      className={cn(
+                        "rounded-lg border-2 px-2 py-2 text-center transition-colors",
+                        isSelected
+                          ? g.isBlackLabel
+                            ? "border-yellow-500 bg-yellow-500/10 text-yellow-600"
+                            : "border-primary bg-primary/10 text-primary"
+                          : "border-border hover:border-muted-foreground"
+                      )}
+                    >
+                      <p className="text-sm font-bold">
+                        {g.isBlackLabel ? "10 BL" : g.value}
+                      </p>
+                      <p className="text-[10px] text-muted-foreground truncate">
+                        {g.isBlackLabel ? "Black Label" : g.label}
+                      </p>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* BGS Subgrades */}
+            {gradingCompany === "bgs" && (
+              <div className="space-y-3 rounded-lg border border-border p-4">
+                <Label className="text-xs uppercase tracking-wide text-muted-foreground">
+                  BGS Subgrades (optional)
+                </Label>
+                <div className="grid grid-cols-2 gap-3">
+                  {BGS_SUBGRADE_FIELDS.map((field) => (
+                    <div key={field.key} className="space-y-1">
+                      <label className="text-xs font-medium">{field.label}</label>
+                      <select
+                        value={subgrades[field.key] ?? ""}
+                        onChange={(e) =>
+                          setSubgrades((prev) => ({
+                            ...prev,
+                            [field.key]: parseFloat(e.target.value),
+                          }))
+                        }
+                        className="h-9 w-full rounded-md border border-border bg-card px-3 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                      >
+                        {BGS_SUBGRADE_VALUES.map((v) => (
+                          <option key={v} value={v}>
+                            {v}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Grade Preview Badge */}
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-muted-foreground">Preview:</span>
+              <Badge
+                className={cn(
+                  "text-sm px-3 py-1",
+                  isBlackLabel
+                    ? "bg-black text-yellow-400 border border-yellow-500"
+                    : "bg-primary text-primary-foreground"
+                )}
+              >
+                {getGradeBadge()}
+              </Badge>
+            </div>
+          </div>
+        )}
+
         {/* Photos */}
         <div className="space-y-2">
-          <Label>Photos (optional — card stock image used if none uploaded)</Label>
+          <Label>Photos (optional -- card stock image used if none uploaded)</Label>
           <ImageUpload images={images} onChange={setImages} />
         </div>
 
@@ -253,7 +480,6 @@ export function PokemonScanForm({ card, onSubmit, onBack }: PokemonScanFormProps
           </div>
         </div>
 
-        {/* Suggest price */}
         {bestPrice != null && (
           <Button
             type="button"
@@ -266,7 +492,6 @@ export function PokemonScanForm({ card, onSubmit, onBack }: PokemonScanFormProps
           </Button>
         )}
 
-        {/* Submit */}
         <Button
           type="button"
           size="lg"

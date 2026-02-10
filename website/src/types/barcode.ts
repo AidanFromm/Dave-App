@@ -93,7 +93,14 @@ export interface ScanFormData {
   images: string[];
 
   // Metadata
-  productType: "sneaker" | "pokemon";
+  productType: "sneaker" | "pokemon" | "pokemon_sealed";
+
+  // Pokemon grading (optional)
+  grading?: PokemonGradingData;
+
+  // Sealed product fields (optional)
+  sealedType?: SealedProductType;
+  quantity?: number;
 }
 
 // Session scan history entry
@@ -172,3 +179,51 @@ export const POKEMON_CONDITION_MAP: Record<string, { label: string; dbValue: imp
   moderately_played: { label: "Moderately Played", dbValue: "used_good" },
   heavily_played: { label: "Heavily Played / Damaged", dbValue: "used_fair" },
 };
+
+// ─── Pokemon Grading Types ──────────────────────────────────
+
+export interface PokemonGradingData {
+  conditionType: "raw" | "graded";
+  // Raw fields
+  rawCondition?: string; // NM, LP, MP, HP, DMG
+  // Graded fields
+  gradingCompany?: string; // psa, bgs, cgc, sgc, ace, tag
+  grade?: number;
+  isBlackLabel?: boolean;
+  subgrades?: {
+    centering?: number;
+    corners?: number;
+    edges?: number;
+    surface?: number;
+  };
+}
+
+// ─── Sealed Product Types ───────────────────────────────────
+
+export type SealedProductType =
+  | "booster_box"
+  | "etb"
+  | "booster_pack"
+  | "collection_box"
+  | "tin"
+  | "other";
+
+export const SEALED_PRODUCT_TYPES: { value: SealedProductType; label: string }[] = [
+  { value: "booster_box", label: "Booster Box" },
+  { value: "etb", label: "Elite Trainer Box (ETB)" },
+  { value: "booster_pack", label: "Booster Pack" },
+  { value: "collection_box", label: "Collection Box" },
+  { value: "tin", label: "Tin" },
+  { value: "other", label: "Other" },
+];
+
+export interface SealedProductFormData {
+  productName: string;
+  setSeries: string;
+  sealedType: SealedProductType;
+  condition: "sealed" | "opened";
+  price: number;
+  cost: number;
+  quantity: number;
+  images: string[];
+}

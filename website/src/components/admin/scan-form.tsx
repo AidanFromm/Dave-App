@@ -236,7 +236,7 @@ export function ScanForm({ result, onSubmit, onMarketDataFetch, defaultMode = "i
         const product = lookupData.products?.[0];
         if (!product) throw new Error("Product not found in inventory");
 
-        const reason = outReason === "instore" ? "sold_instore" : outReason === "sale" ? "sold_instore" : outReason === "return" ? "returned" : outReason === "damage" ? "damaged" : "adjustment";
+        const reason = outReason === "sale" ? "sold_instore" : outReason === "return" ? "returned" : outReason === "damage" ? "damaged" : "adjustment";
         const res = await fetch("/api/admin/inventory/adjust", {
           method: "POST",
           headers: { "Content-Type": "application/json" },

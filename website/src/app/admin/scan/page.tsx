@@ -9,6 +9,7 @@ import { StockXSearchModal } from "@/components/admin/stockx-search-modal";
 import { ScanHistoryTable } from "@/components/admin/scan-history-table";
 import { PokemonCardSearch } from "@/components/admin/pokemon-card-search";
 import { PokemonScanForm } from "@/components/admin/pokemon-scan-form";
+import { SealedProductForm } from "@/components/admin/sealed-product-form";
 import { ImageUpload } from "@/components/admin/image-upload";
 import { MarketDataPanel } from "@/components/admin/market-data-panel";
 import { lookupBarcode, updateScanCount } from "@/actions/barcode";
@@ -657,6 +658,10 @@ export default function ScanPage() {
             <Sparkles className="mr-1.5 h-4 w-4" />
             Pokemon TCG
           </TabsTrigger>
+          <TabsTrigger value="sealed">
+            <Package className="mr-1.5 h-4 w-4" />
+            Sealed Product
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="sneakers" className="mt-4 space-y-6">
@@ -1146,6 +1151,19 @@ export default function ScanPage() {
           ) : (
             <PokemonCardSearch onSelect={setSelectedPokemonCard} />
           )}
+          {scanHistory.length > 0 && (
+            <div className="space-y-3">
+              <h2 className="font-semibold">Session History</h2>
+              <ScanHistoryTable entries={scanHistory} />
+            </div>
+          )}
+        </TabsContent>
+
+        <TabsContent value="sealed" className="mt-4 space-y-6">
+          <SealedProductForm
+            onSubmit={handlePokemonAddToInventory}
+            onBack={() => {}}
+          />
           {scanHistory.length > 0 && (
             <div className="space-y-3">
               <h2 className="font-semibold">Session History</h2>

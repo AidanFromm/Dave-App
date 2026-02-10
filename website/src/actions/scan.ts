@@ -87,6 +87,36 @@ export async function addScannedProductToInventory(data: ScanFormData): Promise<
     return { productId: existing.id, error: null };
   }
 
+  // Build tags for Pokemon products
+  const tags: string[] = [];
+  if (data.productType === "pokemon" || data.productType === "pokemon_sealed") {
+    tags.push("pokemon");
+    if (data.productType === "pokemon_sealed") {
+      tags.push("sealed");
+      if (data.sealedType) tags.push(data.sealedType);
+    }
+    if (data.grading) {
+      if (data.grading.conditionType === "graded") {
+        tags.push("graded");
+        if (data.grading.gradingCompany) tags.push(data.grading.gradingCompany);
+      } else {
+        tags.push("raw");
+        if (data.grading.rawCondition) tags.push(data.grading.rawCondition);
+      }
+    }
+  }
+
+  // Build metadata JSON for grading info
+  const metadata: Record<string, unknown> = {};
+  if (data.grading) {
+    metadata.grading = data.grading;
+  }
+  if (data.sealedType) {
+    metadata.sealedType = data.sealedType;
+  }
+
+  const insertQuantity = data.quantity ?? 1;
+
   // No existing match — create new product
   const { data: product, error: productError } = await supabase
     .from("products")
@@ -102,12 +132,13 @@ export async function addScannedProductToInventory(data: ScanFormData): Promise<
       cost: data.cost,
       price: data.price,
       images: data.images,
-      quantity: 1,
+      quantity: insertQuantity,
       low_stock_threshold: 1,
       is_active: true,
       is_featured: false,
       is_drop: false,
-      tags: [],
+      tags,
+      ...(Object.keys(metadata).length > 0 ? { metadata } : {}),
     })
     .select("id")
     .single();

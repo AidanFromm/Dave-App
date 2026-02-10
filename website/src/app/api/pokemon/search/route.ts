@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-const TCGDEX_BASE = "https://api.tcgdex.net/v2/en";
+const POKEMON_TCG_API = "https://api.pokemontcg.io/v2/cards";
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -12,64 +12,86 @@ export async function GET(request: Request) {
   }
 
   try {
+    const trimmed = query.trim();
+
+    // Build the search query for Pokemon TCG API
+    // If it looks like a number, search by number; otherwise search by name
+    let q: string;
+    if (/^\d+$/.test(trimmed)) {
+      q = `number:${trimmed}`;
+    } else {
+      q = `name:"${trimmed}*"`;
+    }
+
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 15000);
 
-    const res = await fetch(
-      `${TCGDEX_BASE}/cards?name=${encodeURIComponent(query)}&pagination:itemsPerPage=20&pagination:page=${page}`,
-      {
-        headers: { Accept: "application/json" },
-        signal: controller.signal,
-      }
-    );
+    const url = `${POKEMON_TCG_API}?q=${encodeURIComponent(q)}&page=${page}&pageSize=20&orderBy=-set.releaseDate`;
+
+    const res = await fetch(url, {
+      headers: {
+        Accept: "application/json",
+      },
+      signal: controller.signal,
+    });
 
     clearTimeout(timeout);
 
     if (!res.ok) {
       return NextResponse.json(
-        { error: "TCGdex API error" },
+        { error: "Pokemon TCG API error" },
         { status: res.status }
       );
     }
 
     const data = await res.json();
+    const rawCards = data.data ?? [];
 
-    const cards = (Array.isArray(data) ? data : []).map(
-      (c: Record<string, unknown>) => {
-        const image = c.image as string | undefined;
-        const id = c.id as string;
-        const setId = id.includes("-")
-          ? id.substring(0, id.lastIndexOf("-"))
-          : "";
+    const cards = rawCards.map((c: Record<string, unknown>) => {
+      const images = c.images as Record<string, string> | undefined;
+      const set = c.set as Record<string, unknown> | undefined;
+      const setImages = set?.images as Record<string, string> | undefined;
+      const tcgplayer = c.tcgplayer as Record<string, unknown> | undefined;
+      const prices = tcgplayer?.prices as Record<string, Record<string, number>> | undefined;
 
-        return {
-          id,
-          name: c.name ?? "",
-          number: c.localId ?? "",
-          rarity: "",
-          supertype: "",
-          subtypes: [],
-          imageSmall: image ? `${image}/low.png` : "",
-          imageLarge: image ? `${image}/high.png` : "",
-          setId,
-          setName: "",
-          setSeries: "",
-          setSymbol: "",
-          marketPrice: null,
-          tcgplayerUrl: null,
-        };
+      // Get best market price from tcgplayer prices
+      let marketPrice: number | null = null;
+      if (prices) {
+        for (const variant of Object.values(prices)) {
+          if (variant.market != null) {
+            marketPrice = variant.market;
+            break;
+          }
+        }
       }
-    );
+
+      return {
+        id: c.id ?? "",
+        name: c.name ?? "",
+        number: c.number ?? "",
+        rarity: c.rarity ?? "",
+        supertype: c.supertype ?? "",
+        subtypes: (c.subtypes as string[]) ?? [],
+        imageSmall: images?.small ?? "",
+        imageLarge: images?.large ?? "",
+        setId: (set?.id as string) ?? "",
+        setName: (set?.name as string) ?? "",
+        setSeries: (set?.series as string) ?? "",
+        setSymbol: setImages?.symbol ?? "",
+        marketPrice,
+        tcgplayerUrl: (tcgplayer?.url as string) ?? null,
+      };
+    });
 
     return NextResponse.json({
       cards,
       page: parseInt(page, 10),
       pageSize: 20,
-      totalCount: cards.length,
+      totalCount: data.totalCount ?? cards.length,
     });
   } catch {
     return NextResponse.json(
-      { error: "Search failed — please try again." },
+      { error: "Search failed - please try again." },
       { status: 500 }
     );
   }
