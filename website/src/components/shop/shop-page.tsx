@@ -1,13 +1,24 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { Search } from "lucide-react";
 import type { Product, Category } from "@/types/product";
 import { isNewDrop } from "@/types/product";
 import { ProductGrid } from "@/components/product/product-grid";
-import { FilterTabs, type ShopFilter } from "./filter-tabs";
 import { SortSelect, type SortOption } from "./sort-select";
-import { SearchBar } from "./search-bar";
+import { Input } from "@/components/ui/input";
 import { useDebounce } from "@/hooks/use-debounce";
+import { cn } from "@/lib/utils";
+
+type ShopFilter = "all" | "drops" | "new" | "used" | "pokemon";
+
+const FILTERS: { key: ShopFilter; label: string }[] = [
+  { key: "all", label: "All" },
+  { key: "drops", label: "🔥 Drops" },
+  { key: "new", label: "New" },
+  { key: "used", label: "Used" },
+  { key: "pokemon", label: "Pokémon" },
+];
 
 interface ShopPageProps {
   initialProducts: Product[];
@@ -22,8 +33,7 @@ export function ShopPage({ initialProducts, categories }: ShopPageProps) {
 
   const pokemonCategoryId = useMemo(() => {
     const cat = categories.find(
-      (c) =>
-        c.slug === "pokemon" || c.name.toLowerCase() === "pokemon"
+      (c) => c.slug === "pokemon" || c.name.toLowerCase() === "pokemon"
     );
     return cat?.id ?? null;
   }, [categories]);
@@ -42,24 +52,20 @@ export function ShopPage({ initialProducts, categories }: ShopPageProps) {
       );
     }
 
-    // Category filter — same logic as iOS ShopView
+    // Category filter
     switch (filter) {
       case "drops":
         products = products.filter((p) => isNewDrop(p));
         break;
-      case "new": {
-        // Show all items with condition="new" (includes drops)
+      case "new":
         products = products.filter((p) => p.condition === "new");
         break;
-      }
       case "used":
         products = products.filter((p) => p.condition === "used");
         break;
       case "pokemon":
         if (pokemonCategoryId) {
-          products = products.filter(
-            (p) => p.category_id === pokemonCategoryId
-          );
+          products = products.filter((p) => p.category_id === pokemonCategoryId);
         } else {
           products = products.filter(
             (p) =>
@@ -73,11 +79,7 @@ export function ShopPage({ initialProducts, categories }: ShopPageProps) {
     // Sort
     switch (sort) {
       case "newest":
-        products.sort(
-          (a, b) =>
-            new Date(b.created_at).getTime() -
-            new Date(a.created_at).getTime()
-        );
+        products.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
         break;
       case "price_asc":
         products.sort((a, b) => a.price - b.price);
@@ -97,32 +99,53 @@ export function ShopPage({ initialProducts, categories }: ShopPageProps) {
   }, [initialProducts, filter, sort, debouncedSearch, pokemonCategoryId]);
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
-      {/* Filter bar */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        {/* Left: Filter tabs */}
-        <FilterTabs selected={filter} onChange={setFilter} />
+    <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6 lg:px-8">
+      {/* Clean filter bar */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between border-b pb-4">
+        {/* Filter tabs */}
+        <div className="flex gap-1 overflow-x-auto scrollbar-hide">
+          {FILTERS.map((f) => (
+            <button
+              key={f.key}
+              onClick={() => setFilter(f.key)}
+              className={cn(
+                "whitespace-nowrap rounded-full px-4 py-2 text-sm font-medium transition-colors",
+                filter === f.key
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground hover:text-foreground hover:bg-muted"
+              )}
+            >
+              {f.label}
+            </button>
+          ))}
+        </div>
 
-        {/* Right: Search + Sort */}
-        <div className="flex items-center gap-3">
-          <div className="w-48 sm:w-56">
-            <SearchBar value={search} onChange={setSearch} />
+        {/* Search + Sort */}
+        <div className="flex items-center gap-2">
+          <div className="relative flex-1 sm:w-48">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              type="search"
+              placeholder="Search..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-9 h-9"
+            />
           </div>
           <SortSelect value={sort} onChange={setSort} />
         </div>
       </div>
 
-      {/* Results count */}
-      {debouncedSearch && (
-        <p className="mt-4 text-sm text-muted-foreground">
-          {filteredProducts.length} result{filteredProducts.length !== 1 ? "s" : ""} for "{debouncedSearch}"
-        </p>
-      )}
-
-      {/* Grid */}
-      <div className="mt-6">
-        <ProductGrid products={filteredProducts} />
+      {/* Results info */}
+      <div className="flex items-center justify-between py-3 text-sm text-muted-foreground">
+        <span>
+          {filteredProducts.length} product{filteredProducts.length !== 1 ? "s" : ""}
+          {debouncedSearch && ` for "${debouncedSearch}"`}
+        </span>
       </div>
+
+      {/* Products grid */}
+      <ProductGrid products={filteredProducts} />
     </div>
   );
 }
