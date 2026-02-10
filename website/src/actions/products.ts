@@ -1,7 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
-import type { Product, Category } from "@/types/product";
+import type { Product, Category, ProductCondition } from "@/types/product";
 
 export async function getProducts(categoryId?: string): Promise<Product[]> {
   const supabase = await createClient();
@@ -64,6 +64,39 @@ export async function searchProducts(query: string): Promise<Product[]> {
 
   if (error) throw error;
   return (data ?? []) as Product[];
+}
+
+export interface SizeVariant {
+  id: string;
+  size: string | null;
+  price: number;
+  condition: ProductCondition;
+  quantity: number;
+}
+
+/**
+ * Get all size variants of the same product (same name, different sizes).
+ * This allows showing "Available Sizes" on a product detail page.
+ */
+export async function getProductSizeVariants(product: Product): Promise<SizeVariant[]> {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from("products")
+    .select("id, size, price, condition, quantity")
+    .eq("is_active", true)
+    .ilike("name", product.name.trim())
+    .gt("quantity", 0)
+    .order("size");
+
+  if (error) return [];
+
+  // Sort by numeric size
+  return ((data ?? []) as SizeVariant[]).sort((a, b) => {
+    const numA = parseFloat(a.size ?? "0");
+    const numB = parseFloat(b.size ?? "0");
+    return numA - numB;
+  });
 }
 
 export async function getCategories(): Promise<Category[]> {

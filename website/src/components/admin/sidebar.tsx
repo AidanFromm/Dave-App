@@ -4,7 +4,6 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
-  Package,
   ShoppingCart,
   Users,
   BarChart3,
@@ -58,27 +57,6 @@ export function AdminSidebar() {
             );
           })}
         </nav>
-
-        {/* Products sub-section */}
-        <div className="mx-3 mt-2 border-t border-border pt-3">
-          <p className="px-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            Legacy
-          </p>
-          <nav className="mt-2 space-y-1">
-            <Link
-              href="/admin/products"
-              className={cn(
-                "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
-                pathname.startsWith("/admin/products")
-                  ? "bg-primary/10 text-primary"
-                  : "text-muted-foreground hover:bg-accent hover:text-foreground"
-              )}
-            >
-              <Package className="h-4 w-4" />
-              Products
-            </Link>
-          </nav>
-        </div>
       </aside>
 
       {/* Mobile nav */}

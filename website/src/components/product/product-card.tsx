@@ -59,11 +59,7 @@ export function ProductCard({ product }: ProductCardProps) {
         className="relative aspect-square overflow-hidden bg-muted"
       >
         {product.images?.[0] ? (
-          <motion.div
-            className="relative h-full w-full"
-            animate={{ scale: isHovered ? 1.08 : 1 }}
-            transition={{ duration: 0.4 }}
-          >
+          <div className="relative h-full w-full">
             <Image
               src={product.images[0]}
               alt={product.name}
@@ -71,7 +67,7 @@ export function ProductCard({ product }: ProductCardProps) {
               sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
               className="object-contain"
             />
-          </motion.div>
+          </div>
         ) : (
           <div className="flex h-full items-center justify-center text-muted-foreground">
             No Image

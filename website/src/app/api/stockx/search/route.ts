@@ -76,34 +76,35 @@ export async function GET(request: Request) {
     const products = (data.products ?? []).map((p: Record<string, unknown>) => {
       const attrs = p.productAttributes as Record<string, unknown> | undefined;
       
-      // StockX uses various ID field names - try them all
       const productId = p.productId ?? p.id ?? p.uuid ?? p.objectID ?? p.productUuid ?? "";
       const urlKey = (p.urlKey ?? p.urlSlug ?? "") as string;
       
-      // Log what we found for debugging
-      console.log("Product ID extraction:", { 
-        productId: p.productId, 
-        id: p.id, 
-        uuid: p.uuid, 
-        objectID: p.objectID,
-        urlKey: p.urlKey,
-        chosen: productId,
-        allKeys: Object.keys(p)
-      });
+      // Try to extract image from API response first (v2 may include media)
+      const media = p.media as Record<string, unknown> | undefined;
+      const apiImageUrl = (media?.imageUrl as string) ?? (media?.thumbUrl as string) ?? (p.imageUrl as string) ?? (p.image as string) ?? (p.thumbUrl as string) ?? "";
+      const apiImages: string[] = [];
+      if (media?.all && Array.isArray(media.all)) {
+        for (const m of media.all) {
+          if (typeof m === "string") apiImages.push(m);
+          else if (m && typeof m === "object" && "imageUrl" in (m as Record<string, unknown>)) apiImages.push((m as Record<string, string>).imageUrl);
+        }
+      }
+      
+      // Use API images if available, otherwise construct from urlKey
+      const imageUrl = apiImageUrl || buildStockXImageUrl(urlKey);
+      const thumbUrl = apiImageUrl || buildStockXThumbUrl(urlKey);
+      const imageUrls = apiImages.length > 0 ? apiImages : buildStockXImageUrls(urlKey);
       
       return {
         id: productId,
         name: p.title ?? p.name ?? "",
         brand: p.brand ?? "",
-        // Colorway is nested in productAttributes
         colorway: (attrs?.colorway as string) ?? p.colorway ?? "",
         styleId: p.styleId ?? "",
-        // RetailPrice is nested in productAttributes
         retailPrice: (attrs?.retailPrice as number) ?? p.retailPrice ?? 0,
-        // StockX v2 doesn't return images - construct from urlKey
-        thumbnailUrl: buildStockXThumbUrl(urlKey),
-        imageUrl: buildStockXImageUrl(urlKey),
-        imageUrls: buildStockXImageUrls(urlKey),
+        thumbnailUrl: thumbUrl,
+        imageUrl,
+        imageUrls,
         urlSlug: urlKey,
       };
     });

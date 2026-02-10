@@ -1,107 +1,220 @@
+"use client";
+
+import { useEffect, useState, useMemo } from "react";
+import Image from "next/image";
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/server";
+import { getGroupedProducts, type GroupedProduct } from "@/actions/inventory";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { formatCurrency } from "@/lib/utils";
-import { CONDITION_LABELS } from "@/types/product";
-import type { Product } from "@/types/product";
-import { Plus, Edit } from "lucide-react";
+import { Search, Package, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 
-export default async function AdminProductsPage() {
-  const supabase = await createClient();
+type SortField = "name" | "totalQuantity" | "averageCost" | "sellPrice" | "variantCount";
+type SortDir = "asc" | "desc";
 
-  const { data } = await supabase
-    .from("products")
-    .select("*")
-    .eq("is_active", true)
-    .order("created_at", { ascending: false });
+export default function AdminProductsPage() {
+  const [products, setProducts] = useState<GroupedProduct[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+  const [sortField, setSortField] = useState<SortField>("name");
+  const [sortDir, setSortDir] = useState<SortDir>("asc");
+  const [category, setCategory] = useState("all");
 
-  const products = (data ?? []) as Product[];
+  useEffect(() => {
+    async function load() {
+      setLoading(true);
+      try {
+        const data = await getGroupedProducts();
+        setProducts(data);
+      } catch (err) {
+        console.error("Failed to load products:", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    load();
+  }, []);
+
+  const filtered = useMemo(() => {
+    let list = products;
+    if (category !== "all") {
+      list = list.filter((p) => p.category === category);
+    }
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      list = list.filter((p) => p.name.toLowerCase().includes(q));
+    }
+    const sorted = [...list].sort((a, b) => {
+      let cmp = 0;
+      switch (sortField) {
+        case "name": cmp = a.name.localeCompare(b.name); break;
+        case "totalQuantity": cmp = a.totalQuantity - b.totalQuantity; break;
+        case "averageCost": cmp = a.averageCost - b.averageCost; break;
+        case "sellPrice": cmp = a.sellPrice - b.sellPrice; break;
+        case "variantCount": cmp = a.variantCount - b.variantCount; break;
+      }
+      return sortDir === "asc" ? cmp : -cmp;
+    });
+    return sorted;
+  }, [products, category, search, sortField, sortDir]);
+
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    } else {
+      setSortField(field);
+      setSortDir("asc");
+    }
+  };
+
+  const SortIcon = ({ field }: { field: SortField }) => {
+    if (sortField !== field) return <ArrowUpDown className="ml-1 h-3 w-3 opacity-50" />;
+    return sortDir === "asc" ? <ArrowUp className="ml-1 h-3 w-3" /> : <ArrowDown className="ml-1 h-3 w-3" />;
+  };
+
+  const sneakerCount = products.filter((p) => p.category === "sneaker").length;
+  const pokemonCount = products.filter((p) => p.category === "pokemon").length;
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <Skeleton className="h-8 w-48" />
+        <Skeleton className="h-10 w-80" />
+        <div className="space-y-3">
+          {Array.from({ length: 8 }).map((_, i) => (
+            <Skeleton key={i} className="h-16 w-full" />
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="p-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Products ({products.length})</h1>
-        <Button asChild>
-          <Link href="/admin/products/new">
-            <Plus className="mr-2 h-4 w-4" /> Add Product
-          </Link>
-        </Button>
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold tracking-tight">Products</h1>
+        <p className="text-sm text-muted-foreground">
+          {products.length} unique products across all categories
+        </p>
       </div>
 
-      {/* Product table */}
-      <div className="mt-6 overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-border text-left">
-              <th className="pb-3 font-semibold">Product</th>
-              <th className="pb-3 font-semibold">SKU</th>
-              <th className="pb-3 font-semibold">Condition</th>
-              <th className="pb-3 font-semibold">Price</th>
-              <th className="pb-3 font-semibold">Qty</th>
-              <th className="pb-3 font-semibold">Status</th>
-              <th className="pb-3 font-semibold"></th>
-            </tr>
-          </thead>
-          <tbody>
-            {products.map((product) => (
-              <tr
-                key={product.id}
-                className="border-b border-border last:border-0"
-              >
-                <td className="py-3">
-                  <div>
-                    <p className="font-medium">{product.name}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {product.brand}
-                      {product.size && ` · Size ${product.size}`}
-                    </p>
-                  </div>
-                </td>
-                <td className="py-3 text-muted-foreground">
-                  {product.sku ?? "—"}
-                </td>
-                <td className="py-3">
-                  <Badge variant="outline" className="text-xs">
-                    {CONDITION_LABELS[product.condition]}
-                  </Badge>
-                </td>
-                <td className="py-3">{formatCurrency(product.price)}</td>
-                <td className="py-3">
-                  <span
-                    className={
-                      product.quantity <= 0
-                        ? "font-bold text-destructive"
-                        : product.quantity <= product.low_stock_threshold
-                          ? "font-bold text-secured-warning"
-                          : ""
-                    }
-                  >
-                    {product.quantity}
-                  </span>
-                </td>
-                <td className="py-3">
-                  {product.is_featured && (
-                    <Badge className="mr-1 text-[10px]">Featured</Badge>
+      <Tabs value={category} onValueChange={setCategory}>
+        <TabsList>
+          <TabsTrigger value="all">All ({products.length})</TabsTrigger>
+          <TabsTrigger value="sneaker">Sneakers ({sneakerCount})</TabsTrigger>
+          <TabsTrigger value="pokemon">Pokemon ({pokemonCount})</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value={category} className="mt-4 space-y-4">
+          {/* Search */}
+          <div className="relative max-w-sm">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search products..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-9"
+            />
+          </div>
+
+          {/* Table */}
+          <div className="rounded-lg border overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b bg-muted/50">
+                    <th className="px-4 py-3 text-left font-medium text-muted-foreground w-[80px]"></th>
+                    <th className="px-4 py-3 text-left font-medium text-muted-foreground">
+                      <button onClick={() => handleSort("name")} className="flex items-center hover:text-foreground transition-colors">
+                        Product <SortIcon field="name" />
+                      </button>
+                    </th>
+                    <th className="px-4 py-3 text-left font-medium text-muted-foreground">Category</th>
+                    <th className="px-4 py-3 text-left font-medium text-muted-foreground">
+                      <button onClick={() => handleSort("variantCount")} className="flex items-center hover:text-foreground transition-colors">
+                        Variants <SortIcon field="variantCount" />
+                      </button>
+                    </th>
+                    <th className="px-4 py-3 text-left font-medium text-muted-foreground">
+                      <button onClick={() => handleSort("totalQuantity")} className="flex items-center hover:text-foreground transition-colors">
+                        Total Qty <SortIcon field="totalQuantity" />
+                      </button>
+                    </th>
+                    <th className="px-4 py-3 text-left font-medium text-muted-foreground">
+                      <button onClick={() => handleSort("averageCost")} className="flex items-center hover:text-foreground transition-colors">
+                        Avg Cost <SortIcon field="averageCost" />
+                      </button>
+                    </th>
+                    <th className="px-4 py-3 text-left font-medium text-muted-foreground">
+                      <button onClick={() => handleSort("sellPrice")} className="flex items-center hover:text-foreground transition-colors">
+                        Sell Price <SortIcon field="sellPrice" />
+                      </button>
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filtered.length === 0 ? (
+                    <tr>
+                      <td colSpan={7} className="px-4 py-12 text-center text-muted-foreground">
+                        <Package className="mx-auto h-8 w-8 mb-2 opacity-50" />
+                        {search ? "No products match your search." : "No products found."}
+                      </td>
+                    </tr>
+                  ) : (
+                    filtered.map((product) => (
+                      <Link
+                        key={product.name}
+                        href={`/admin/products/detail?name=${encodeURIComponent(product.name)}`}
+                        className="contents"
+                      >
+                        <tr className="border-b last:border-b-0 hover:bg-muted/30 transition-colors cursor-pointer">
+                          <td className="px-4 py-3">
+                            {product.image ? (
+                              <Image
+                                src={product.image}
+                                alt={product.name}
+                                width={64}
+                                height={64}
+                                className="rounded-lg object-cover w-16 h-16"
+                              />
+                            ) : (
+                              <div className="w-16 h-16 rounded-lg bg-muted flex items-center justify-center">
+                                <Package className="h-6 w-6 text-muted-foreground" />
+                              </div>
+                            )}
+                          </td>
+                          <td className="px-4 py-3 font-medium">{product.name}</td>
+                          <td className="px-4 py-3">
+                            <Badge variant="secondary" className="text-xs capitalize">
+                              {product.category === "pokemon" ? "Pokemon" : "Sneaker"}
+                            </Badge>
+                          </td>
+                          <td className="px-4 py-3 text-muted-foreground">
+                            {product.variantCount} size{product.variantCount !== 1 ? "s" : ""}
+                          </td>
+                          <td className="px-4 py-3">
+                            <span className={product.totalQuantity === 0 ? "text-destructive font-bold" : ""}>
+                              {product.totalQuantity}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 text-muted-foreground">
+                            {product.averageCost > 0 ? formatCurrency(product.averageCost) : "--"}
+                          </td>
+                          <td className="px-4 py-3 font-medium">
+                            {formatCurrency(product.sellPrice)}
+                          </td>
+                        </tr>
+                      </Link>
+                    ))
                   )}
-                  {product.is_drop && (
-                    <Badge variant="secondary" className="text-[10px]">
-                      Drop
-                    </Badge>
-                  )}
-                </td>
-                <td className="py-3">
-                  <Button variant="ghost" size="icon" asChild>
-                    <Link href={`/admin/products/${product.id}/edit`}>
-                      <Edit className="h-4 w-4" />
-                    </Link>
-                  </Button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

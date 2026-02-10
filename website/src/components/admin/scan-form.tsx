@@ -512,30 +512,13 @@ export function ScanForm({ result, onSubmit, onMarketDataFetch, defaultMode = "i
             </div>
           </div>
 
-          {/* Images */}
-          <div className="space-y-2">
-            <Label>
-              {isUsed ? "Upload Photos (required for used items)" : "Images"}
-            </Label>
-            {condition === "new" && images.length > 0 && result.source !== "manual" ? (
-              <div className="grid grid-cols-3 gap-2">
-                {images.slice(0, 3).map((url, i) => (
-                  <div
-                    key={url}
-                    className="aspect-square overflow-hidden rounded-lg border border-border"
-                  >
-                    <img
-                      src={url}
-                      alt={`Stock ${i + 1}`}
-                      className="h-full w-full object-contain"
-                    />
-                  </div>
-                ))}
-              </div>
-            ) : (
+          {/* Image Upload - Only for Used condition */}
+          {isUsed && (
+            <div className="space-y-2">
+              <Label>Upload Photos (required for used items)</Label>
               <ImageUpload images={images} onChange={setImages} />
-            )}
-          </div>
+            </div>
+          )}
 
           {/* Pricing */}
           <div className="grid grid-cols-2 gap-3">

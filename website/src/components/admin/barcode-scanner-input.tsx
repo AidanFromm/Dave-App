@@ -61,15 +61,20 @@ export function BarcodeScannerInput({
       isRapidInputRef.current = true;
     }
 
-    // If rapid input detected, auto-submit after 300ms of no new input
-    if (isRapidInputRef.current) {
+    // Auto-submit: rapid input OR valid UPC length (12-13 all-digit)
+    const trimmed = newValue.trim();
+    const isUpcLength = /^\d{12,13}$/.test(trimmed);
+
+    if (isRapidInputRef.current || isUpcLength) {
       if (autoSubmitRef.current) clearTimeout(autoSubmitRef.current);
+      // Shorter delay for UPC-length barcodes for instant feel
+      const delay = isUpcLength ? 150 : 300;
       autoSubmitRef.current = setTimeout(() => {
         if (newValue.trim()) {
           handleSubmit(newValue);
         }
         isRapidInputRef.current = false;
-      }, 300);
+      }, delay);
     }
   }, [handleSubmit]);
 

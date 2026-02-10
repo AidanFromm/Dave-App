@@ -41,7 +41,7 @@ export function ProductGallery({ images, name }: ProductGalleryProps) {
       <div className="space-y-4">
         {/* Main Image */}
         <motion.div
-          className="relative aspect-square overflow-hidden rounded-2xl bg-muted cursor-zoom-in group"
+          className="relative aspect-square overflow-hidden rounded-2xl bg-gradient-to-br from-muted/60 to-muted/30 cursor-zoom-in group"
           onClick={() => openLightbox(selectedIndex)}
           whileHover={{ scale: 1.01 }}
           transition={{ duration: 0.2 }}
@@ -60,7 +60,7 @@ export function ProductGallery({ images, name }: ProductGalleryProps) {
                 alt={`${name} - Image ${selectedIndex + 1}`}
                 fill
                 sizes="(max-width: 768px) 100vw, 50vw"
-                className="object-contain p-4"
+                className="object-contain p-8 sm:p-12"
                 priority
               />
             </motion.div>
@@ -105,7 +105,7 @@ export function ProductGallery({ images, name }: ProductGalleryProps) {
                 key={i}
                 onClick={() => setSelectedIndex(i)}
                 className={cn(
-                  "relative h-20 w-20 flex-shrink-0 overflow-hidden rounded-xl bg-muted transition-all",
+                  "relative h-20 w-20 flex-shrink-0 overflow-hidden rounded-xl bg-muted/50 transition-all",
                   i === selectedIndex
                     ? "ring-2 ring-primary ring-offset-2"
                     : "opacity-60 hover:opacity-100"

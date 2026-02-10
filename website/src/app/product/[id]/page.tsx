@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { getProduct } from "@/actions/products";
+import { getProduct, getProductSizeVariants } from "@/actions/products";
 import { ProductDetailClient } from "./product-detail-client";
 import { formatCurrency } from "@/types/product";
 
@@ -33,5 +33,8 @@ export default async function ProductPage({ params }: Props) {
   const product = await getProduct(id);
   if (!product) notFound();
 
-  return <ProductDetailClient product={product} />;
+  // Fetch all size variants for this product
+  const sizeVariants = await getProductSizeVariants(product);
+
+  return <ProductDetailClient product={product} sizeVariants={sizeVariants} />;
 }

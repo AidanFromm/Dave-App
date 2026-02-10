@@ -13,8 +13,8 @@ import { cn } from "@/lib/utils";
 type ShopFilter = "all" | "drops" | "new" | "used" | "pokemon";
 
 const FILTERS: { key: ShopFilter; label: string }[] = [
+  { key: "drops", label: "Drops" },
   { key: "all", label: "All" },
-  { key: "drops", label: "🔥 Drops" },
   { key: "new", label: "New" },
   { key: "used", label: "Used" },
   { key: "pokemon", label: "Pokémon" },
@@ -26,7 +26,7 @@ interface ShopPageProps {
 }
 
 export function ShopPage({ initialProducts, categories }: ShopPageProps) {
-  const [filter, setFilter] = useState<ShopFilter>("all");
+  const [filter, setFilter] = useState<ShopFilter>("drops");
   const [sort, setSort] = useState<SortOption>("newest");
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, 300);
@@ -75,6 +75,24 @@ export function ShopPage({ initialProducts, categories }: ShopPageProps) {
         }
         break;
     }
+
+    // Group by product name — show one card per unique name (lowest price, summed quantity)
+    const grouped = new Map<string, Product>();
+    for (const p of products) {
+      const key = p.name.toLowerCase().trim();
+      const existing = grouped.get(key);
+      if (!existing) {
+        grouped.set(key, { ...p, quantity: p.quantity });
+      } else {
+        // Keep the one with the lowest price as the display card, sum quantities
+        if (p.price < existing.price) {
+          grouped.set(key, { ...p, quantity: existing.quantity + p.quantity });
+        } else {
+          grouped.set(key, { ...existing, quantity: existing.quantity + p.quantity });
+        }
+      }
+    }
+    products = Array.from(grouped.values());
 
     // Sort
     switch (sort) {

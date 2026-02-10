@@ -33,6 +33,8 @@ import {
   VolumeX,
   Package,
   ChevronDown,
+  Upload,
+  ImageOff,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -77,7 +79,70 @@ interface SavedSession {
 
 const SESSION_KEY = "dave-scan-session";
 
-// Conditions simplified to just New and Used
+// ─── Product Image with Error Fallback ────────────────────────
+
+function ProductImage({ 
+  src, 
+  alt, 
+  className, 
+  size = "md",
+  onUploadFallback,
+}: { 
+  src?: string | null; 
+  alt?: string; 
+  className?: string;
+  size?: "sm" | "md" | "lg";
+  onUploadFallback?: () => void;
+}) {
+  const [error, setError] = useState(false);
+  const [loaded, setLoaded] = useState(false);
+
+  const sizeClasses = {
+    sm: "h-14 w-14",
+    md: "h-20 w-20",
+    lg: "h-32 w-32",
+  };
+
+  if (!src || error) {
+    return (
+      <div 
+        className={cn(
+          "flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-border bg-muted/50",
+          sizeClasses[size],
+          onUploadFallback && "cursor-pointer hover:border-primary hover:bg-primary/5 transition-colors",
+          className
+        )}
+        onClick={onUploadFallback}
+      >
+        {onUploadFallback ? (
+          <>
+            <Upload className="h-4 w-4 text-muted-foreground" />
+            <span className="text-[9px] text-muted-foreground mt-0.5">Upload</span>
+          </>
+        ) : (
+          <ImageOff className="h-5 w-5 text-muted-foreground/50" />
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <div className={cn("overflow-hidden rounded-lg border border-border bg-white", sizeClasses[size], className)}>
+      <img
+        src={src}
+        alt={alt || "Product"}
+        className={cn("h-full w-full object-contain p-1", !loaded && "opacity-0")}
+        onLoad={() => setLoaded(true)}
+        onError={() => setError(true)}
+      />
+      {!loaded && !error && (
+        <div className="absolute inset-0 flex items-center justify-center">
+          <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+        </div>
+      )}
+    </div>
+  );
+}
 
 // ─── Component ───────────────────────────────────────────────
 
@@ -230,6 +295,33 @@ export default function ScanPage() {
             marketData,
           };
         }
+      }
+      // StockX didn't find it - try UPC lookup as fallback for images/product info
+      if (/^\d{12,13}$/.test(barcode)) {
+        try {
+          const upcRes = await fetch(`/api/upc-lookup?upc=${encodeURIComponent(barcode)}`);
+          if (upcRes.ok) {
+            const upcData = await upcRes.json();
+            if (upcData.title) {
+              return {
+                source: "stockx" as const,
+                barcode,
+                productName: upcData.title,
+                brand: upcData.brand || null,
+                colorway: null,
+                styleId: null,
+                size: null,
+                retailPrice: null,
+                imageUrl: upcData.images?.[0] || null,
+                imageUrls: upcData.images || [],
+                stockxProductId: null,
+                stockxVariantId: null,
+                variants: [],
+                marketData: null,
+              };
+            }
+          }
+        } catch {}
       }
       return null;
     } catch {
@@ -537,8 +629,8 @@ export default function ScanPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Scan In</h1>
-          <p className="text-sm text-muted-foreground">
+          <h1 className="text-3xl font-bold">Scan In</h1>
+          <p className="text-base text-muted-foreground">
             {phase === "scanning"
               ? "Scan barcodes to build your list, then move to pricing"
               : "Set condition and pricing for each item"}
@@ -645,29 +737,17 @@ export default function ScanPage() {
                     {items.map((item) => (
                       <div
                         key={item.id}
-                        className="flex items-center gap-3 rounded-lg border border-border bg-card p-3 transition-colors hover:bg-muted/30"
+                        className="flex items-center gap-4 rounded-xl border border-border bg-card p-4 transition-colors hover:bg-muted/30"
                       >
                         {/* Thumbnail */}
-                        <div className="h-14 w-14 flex-shrink-0 overflow-hidden rounded-lg border border-border bg-muted">
-                          {item.result.imageUrl ? (
-                            <img
-                              src={item.result.imageUrl}
-                              alt=""
-                              className="h-full w-full object-contain p-1"
-                            />
-                          ) : (
-                            <div className="flex h-full w-full items-center justify-center text-muted-foreground">
-                              <Package className="h-5 w-5" />
-                            </div>
-                          )}
-                        </div>
+                        <ProductImage src={item.result.imageUrl} size="md" />
 
                         {/* Info */}
                         <div className="min-w-0 flex-1">
-                          <p className="truncate text-sm font-medium">
+                          <p className="truncate text-base font-semibold">
                             {item.result.productName || "Manual Entry"}
                           </p>
-                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
                             {item.result.size && (
                               <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
                                 Size {item.result.size}
@@ -771,24 +851,16 @@ export default function ScanPage() {
                     <div key={item.id} className="overflow-hidden rounded-lg border border-border bg-card">
                       {/* Collapsed Header */}
                       <div
-                        className="flex cursor-pointer items-center gap-3 p-3 transition-colors hover:bg-muted/50"
+                        className="flex cursor-pointer items-center gap-4 p-4 transition-colors hover:bg-muted/50"
                         onClick={() => updateItem(item.id, { expanded: !item.expanded })}
                       >
-                        <div className="h-12 w-12 flex-shrink-0 overflow-hidden rounded-md border border-border bg-muted">
-                          {item.result.imageUrl ? (
-                            <img src={item.result.imageUrl} alt="" className="h-full w-full object-contain" />
-                          ) : (
-                            <div className="flex h-full w-full items-center justify-center text-muted-foreground">
-                              <Package className="h-5 w-5" />
-                            </div>
-                          )}
-                        </div>
+                        <ProductImage src={item.result.imageUrl} size="lg" />
 
                         <div className="min-w-0 flex-1">
-                          <p className="truncate text-sm font-medium">
+                          <p className="truncate text-lg font-bold">
                             {item.result.productName || "Manual Entry"}
                           </p>
-                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                          <div className="flex items-center gap-3 text-sm text-muted-foreground">
                             {(item.selectedSize || item.result.size) && (
                               <span>Size {item.selectedSize || item.result.size}</span>
                             )}
@@ -823,7 +895,7 @@ export default function ScanPage() {
 
                       {/* Expanded Pricing Form */}
                       {item.expanded && (
-                        <div className="border-t border-border p-4 space-y-4">
+                        <div className="border-t border-border p-6 space-y-5">
                           {/* Product Name (locked for StockX items) */}
                           {item.result.source === "manual" && (
                             <div className="space-y-1.5">
@@ -927,24 +999,13 @@ export default function ScanPage() {
                             </div>
                           )}
 
-                          {/* Images: thumbnails for New, upload for Used */}
-                          {isUsed ? (
+                          {/* Image Upload - Only for Used condition */}
+                          {isUsed && (
                             <div className="space-y-2">
                               <Label>Upload Photos (required for used items)</Label>
                               <ImageUpload images={item.images} onChange={(imgs) => updateItem(item.id, { images: imgs })} />
                             </div>
-                          ) : item.result.imageUrls.length > 0 ? (
-                            <div className="space-y-2">
-                              <Label>Product Images</Label>
-                              <div className="flex gap-2 overflow-x-auto pb-1">
-                                {item.result.imageUrls.slice(0, 5).map((url, idx) => (
-                                  <div key={idx} className="h-16 w-16 flex-shrink-0 overflow-hidden rounded-md border border-border bg-muted">
-                                    <img src={url} alt="" className="h-full w-full object-contain p-1" />
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          ) : null}
+                          )}
 
                           {/* Market Data */}
                           {item.marketData && (
@@ -955,27 +1016,27 @@ export default function ScanPage() {
                           )}
 
                           {/* Pricing */}
-                          <div className="grid grid-cols-2 gap-3">
-                            <div className="space-y-1.5">
-                              <Label>Cost (what you paid)</Label>
+                          <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                              <Label className="text-base">Cost (what you paid)</Label>
                               <Input
                                 type="number"
                                 step="0.01"
                                 placeholder="0.00"
                                 value={item.cost}
                                 onChange={(e) => updateItem(item.id, { cost: e.target.value })}
-                                className="text-lg"
+                                className="text-xl h-14"
                               />
                             </div>
-                            <div className="space-y-1.5">
-                              <Label>Selling Price *</Label>
+                            <div className="space-y-2">
+                              <Label className="text-base">Selling Price *</Label>
                               <Input
                                 type="number"
                                 step="0.01"
                                 placeholder="0.00"
                                 value={item.price}
                                 onChange={(e) => updateItem(item.id, { price: e.target.value })}
-                                className="text-lg font-semibold"
+                                className="text-xl h-14 font-semibold"
                               />
                             </div>
                           </div>

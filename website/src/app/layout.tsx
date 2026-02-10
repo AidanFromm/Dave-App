@@ -4,7 +4,7 @@ import "./globals.css";
 import { ThemeProvider } from "@/components/providers/theme-provider";
 import { ToastProvider } from "@/components/providers/toast-provider";
 import { Header } from "@/components/layout/header";
-import { Footer } from "@/components/layout/footer";
+import { FooterWrapper } from "@/components/layout/footer-wrapper";
 import { CartDrawer } from "@/components/cart/cart-drawer";
 
 const inter = Inter({
@@ -41,7 +41,7 @@ export default function RootLayout({
           <div className="flex min-h-screen flex-col">
             <Header />
             <main className="flex-1">{children}</main>
-            <Footer />
+            <FooterWrapper />
           </div>
           <CartDrawer />
           <ToastProvider />

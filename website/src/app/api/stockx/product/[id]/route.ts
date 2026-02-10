@@ -120,11 +120,22 @@ export async function GET(
     // Product attributes are nested
     const attrs = product.productAttributes as Record<string, unknown> | undefined;
     
-    // StockX v2 API doesn't return images - construct from urlKey
+    // Try to extract images from API response first
     const urlKey = product.urlKey ?? product.urlSlug ?? "";
-    const imageUrl = buildStockXImageUrl(urlKey);
-    const thumbUrl = buildStockXThumbUrl(urlKey);
-    const imageUrls = buildStockXImageUrls(urlKey);
+    const media = product.media as Record<string, unknown> | undefined;
+    const apiImageUrl = (media?.imageUrl as string) ?? (product.imageUrl as string) ?? (product.image as string) ?? "";
+    const apiImages: string[] = [];
+    if (media?.all && Array.isArray(media.all)) {
+      for (const m of media.all) {
+        if (typeof m === "string") apiImages.push(m);
+        else if (m && typeof m === "object" && "imageUrl" in (m as Record<string, unknown>)) apiImages.push((m as Record<string, string>).imageUrl);
+      }
+    }
+    
+    // Use API images if available, otherwise construct from urlKey
+    const imageUrl = apiImageUrl || buildStockXImageUrl(urlKey);
+    const thumbUrl = apiImageUrl || buildStockXThumbUrl(urlKey);
+    const imageUrls = apiImages.length > 0 ? apiImages : buildStockXImageUrls(urlKey);
 
     return NextResponse.json({
       id: product.productId ?? product.id,

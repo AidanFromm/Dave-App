@@ -527,7 +527,6 @@ export default function AdminDropsPage() {
                         drop.status === "scheduled" && "bg-blue-500 text-white"
                       )}
                     >
-                      {drop.status === "live" && "🔴 "}
                       {drop.status.charAt(0).toUpperCase() + drop.status.slice(1)}
                     </Badge>
                   </div>
