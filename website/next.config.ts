@@ -1,6 +1,9 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  turbopack: {
+    root: ".",
+  },
   images: {
     remotePatterns: [
       {
@@ -19,6 +22,10 @@ const nextConfig: NextConfig = {
       {
         protocol: "https",
         hostname: "assets.tcgdex.net",
+      },
+      {
+        protocol: "https",
+        hostname: "images.pokemontcg.io",
       },
     ],
   },
