@@ -25,10 +25,24 @@ export async function updateSession(request: NextRequest) {
     }
   );
 
-  // Refresh session
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // Refresh session — try getUser first, fall back to getSession
+  let user = null;
+  try {
+    const { data } = await supabase.auth.getUser();
+    user = data.user;
+  } catch {
+    // getUser can fail if token is expired but session exists
+  }
+  
+  // Fallback: check session if getUser returned null
+  if (!user) {
+    try {
+      const { data } = await supabase.auth.getSession();
+      user = data.session?.user ?? null;
+    } catch {
+      // Session check failed too
+    }
+  }
 
   // Detect admin subdomain
   const hostname = request.headers.get("host") ?? "";
