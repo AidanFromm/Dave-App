@@ -27,6 +27,22 @@ const nextConfig: NextConfig = {
         protocol: "https",
         hostname: "images.pokemontcg.io",
       },
+      {
+        protocol: "https",
+        hostname: "i5.walmartimages.com",
+      },
+      {
+        protocol: "https",
+        hostname: "media.finishline.com",
+      },
+      {
+        protocol: "https",
+        hostname: "cdn11.bigcommerce.com",
+      },
+      {
+        protocol: "https",
+        hostname: "**.walmartimages.com",
+      },
     ],
   },
 };
