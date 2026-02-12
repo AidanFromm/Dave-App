@@ -24,7 +24,6 @@ export async function POST(request: Request) {
     if (error) {
       // Table might not exist - log and still return success
       console.error("Failed to save drop subscriber to Supabase:", error.message);
-      console.log("Drop subscriber:", email);
     }
 
     return NextResponse.json({ success: true });
