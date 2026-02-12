@@ -4,6 +4,15 @@ import { createClient } from "@/lib/supabase/server";
 // Schedule a drop
 export async function POST(request: Request) {
   try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const { productId, dropDate } = await request.json();
 
     if (!productId || !dropDate) {
@@ -12,8 +21,6 @@ export async function POST(request: Request) {
         { status: 400 }
       );
     }
-
-    const supabase = await createClient();
 
     const { error } = await supabase
       .from("products")
@@ -45,6 +52,15 @@ export async function POST(request: Request) {
 // Toggle drop status
 export async function PATCH(request: Request) {
   try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const { productId, isDrop } = await request.json();
 
     if (!productId) {
@@ -53,8 +69,6 @@ export async function PATCH(request: Request) {
         { status: 400 }
       );
     }
-
-    const supabase = await createClient();
 
     const { error } = await supabase
       .from("products")
@@ -85,6 +99,15 @@ export async function PATCH(request: Request) {
 // Remove drop
 export async function DELETE(request: Request) {
   try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const { productId } = await request.json();
 
     if (!productId) {
@@ -93,8 +116,6 @@ export async function DELETE(request: Request) {
         { status: 400 }
       );
     }
-
-    const supabase = await createClient();
 
     const { error } = await supabase
       .from("products")

@@ -1,18 +1,28 @@
 import { NextRequest, NextResponse } from "next/server";
+import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 export async function GET(request: NextRequest) {
   try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const { searchParams } = new URL(request.url);
     const days = parseInt(searchParams.get("days") ?? "30", 10);
 
-    const supabase = createAdminClient();
+    const adminSupabase = createAdminClient();
 
     const startDate = new Date();
     startDate.setDate(startDate.getDate() - days);
 
     // Fetch orders for the period
-    const { data: orders, error } = await supabase
+    const { data: orders, error } = await adminSupabase
       .from("orders")
       .select("total, items, sales_channel, created_at")
       .gte("created_at", startDate.toISOString())
