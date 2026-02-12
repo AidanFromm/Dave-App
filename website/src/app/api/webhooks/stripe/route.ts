@@ -142,7 +142,9 @@ export async function POST(request: Request) {
       });
 
       // Sync stock to Clover (fire-and-forget)
-      handleWebsiteSale(item.id, item.qty).catch(() => {});
+      handleWebsiteSale(item.id, item.qty).catch((err) => {
+        console.error(`Clover sync failed for product ${item.id}:`, err);
+      });
     }
   }
 

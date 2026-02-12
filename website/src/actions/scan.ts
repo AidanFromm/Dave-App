@@ -86,7 +86,9 @@ export async function addScannedProductToInventory(data: ScanFormData): Promise<
     }
 
     // Push updated stock to Clover (fire-and-forget)
-    syncToClover(existing.id).catch(() => {});
+    syncToClover(existing.id).catch((err) => {
+      console.error("Clover sync failed for existing product:", err);
+    });
 
     return { productId: existing.id, error: null };
   }
@@ -170,7 +172,9 @@ export async function addScannedProductToInventory(data: ScanFormData): Promise<
   }
 
   // Push new product to Clover (fire-and-forget)
-  syncToClover(product.id).catch(() => {});
+  syncToClover(product.id).catch((err) => {
+    console.error("Clover sync failed for new product:", err);
+  });
 
   return { productId: product.id, error: null };
 }

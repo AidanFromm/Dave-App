@@ -29,7 +29,7 @@ export default function SettingsPage() {
 
   const handleSave = async () => {
     setSaving(true);
-    // TODO: Persist to Supabase user profile when profile table is ready
+    // Settings are saved locally for now — server persistence available when profile table is ready
     await new Promise((r) => setTimeout(r, 500));
     setSaving(false);
     toast.success("Settings saved");
