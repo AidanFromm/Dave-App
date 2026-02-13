@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { getProduct, getProductSizeVariants } from "@/actions/products";
+import { getProduct, getProductSizeVariants, getRelatedProducts, getCategoryForProduct } from "@/actions/products";
 import { getVariantsForProduct } from "@/actions/variants";
 import { ProductDetailClient } from "./product-detail-client";
 import { formatCurrency } from "@/types/product";
@@ -49,5 +49,19 @@ export default async function ProductPage({ params }: Props) {
       }))
     : await getProductSizeVariants(product);
 
-  return <ProductDetailClient product={product} sizeVariants={sizeVariants} dbVariants={dbVariants} />;
+  // Fetch category and related products
+  const [category, relatedProducts] = await Promise.all([
+    getCategoryForProduct(product.category_id),
+    getRelatedProducts(product.id, product.category_id, 4),
+  ]);
+
+  return (
+    <ProductDetailClient
+      product={product}
+      sizeVariants={sizeVariants}
+      dbVariants={dbVariants}
+      category={category}
+      relatedProducts={relatedProducts}
+    />
+  );
 }

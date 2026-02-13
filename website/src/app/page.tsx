@@ -1,6 +1,7 @@
 import { Metadata } from "next";
 import { getProducts, getCategories } from "@/actions/products";
 import { ShopPage } from "@/components/shop/shop-page";
+import { OrganizationJsonLd } from "@/components/seo/json-ld";
 
 export const metadata: Metadata = {
   title: "Shop",
@@ -17,5 +18,10 @@ export default async function Home() {
     getCategories(),
   ]);
 
-  return <ShopPage initialProducts={products} categories={categories} />;
+  return (
+    <>
+      <OrganizationJsonLd />
+      <ShopPage initialProducts={products} categories={categories} />
+    </>
+  );
 }

@@ -36,6 +36,16 @@ export const metadata: Metadata = {
     type: "website",
     locale: "en_US",
     siteName: "Secured Tampa",
+    title: "Secured Tampa — Premium Sneakers & Collectibles",
+    description:
+      "Shop premium sneakers, streetwear, and Pokemon cards at Secured Tampa. New drops, used gems, and rare collectibles.",
+    url: "https://securedtampa.com",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Secured Tampa — Premium Sneakers & Collectibles",
+    description:
+      "Shop premium sneakers, streetwear, and Pokemon cards at Secured Tampa.",
   },
 };
 

@@ -6,8 +6,9 @@ const BRAND = {
   navy: '#002244',
   storeName: 'Secured Tampa',
   storeUrl: 'https://securedtampa.com',
-  storeAddress: '123 Main Street, Tampa, FL 33601', // Placeholder — Dave will update
-  storePhone: '(813) 555-0000', // Placeholder
+  storeAddress: '5009 S Dale Mabry Hwy, Tampa, FL 33611',
+  storePhone: '(813) 551-1771',
+  storeHours: 'Mon–Sat 11am–7pm · Sun 12pm–5pm',
 };
 
 function layout(content: string): string {
@@ -22,11 +23,17 @@ function layout(content: string): string {
       <p style="margin:4px 0 0;color:${BRAND.orange};font-size:12px;letter-spacing:2px;text-transform:uppercase;">Tampa, FL</p>
     </div>
     ${content}
+    <!-- Orange accent bar -->
+    <div style="height:4px;background:${BRAND.orange};"></div>
     <!-- Footer -->
     <div style="padding:24px;text-align:center;background:#fafafa;border-top:1px solid #e5e5e5;">
       <p style="color:#888;font-size:12px;margin:0;">
         ${BRAND.storeName} &middot; ${BRAND.storeAddress}<br>
+        Phone: ${BRAND.storePhone} &middot; ${BRAND.storeHours}<br>
         <a href="${BRAND.storeUrl}" style="color:${BRAND.orange};text-decoration:none;">${BRAND.storeUrl}</a>
+      </p>
+      <p style="color:#aaa;font-size:11px;margin:12px 0 0;">
+        &copy; ${new Date().getFullYear()} ${BRAND.storeName}. All rights reserved.
       </p>
     </div>
   </div>
@@ -190,6 +197,7 @@ export function orderPickupEmail(data: OrderPickupData) {
           <p style="margin:0 0 4px;font-weight:bold;color:${BRAND.navy};font-size:16px;">${BRAND.storeName}</p>
           <p style="margin:0;color:#555;font-size:14px;">${BRAND.storeAddress}</p>
           <p style="margin:8px 0 0;color:#888;font-size:13px;">Phone: ${BRAND.storePhone}</p>
+          <p style="margin:4px 0 0;color:#888;font-size:13px;">Hours: ${BRAND.storeHours}</p>
         </div>
         <p style="color:#888;font-size:13px;">Please bring a valid photo ID when picking up your order.</p>
       </div>
