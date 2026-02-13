@@ -2,7 +2,9 @@ import { NextResponse } from "next/server";
 import { Resend } from "resend";
 import { orderConfirmationEmail, type OrderConfirmationData } from "@/lib/email-templates";
 
-const resend = new Resend(process.env.RESEND_API_KEY ?? "re_cYnijget_FyAroQA3mF9U9qD4jX4Z75wf");
+function getResend() {
+  return new Resend(process.env.RESEND_API_KEY ?? "re_cYnijget_FyAroQA3mF9U9qD4jX4Z75wf");
+}
 const FROM = "Secured Tampa <orders@securedtampa.com>";
 
 interface ConfirmationRequest {
@@ -46,7 +48,7 @@ export async function POST(request: Request) {
 
     const email = orderConfirmationEmail(data);
 
-    const result = await resend.emails.send({
+    const result = await getResend().emails.send({
       from: FROM,
       to: body.email,
       subject: email.subject,

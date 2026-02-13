@@ -14,7 +14,9 @@ import {
   type OrderConfirmationData,
 } from '@/lib/email-templates';
 
-const resend = new Resend(process.env.RESEND_API_KEY ?? 're_cYnijget_FyAroQA3mF9U9qD4jX4Z75wf');
+function getResend() {
+  return new Resend(process.env.RESEND_API_KEY ?? 're_cYnijget_FyAroQA3mF9U9qD4jX4Z75wf');
+}
 const FROM = 'Secured Tampa <orders@securedtampa.com>';
 
 type NotificationType = 'confirmation' | 'shipped' | 'pickup' | 'reminder' | 'welcome';
@@ -44,7 +46,7 @@ export async function POST(request: Request) {
       const toEmail = (body.email ?? customData?.email) as string;
       if (!toEmail) return NextResponse.json({ error: 'Missing email' }, { status: 400 });
 
-      const result = await resend.emails.send({ from: FROM, to: toEmail, subject: email.subject, html: email.html });
+      const result = await getResend().emails.send({ from: FROM, to: toEmail, subject: email.subject, html: email.html });
       return NextResponse.json({ success: true, id: result.data?.id });
     }
 
@@ -123,7 +125,7 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: `Unknown type: ${type}` }, { status: 400 });
     }
 
-    const result = await resend.emails.send({
+    const result = await getResend().emails.send({
       from: FROM,
       to: customerEmail,
       subject: emailContent.subject,

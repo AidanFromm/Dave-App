@@ -7,7 +7,11 @@ import {
   abandonedCartEmail3,
 } from "@/lib/email-templates-recovery";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+function getResend() {
+  const key = process.env.RESEND_API_KEY;
+  if (!key) throw new Error("RESEND_API_KEY not configured");
+  return new Resend(key);
+}
 
 interface CartItemJson {
   name?: string;
@@ -79,7 +83,7 @@ export async function GET(request: Request) {
         // Email 1: After 1 hour
         if (!cart.email_1_sent && hoursOld >= 1) {
           const { subject, html } = abandonedCartEmail1(items, total);
-          await resend.emails.send({
+          await getResend().emails.send({
             from: "Secured Tampa <orders@securedtampa.com>",
             to: cart.email,
             subject,
@@ -100,7 +104,7 @@ export async function GET(request: Request) {
         // Email 2: After 24 hours
         if (cart.email_1_sent && !cart.email_2_sent && hoursOld >= 24) {
           const { subject, html } = abandonedCartEmail2(items, total);
-          await resend.emails.send({
+          await getResend().emails.send({
             from: "Secured Tampa <orders@securedtampa.com>",
             to: cart.email,
             subject,
@@ -121,7 +125,7 @@ export async function GET(request: Request) {
         if (cart.email_2_sent && !cart.email_3_sent && hoursOld >= 72) {
           const discountCode = cart.discount_code || generateDiscountCode();
           const { subject, html } = abandonedCartEmail3(items, total, discountCode);
-          await resend.emails.send({
+          await getResend().emails.send({
             from: "Secured Tampa <orders@securedtampa.com>",
             to: cart.email,
             subject,

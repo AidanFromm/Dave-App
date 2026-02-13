@@ -3,13 +3,16 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { Resend } from "resend";
 import { backInStockEmail } from "@/lib/email-templates-recovery";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
-
 export async function GET(request: Request) {
   const authHeader = request.headers.get("authorization");
   if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+
+  if (!process.env.RESEND_API_KEY) {
+    return NextResponse.json({ error: "RESEND_API_KEY not configured" }, { status: 500 });
+  }
+  const resend = new Resend(process.env.RESEND_API_KEY);
 
   const supabase = createAdminClient();
   let sent = 0;
