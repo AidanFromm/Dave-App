@@ -26,7 +26,6 @@ import {
   ClipboardCheck,
   Activity,
   DollarSign,
-  MessageSquare,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 

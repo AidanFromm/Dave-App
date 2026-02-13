@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatCurrency } from "@/lib/utils";
-import { Search, Package, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
+import { Search, Package, ArrowUpDown, ArrowUp, ArrowDown, Plus } from "lucide-react";
 import { Pagination } from "@/components/ui/pagination";
 import { toast } from "sonner";
 
@@ -171,9 +171,22 @@ export default function AdminProductsPage() {
                 <tbody>
                   {filtered.length === 0 ? (
                     <tr>
-                      <td colSpan={7} className="px-4 py-12 text-center text-muted-foreground">
-                        <Package className="mx-auto h-8 w-8 mb-2 opacity-50" />
-                        {search ? "No products match your search." : "No products found."}
+                      <td colSpan={7} className="px-4 py-16 text-center">
+                        <div className="flex flex-col items-center">
+                          <div className="flex h-14 w-14 items-center justify-center rounded-full bg-primary/10 mb-4">
+                            <Package className="h-7 w-7 text-primary" />
+                          </div>
+                          <p className="text-sm font-medium">{search ? "No products match your search" : "No products yet"}</p>
+                          <p className="text-xs text-muted-foreground mt-1 max-w-sm">
+                            {search ? "Try a different search term." : "Add your first product to get started selling."}
+                          </p>
+                          {!search && (
+                            <Link href="/admin/products/new" className="mt-4 inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors">
+                              <Plus className="h-4 w-4" />
+                              Add Your First Product
+                            </Link>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ) : (

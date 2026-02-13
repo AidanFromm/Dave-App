@@ -344,7 +344,17 @@ ${selectedOrders.map((order) => {
             <tbody>
               {filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="py-12 text-center text-muted-foreground">No orders found.</td>
+                  <td colSpan={7} className="py-16 text-center">
+                    <div className="flex flex-col items-center">
+                      <div className="flex h-14 w-14 items-center justify-center rounded-full bg-primary/10 mb-4">
+                        <Package className="h-7 w-7 text-primary" />
+                      </div>
+                      <p className="text-sm font-medium">{search || statusFilter !== "all" ? "No orders match your filters" : "No orders yet"}</p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {search || statusFilter !== "all" ? "Try adjusting your search or filters." : "Orders will appear here when customers make purchases."}
+                      </p>
+                    </div>
+                  </td>
                 </tr>
               ) : (
                 paginated.map((order) => (

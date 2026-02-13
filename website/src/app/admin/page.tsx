@@ -113,12 +113,39 @@ export default function AdminDashboardPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="font-display text-2xl md:text-3xl font-bold uppercase tracking-tight">Dashboard</h1>
-          <p className="text-sm text-muted-foreground mt-1">Welcome back. Here&apos;s what&apos;s happening.</p>
+          <p className="text-sm text-muted-foreground mt-1">
+            Welcome back, Dave. Here&apos;s what&apos;s happening with your store.
+          </p>
         </div>
         <div className="flex items-center gap-2">
           <TimeSelector selected={period} onChange={setPeriod} />
         </div>
       </div>
+
+      {/* Attention Needed */}
+      {!ordersLoading && recentOrders.filter(o => o.status === "pending" || o.status === "paid").length > 0 && (
+        <div className="rounded-xl bg-primary/5 border border-primary/20 p-4 flex flex-col sm:flex-row sm:items-center gap-3">
+          <div className="flex items-center gap-3 flex-1">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 flex-shrink-0">
+              <AlertTriangle className="h-5 w-5 text-primary" />
+            </div>
+            <div>
+              <p className="text-sm font-semibold">
+                {recentOrders.filter(o => o.status === "pending" || o.status === "paid").length} order(s) need attention
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Pending or paid orders waiting to be processed.
+              </p>
+            </div>
+          </div>
+          <Button asChild size="sm" className="gap-1.5 self-start sm:self-auto">
+            <Link href="/admin/orders?status=pending">
+              <ClipboardList className="h-3.5 w-3.5" />
+              Review Now
+            </Link>
+          </Button>
+        </div>
+      )}
 
       {/* Quick Actions */}
       <div className="flex flex-wrap gap-2">

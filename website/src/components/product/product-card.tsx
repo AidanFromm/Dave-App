@@ -91,42 +91,14 @@ export function ProductCard({ product, availableSizes }: ProductCardProps) {
           </div>
         )}
 
-        {/* Badges — top left */}
-        <div className="absolute left-2 top-2 flex flex-col gap-1 z-10">
-          {isPokemon ? (
-            <>
-              <span className="bg-yellow-500/90 text-black text-[10px] font-bold uppercase px-2 py-0.5 rounded">
-                Pokemon
-              </span>
-              {product.tags?.some((t) => t.toLowerCase().includes("graded")) ? (
-                <span className="bg-blue-500/90 text-white text-[10px] font-bold uppercase px-2 py-0.5 rounded">
-                  {product.tags?.find((t) => /psa|bgs|cgc/i.test(t))?.toUpperCase() || "Graded"}
-                </span>
-              ) : product.tags?.some((t) => t.toLowerCase().includes("sealed")) ? (
-                <span className="bg-purple-500/90 text-white text-[10px] font-bold uppercase px-2 py-0.5 rounded">
-                  Sealed
-                </span>
-              ) : (
-                <span className="bg-surface-700 text-white text-[10px] font-bold uppercase px-2 py-0.5 rounded">
-                  Raw
-                </span>
-              )}
-            </>
-          ) : (
-            <>
-              {newDrop && (
-                <span className="bg-primary text-white text-[10px] font-bold uppercase px-2 py-0.5 rounded">
-                  NEW
-                </span>
-              )}
-            </>
-          )}
-          {discount && (
+        {/* Discount badge — top left (only discount overlays the image) */}
+        {discount && (
+          <div className="absolute left-2 top-2 z-10">
             <span className="bg-destructive text-white text-[10px] font-bold px-2 py-0.5 rounded">
               -{discount}%
             </span>
-          )}
-        </div>
+          </div>
+        )}
 
         {/* Wishlist button — top right */}
         <motion.div
@@ -207,28 +179,58 @@ export function ProductCard({ product, availableSizes }: ProductCardProps) {
           </div>
         )}
         
-        {/* Price and Condition */}
-        <div className="mt-auto pt-2 flex items-center justify-between gap-2">
-          <div className="flex items-baseline gap-2">
-            <span className="text-base font-mono font-bold text-primary">
-              {formatCurrency(product.price)}
-            </span>
-            {product.compare_at_price && product.compare_at_price > product.price && (
-              <span className="text-xs font-mono text-muted-foreground line-through">
-                {formatCurrency(product.compare_at_price)}
-              </span>
-            )}
-          </div>
-          <span
-            className={cn(
-              "text-[10px] font-semibold px-2 py-0.5 rounded-full",
-              product.condition === "new"
-                ? "bg-green-500/10 text-green-500"
-                : "bg-blue-500/10 text-blue-500"
-            )}
-          >
-            {CONDITION_LABELS[product.condition]}
+        {/* Price */}
+        <div className="mt-auto pt-2 flex items-baseline gap-2">
+          <span className="text-base font-mono font-bold text-primary">
+            {formatCurrency(product.price)}
           </span>
+          {product.compare_at_price && product.compare_at_price > product.price && (
+            <span className="text-xs font-mono text-muted-foreground line-through">
+              {formatCurrency(product.compare_at_price)}
+            </span>
+          )}
+        </div>
+
+        {/* Tags — bottom */}
+        <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+          {isPokemon ? (
+            <>
+              <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-yellow-500/15 text-yellow-500">
+                Pokemon
+              </span>
+              {product.tags?.some((t) => t.toLowerCase().includes("graded")) ? (
+                <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-blue-500/15 text-blue-400">
+                  {product.tags?.find((t) => /psa|bgs|cgc/i.test(t))?.toUpperCase() || "Graded"}
+                </span>
+              ) : product.tags?.some((t) => t.toLowerCase().includes("sealed")) ? (
+                <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-purple-500/15 text-purple-400">
+                  Sealed
+                </span>
+              ) : (
+                <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-surface-700/50 text-muted-foreground">
+                  Raw
+                </span>
+              )}
+            </>
+          ) : (
+            <>
+              {newDrop && (
+                <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-primary/15 text-primary">
+                  New Arrival
+                </span>
+              )}
+              <span
+                className={cn(
+                  "text-[10px] font-semibold px-2 py-0.5 rounded-full",
+                  product.condition === "new"
+                    ? "bg-green-500/10 text-green-500"
+                    : "bg-blue-500/10 text-blue-500"
+                )}
+              >
+                {CONDITION_LABELS[product.condition]}
+              </span>
+            </>
+          )}
         </div>
       </Link>
     </motion.div>

@@ -216,17 +216,20 @@ export function ProductForm({ product, categories, existingVariants = [] }: Prod
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
       {/* Basic info */}
       <div className="space-y-4">
-        <h2 className="font-semibold">Product Info</h2>
+        <div>
+          <h2 className="font-semibold">Product Info</h2>
+          <p className="text-xs text-muted-foreground mt-0.5">Basic details about the product. Name and price are required.</p>
+        </div>
         <div className="space-y-2">
-          <Label>Name *</Label>
-          <Input {...register("name")} />
+          <Label>Product Name *</Label>
+          <Input {...register("name")} placeholder="e.g. Nike Air Jordan 1 Retro High OG" />
           {errors.name && (
             <p className="text-xs text-destructive">{errors.name.message}</p>
           )}
         </div>
         <div className="space-y-2">
           <Label>Description</Label>
-          <Textarea {...register("description")} rows={3} />
+          <Textarea {...register("description")} rows={3} placeholder="Describe the product — condition details, notable features, etc." />
         </div>
         <div className="space-y-2">
           <Label>Images</Label>
@@ -239,25 +242,26 @@ export function ProductForm({ product, categories, existingVariants = [] }: Prod
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-2">
             <Label>Brand</Label>
-            <Input {...register("brand")} />
+            <Input {...register("brand")} placeholder="e.g. Nike, Adidas, Pokémon" />
           </div>
           <div className="space-y-2">
             <Label>SKU</Label>
-            <Input {...register("sku")} />
+            <Input {...register("sku")} placeholder="e.g. DZ5485-612" />
+            <p className="text-[10px] text-muted-foreground">Style code or internal ID</p>
           </div>
         </div>
         <div className="grid grid-cols-3 gap-3">
           <div className="space-y-2">
             <Label>Barcode</Label>
-            <Input {...register("barcode")} />
+            <Input {...register("barcode")} placeholder="UPC / EAN" />
           </div>
           <div className="space-y-2">
             <Label>Size</Label>
-            <Input {...register("size")} />
+            <Input {...register("size")} placeholder="e.g. 10, 10.5" />
           </div>
           <div className="space-y-2">
             <Label>Colorway</Label>
-            <Input {...register("colorway")} />
+            <Input {...register("colorway")} placeholder="e.g. Bred, University Blue" />
           </div>
         </div>
       </div>
@@ -303,7 +307,10 @@ export function ProductForm({ product, categories, existingVariants = [] }: Prod
 
       {/* Pricing */}
       <div className="space-y-4">
-        <h2 className="font-semibold">Pricing</h2>
+        <div>
+          <h2 className="font-semibold">Pricing</h2>
+          <p className="text-xs text-muted-foreground mt-0.5">&quot;Compare At&quot; shows as a strikethrough price to highlight a deal.</p>
+        </div>
         <div className="grid grid-cols-3 gap-3">
           <div className="space-y-2">
             <Label>Price *</Label>
@@ -339,7 +346,10 @@ export function ProductForm({ product, categories, existingVariants = [] }: Prod
 
       {/* Inventory */}
       <div className="space-y-4">
-        <h2 className="font-semibold">Inventory</h2>
+        <div>
+          <h2 className="font-semibold">Inventory</h2>
+          <p className="text-xs text-muted-foreground mt-0.5">You&apos;ll get an alert when stock drops below the threshold.</p>
+        </div>
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-2">
             <Label>Quantity *</Label>
@@ -365,31 +375,43 @@ export function ProductForm({ product, categories, existingVariants = [] }: Prod
 
       {/* Toggles */}
       <div className="space-y-4">
-        <h2 className="font-semibold">Settings</h2>
-        <div className="space-y-3">
+        <h2 className="font-semibold">Visibility &amp; Options</h2>
+        <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <Label>Has Box</Label>
+            <div>
+              <Label>Has Box</Label>
+              <p className="text-[10px] text-muted-foreground">Does this item come with its original box?</p>
+            </div>
             <Switch
               checked={watch("hasBox")}
               onCheckedChange={(v) => setValue("hasBox", v)}
             />
           </div>
           <div className="flex items-center justify-between">
-            <Label>Active</Label>
+            <div>
+              <Label>Active (Visible on Store)</Label>
+              <p className="text-[10px] text-muted-foreground">Turn off to hide from the website without deleting</p>
+            </div>
             <Switch
               checked={watch("isActive")}
               onCheckedChange={(v) => setValue("isActive", v)}
             />
           </div>
           <div className="flex items-center justify-between">
-            <Label>Featured</Label>
+            <div>
+              <Label>Featured</Label>
+              <p className="text-[10px] text-muted-foreground">Show on the homepage featured section</p>
+            </div>
             <Switch
               checked={watch("isFeatured")}
               onCheckedChange={(v) => setValue("isFeatured", v)}
             />
           </div>
           <div className="flex items-center justify-between">
-            <Label>New Drop</Label>
+            <div>
+              <Label>New Drop</Label>
+              <p className="text-[10px] text-muted-foreground">Show in the &quot;New Drops&quot; section of the store</p>
+            </div>
             <Switch
               checked={watch("isDrop")}
               onCheckedChange={(v) => setValue("isDrop", v)}

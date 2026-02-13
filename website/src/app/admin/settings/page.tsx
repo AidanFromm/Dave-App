@@ -206,14 +206,20 @@ export default function SettingsPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold">Settings</h1>
+      <div>
+        <h1 className="text-2xl font-bold">Settings</h1>
+        <p className="text-sm text-muted-foreground mt-1">Manage your store info, tax rates, integrations, and notifications.</p>
+      </div>
 
       {/* Store Settings */}
       <div className="rounded-xl shadow-card bg-card p-6">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-2">
             <Store className="h-5 w-5 text-primary" />
-            <h3 className="text-lg font-semibold">Store Settings</h3>
+            <div>
+              <h3 className="text-lg font-semibold">Store Settings</h3>
+              <p className="text-xs text-muted-foreground">Your store name and contact info shown on receipts and emails.</p>
+            </div>
           </div>
           {!storeEditing ? (
             <button
@@ -311,7 +317,10 @@ export default function SettingsPage() {
       <div className="rounded-xl shadow-card bg-card p-6">
         <div className="flex items-center gap-2 mb-6">
           <DollarSign className="h-5 w-5 text-primary" />
-          <h3 className="text-lg font-semibold">Tax &amp; Shipping</h3>
+          <div>
+            <h3 className="text-lg font-semibold">Tax &amp; Shipping</h3>
+            <p className="text-xs text-muted-foreground">These rates apply to all online orders. Florida default tax is 7.5%.</p>
+          </div>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="space-y-1.5">
