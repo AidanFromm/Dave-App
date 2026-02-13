@@ -11,7 +11,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { signInSchema, type SignInFormValues } from "@/lib/validators";
 import { signIn } from "@/actions/auth";
-import { Loader2, Eye, EyeOff, ShoppingBag, ArrowRight, Sparkles } from "lucide-react";
+import {
+  Loader2, Eye, EyeOff, ShoppingBag, ArrowRight,
+  Shield, Package, Truck, Star, Lock, AlertCircle,
+} from "lucide-react";
 
 const fadeIn = {
   hidden: { opacity: 0, y: 20 },
@@ -84,7 +87,7 @@ function SignInForm() {
                   animate={{ opacity: 1, scale: 1 }}
                   className="rounded-xl bg-destructive/10 p-4 text-sm text-destructive flex items-center gap-2"
                 >
-                  <span className="text-lg">⚠️</span>
+                  <AlertCircle className="h-4 w-4 shrink-0" />
                   {serverError}
                 </motion.div>
               )}
@@ -177,49 +180,46 @@ function SignInForm() {
       </div>
 
       {/* Right side - Decorative (hidden on mobile) */}
-      <div className="hidden lg:flex flex-1 items-center justify-center bg-gradient-to-br from-primary/10 via-background to-orange-500/10 relative overflow-hidden">
-        {/* Floating elements */}
-        <motion.div
-          animate={{ 
-            y: [0, -20, 0],
-            rotate: [0, 5, 0],
-          }}
-          transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
-          className="absolute top-20 right-20 text-8xl"
-        >
-          👟
-        </motion.div>
-        <motion.div
-          animate={{ 
-            y: [0, 20, 0],
-            rotate: [0, -5, 0],
-          }}
-          transition={{ duration: 5, repeat: Infinity, ease: "easeInOut", delay: 1 }}
-          className="absolute bottom-32 left-20 text-7xl"
-        >
-          🎴
-        </motion.div>
-        <motion.div
-          animate={{ 
-            scale: [1, 1.1, 1],
-          }}
-          transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
-        >
-          <div className="text-center">
-            <Sparkles className="h-16 w-16 text-primary/30 mx-auto" />
-            <p className="mt-4 text-2xl font-bold text-muted-foreground/50">
-              Exclusive Access
-            </p>
-            <p className="mt-2 text-muted-foreground/40 max-w-xs">
-              Sign in to track orders, save favorites, and get early access to drops
-            </p>
+      <div className="hidden lg:flex flex-1 items-center justify-center bg-gradient-to-br from-primary/5 via-background to-surface-900 relative overflow-hidden">
+        {/* Central content */}
+        <div className="relative z-10 text-center px-12">
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl border border-primary/20 bg-primary/10">
+            <Lock className="h-8 w-8 text-primary" />
           </div>
-        </motion.div>
+          <h2 className="mt-6 text-2xl font-bold text-foreground">
+            Your Account
+          </h2>
+          <p className="mt-2 text-muted-foreground max-w-sm mx-auto">
+            Track orders, save favorites, and get early access to exclusive drops.
+          </p>
 
-        {/* Background circles */}
+          {/* Feature cards */}
+          <div className="mt-10 space-y-3 max-w-xs mx-auto">
+            {[
+              { icon: Shield, label: "100% Authentic", desc: "Every item verified" },
+              { icon: Truck, label: "Order Tracking", desc: "Real-time updates" },
+              { icon: Star, label: "Early Access", desc: "Shop drops first" },
+              { icon: Package, label: "Order History", desc: "All purchases saved" },
+            ].map((feature) => (
+              <div
+                key={feature.label}
+                className="flex items-center gap-4 rounded-xl border border-surface-800/50 bg-surface-900/50 p-4 text-left"
+              >
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+                  <feature.icon className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-foreground">{feature.label}</p>
+                  <p className="text-xs text-muted-foreground">{feature.desc}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Background decoration */}
         <div className="absolute -top-40 -right-40 h-80 w-80 rounded-full bg-primary/5 blur-3xl" />
-        <div className="absolute -bottom-40 -left-40 h-96 w-96 rounded-full bg-orange-500/5 blur-3xl" />
+        <div className="absolute -bottom-40 -left-40 h-96 w-96 rounded-full bg-primary/3 blur-3xl" />
       </div>
     </div>
   );

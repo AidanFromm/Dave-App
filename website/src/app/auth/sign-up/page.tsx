@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { signUpSchema, type SignUpFormValues } from "@/lib/validators";
 import { signUp } from "@/actions/auth";
-import { Loader2, CheckCircle, Eye, EyeOff, ArrowRight, Shield, Truck, Sparkles } from "lucide-react";
+import { Loader2, CheckCircle, Eye, EyeOff, ArrowRight, Shield, Truck, Sparkles, AlertCircle } from "lucide-react";
 
 const fadeIn = {
   hidden: { opacity: 0, y: 20 },
@@ -120,7 +120,7 @@ export default function SignUpPage() {
                   animate={{ opacity: 1, scale: 1 }}
                   className="rounded-xl bg-destructive/10 p-4 text-sm text-destructive flex items-center gap-2"
                 >
-                  <span className="text-lg">⚠️</span>
+                  <AlertCircle className="h-4 w-4 shrink-0" />
                   {serverError}
                 </motion.div>
               )}
