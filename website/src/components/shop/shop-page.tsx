@@ -193,7 +193,10 @@ export function ShopPage({ initialProducts, categories }: ShopPageProps) {
       </div>
 
       {/* Products grid */}
-      <ProductGrid products={filteredProducts} sizesByName={sizesByName} />
+      <ProductGrid products={paginatedProducts} sizesByName={sizesByName} />
+
+      {/* Pagination */}
+      <Pagination currentPage={safePage} totalPages={totalPages} onPageChange={setCurrentPage} />
     </div>
   );
 }

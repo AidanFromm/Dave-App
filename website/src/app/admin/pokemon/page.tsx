@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatCurrency } from "@/lib/utils";
+import { toast } from "sonner";
 import {
   Search,
   Package,
@@ -58,7 +59,9 @@ export default function AdminPokemonPage() {
           const data = await res.json();
           setProducts(data.products ?? []);
         }
-      } catch {}
+      } catch {
+        toast.error("Failed to load Pokemon products");
+      }
       setLoading(false);
     }
     load();

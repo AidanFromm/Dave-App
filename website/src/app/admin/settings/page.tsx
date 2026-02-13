@@ -78,7 +78,9 @@ export default function SettingsPage() {
         if (n.orderAlerts !== undefined) setOrderAlerts(n.orderAlerts);
         if (n.lowStockThreshold !== undefined) setLowStockThreshold(n.lowStockThreshold);
       }
-    } catch {}
+    } catch {
+      // localStorage parse error — safe to ignore
+    }
 
     async function fetchSettings() {
       try {
@@ -92,7 +94,7 @@ export default function SettingsPage() {
           });
         }
       } catch {
-        // Clover settings not available yet, that's OK
+        toast.error("Failed to load Clover settings");
       } finally {
         setLoading(false);
       }

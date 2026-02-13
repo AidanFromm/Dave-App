@@ -165,6 +165,8 @@ export async function POST(request: Request) {
       subtotal: subtotalStr,
       tax: taxStr,
       shippingCost: shippingCostStr,
+      discountCode: discountCodeMeta,
+      discountAmount: discountAmountStr,
     } = paymentIntent.metadata;
 
     const supabase = createAdminClient();
@@ -215,7 +217,8 @@ export async function POST(request: Request) {
       subtotal,
       tax,
       shipping_cost: shippingCost,
-      discount: 0,
+      discount: discountAmountStr ? parseFloat(discountAmountStr) : 0,
+      discount_code: discountCodeMeta || null,
       total,
       status: "paid",
       fulfillment_type: fulfillmentType || "ship",
@@ -229,6 +232,21 @@ export async function POST(request: Request) {
 
     if (orderError) {
       console.error("Failed to create order:", orderError.message);
+    }
+
+    // Increment discount code uses
+    if (discountCodeMeta) {
+      const { data: disc } = await supabase
+        .from("discounts")
+        .select("uses")
+        .eq("code", discountCodeMeta)
+        .single();
+      if (disc) {
+        await supabase
+          .from("discounts")
+          .update({ uses: (disc.uses || 0) + 1 })
+          .eq("code", discountCodeMeta);
+      }
     }
 
     // Decrement inventory for each item

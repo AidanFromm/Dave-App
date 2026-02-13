@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatCurrency } from "@/lib/utils";
+import { toast } from "sonner";
 import {
   RefreshCw,
   Package,
@@ -106,7 +107,7 @@ export default function InventoryPage() {
       setProducts(data as Product[]);
       setStats(invStats);
     } catch {
-      // Failed to fetch inventory
+      toast.error("Failed to load inventory");
     } finally {
       setLoading(false);
       setRefreshing(false);

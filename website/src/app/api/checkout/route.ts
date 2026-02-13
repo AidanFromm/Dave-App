@@ -110,7 +110,34 @@ export async function POST(request: Request) {
     const ft = (fulfillmentType || "ship") as "ship" | "pickup";
     const tax = Math.round(subtotal * TAX_RATE * 100) / 100;
     const shippingCost = calculateShipping(subtotal, ft);
-    const total = subtotal + tax + shippingCost;
+
+    // Validate and apply discount code server-side
+    let discountAmount = 0;
+    let validatedDiscountCode: string | null = null;
+    if (discountCode) {
+      const { data: discount } = await supabase
+        .from("discounts")
+        .select("*")
+        .eq("code", discountCode.toUpperCase().trim())
+        .single();
+
+      if (
+        discount &&
+        discount.active &&
+        (!discount.expires_at || new Date(discount.expires_at) >= new Date()) &&
+        (discount.max_uses === null || discount.uses < discount.max_uses) &&
+        subtotal >= (discount.min_order || 0)
+      ) {
+        validatedDiscountCode = discount.code;
+        if (discount.type === "percentage") {
+          discountAmount = Math.round(subtotal * (discount.value / 100) * 100) / 100;
+        } else {
+          discountAmount = Math.min(Number(discount.value), subtotal);
+        }
+      }
+    }
+
+    const total = subtotal + tax + shippingCost - discountAmount;
 
     if (total <= 0) {
       return NextResponse.json(
@@ -147,6 +174,8 @@ export async function POST(request: Request) {
         subtotal: subtotal.toFixed(2),
         tax: tax.toFixed(2),
         shippingCost: shippingCost.toFixed(2),
+        discountCode: validatedDiscountCode || "",
+        discountAmount: discountAmount.toFixed(2),
       },
     });
 

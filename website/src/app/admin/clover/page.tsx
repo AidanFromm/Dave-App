@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { toast } from "sonner";
 
 interface CloverStatus {
   isConnected: boolean;
@@ -60,7 +61,7 @@ export default function CloverAdminPage() {
         setMismatches(data.mismatches ?? []);
       }
     } catch {
-      // ignore
+      toast.error("Failed to load sync status");
     }
   }, []);
 

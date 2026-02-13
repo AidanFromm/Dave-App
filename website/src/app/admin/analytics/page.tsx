@@ -23,6 +23,7 @@ import { TimeSelector } from "@/components/admin/time-selector";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatCurrency } from "@/types/product";
 import type { TimePeriod } from "@/types/admin";
+import { toast } from "sonner";
 
 const PERIOD_DAYS: Record<Exclude<TimePeriod, "custom">, number> = {
   today: 1,
@@ -116,7 +117,7 @@ export default function AnalyticsPage() {
         setRevenueData(revenueResult);
         setTopProducts(productsResult);
       } catch (error) {
-        // Failed to fetch analytics data
+        toast.error("Failed to load analytics data");
       } finally {
         setLoading(false);
       }

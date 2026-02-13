@@ -85,7 +85,7 @@ function ProductDetailPage() {
       const data = await getProductVariants(productName);
       setVariants(data);
     } catch {
-      // Failed to load variants
+      toast.error("Failed to load product variants");
     } finally {
       setLoading(false);
     }

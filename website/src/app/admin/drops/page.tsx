@@ -342,7 +342,7 @@ export default function AdminDropsPage() {
           );
         }
       } catch (error) {
-        // Failed to load drops data
+        toast.error("Failed to load drops data");
       } finally {
         setLoading(false);
       }

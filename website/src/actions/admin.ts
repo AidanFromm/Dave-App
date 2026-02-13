@@ -237,26 +237,34 @@ export async function getAdminCustomers(search?: string) {
 
   const { data: customers } = await query;
 
-  // Get order aggregates for each customer
-  const enriched = await Promise.all(
-    (customers ?? []).map(async (c) => {
-      const { data: orders } = await supabase
-        .from("orders")
-        .select("total")
-        .eq("customer_id", c.id);
+  if (!customers || customers.length === 0) return [];
 
-      const totalOrders = orders?.length ?? 0;
-      const totalSpend = orders?.reduce((sum, o) => sum + (o.total ?? 0), 0) ?? 0;
-      const avgOrderValue = totalOrders > 0 ? totalSpend / totalOrders : 0;
+  // Get order aggregates in a single query instead of N+1
+  const customerIds = customers.map((c) => c.id);
+  const { data: orderAggregates } = await supabase
+    .from("orders")
+    .select("customer_id, total")
+    .in("customer_id", customerIds);
 
-      return {
-        ...c,
-        total_orders: totalOrders,
-        total_spend: totalSpend,
-        avg_order_value: Math.round(avgOrderValue * 100) / 100,
-      };
-    })
-  );
+  // Build aggregates map
+  const aggregateMap = new Map<string, { count: number; total: number }>();
+  (orderAggregates ?? []).forEach((o) => {
+    const existing = aggregateMap.get(o.customer_id) ?? { count: 0, total: 0 };
+    existing.count += 1;
+    existing.total += o.total ?? 0;
+    aggregateMap.set(o.customer_id, existing);
+  });
+
+  const enriched = customers.map((c) => {
+    const agg = aggregateMap.get(c.id) ?? { count: 0, total: 0 };
+    const avgOrderValue = agg.count > 0 ? agg.total / agg.count : 0;
+    return {
+      ...c,
+      total_orders: agg.count,
+      total_spend: agg.total,
+      avg_order_value: Math.round(avgOrderValue * 100) / 100,
+    };
+  });
 
   return enriched;
 }

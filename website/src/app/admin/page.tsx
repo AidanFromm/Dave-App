@@ -13,6 +13,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { formatCurrency } from "@/lib/utils";
 import { formatDateShort } from "@/lib/utils";
 import type { TimePeriod } from "@/types/admin";
+import { toast } from "sonner";
 import { Package, DollarSign, Layers, TrendingUp } from "lucide-react";
 
 const PERIOD_DAYS: Record<Exclude<TimePeriod, "custom">, number> = {
@@ -61,7 +62,7 @@ export default function AdminDashboardPage() {
         setRevenueData(revenueResult);
         setTopProducts(productsResult);
       } catch (error) {
-        // Failed to fetch dashboard data
+        toast.error("Failed to load dashboard data");
       } finally {
         setLoading(false);
       }
@@ -77,7 +78,7 @@ export default function AdminDashboardPage() {
         const data = await getInventoryStats();
         setInventoryStats(data);
       } catch (error) {
-        // Failed to fetch inventory stats
+        toast.error("Failed to load inventory stats");
       } finally {
         setInvLoading(false);
       }
