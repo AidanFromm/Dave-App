@@ -56,6 +56,11 @@ export interface Product {
   images: string[];
   is_drop: boolean;
   drop_date: string | null;
+  drop_price: number | null;
+  drop_quantity: number | null;
+  drop_starts_at: string | null;
+  drop_ends_at: string | null;
+  drop_sold_count: number;
   ebay_listing_id: string | null;
   whatnot_listing_id: string | null;
   is_active: boolean;
@@ -93,6 +98,38 @@ export function isNewDrop(product: Product): boolean {
   const fiveDaysAgo = new Date();
   fiveDaysAgo.setDate(fiveDaysAgo.getDate() - 5);
   return new Date(product.created_at) >= fiveDaysAgo;
+}
+
+export type DropStatus = "upcoming" | "live" | "ended" | "sold_out";
+
+export function getDropStatus(product: Product): DropStatus | null {
+  if (!product.is_drop) return null;
+  const now = new Date();
+  const startsAt = product.drop_starts_at ? new Date(product.drop_starts_at) : null;
+  const endsAt = product.drop_ends_at ? new Date(product.drop_ends_at) : null;
+  const dropQty = product.drop_quantity;
+  const soldCount = product.drop_sold_count ?? 0;
+
+  if (dropQty !== null && dropQty !== undefined && soldCount >= dropQty) return "sold_out";
+  if (endsAt && now >= endsAt) return "ended";
+  if (startsAt && now < startsAt) return "upcoming";
+  return "live";
+}
+
+export function isActiveDrop(product: Product): boolean {
+  return getDropStatus(product) === "live";
+}
+
+export function getDropDisplayPrice(product: Product): number {
+  if (product.is_drop && product.drop_price !== null && product.drop_price !== undefined) {
+    return product.drop_price;
+  }
+  return product.price;
+}
+
+export function getDropRemainingQuantity(product: Product): number | null {
+  if (!product.is_drop || product.drop_quantity === null || product.drop_quantity === undefined) return null;
+  return Math.max(0, product.drop_quantity - (product.drop_sold_count ?? 0));
 }
 
 export function primaryImage(product: Product): string | null {

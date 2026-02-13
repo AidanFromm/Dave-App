@@ -21,7 +21,14 @@ export async function GET(request: Request) {
     }
 
     if (drops) {
-      query = query.eq("is_drop", true);
+      const now = new Date().toISOString();
+      query = query
+        .eq("is_drop", true)
+        .lte("drop_starts_at", now)
+        .or(`drop_ends_at.is.null,drop_ends_at.gt.${now}`);
+    } else {
+      // Exclude drop products from regular browsing
+      query = query.eq("is_drop", false);
     }
 
     const { data, error } = await query

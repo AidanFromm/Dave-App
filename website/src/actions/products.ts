@@ -9,7 +9,8 @@ export async function getProducts(categoryId?: string): Promise<Product[]> {
   let query = supabase
     .from("products")
     .select("*")
-    .eq("is_active", true);
+    .eq("is_active", true)
+    .eq("is_drop", false);
 
   if (categoryId) {
     query = query.eq("category_id", categoryId);
@@ -44,6 +45,7 @@ export async function getFeaturedProducts(): Promise<Product[]> {
     .select("*")
     .eq("is_active", true)
     .eq("is_featured", true)
+    .eq("is_drop", false)
     .order("created_at", { ascending: false })
     .limit(10);
 
@@ -58,6 +60,7 @@ export async function searchProducts(query: string): Promise<Product[]> {
     .from("products")
     .select("*")
     .eq("is_active", true)
+    .eq("is_drop", false)
     .ilike("name", `%${query}%`)
     .order("name")
     .limit(50);
@@ -140,6 +143,53 @@ export async function getRelatedProducts(
     .gt("quantity", 0)
     .order("created_at", { ascending: false })
     .limit(limit);
+  return (data ?? []) as Product[];
+}
+
+export async function getActiveDrops(): Promise<Product[]> {
+  const supabase = await createClient();
+  const now = new Date().toISOString();
+
+  const { data, error } = await supabase
+    .from("products")
+    .select("*")
+    .eq("is_active", true)
+    .eq("is_drop", true)
+    .lte("drop_starts_at", now)
+    .or(`drop_ends_at.is.null,drop_ends_at.gt.${now}`)
+    .order("drop_starts_at", { ascending: false });
+
+  if (error) throw error;
+  return (data ?? []) as Product[];
+}
+
+export async function getUpcomingDrops(): Promise<Product[]> {
+  const supabase = await createClient();
+  const now = new Date().toISOString();
+
+  const { data, error } = await supabase
+    .from("products")
+    .select("*")
+    .eq("is_active", true)
+    .eq("is_drop", true)
+    .gt("drop_starts_at", now)
+    .order("drop_starts_at", { ascending: true });
+
+  if (error) throw error;
+  return (data ?? []) as Product[];
+}
+
+export async function getAllDropProducts(): Promise<Product[]> {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from("products")
+    .select("*")
+    .eq("is_active", true)
+    .eq("is_drop", true)
+    .order("drop_starts_at", { ascending: false });
+
+  if (error) throw error;
   return (data ?? []) as Product[];
 }
 

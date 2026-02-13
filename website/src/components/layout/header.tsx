@@ -36,7 +36,6 @@ import { cn } from "@/lib/utils";
 const NAV_LINKS = [
   { href: "/", label: "Shop" },
   { href: "/drops", label: "Drops" },
-  { href: "/pokemon", label: "Pokémon" },
   { href: "/about", label: "About" },
 ];
 

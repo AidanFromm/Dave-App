@@ -4,7 +4,7 @@ import { useMemo, useState, useEffect, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Search, SlidersHorizontal, X } from "lucide-react";
 import type { Product, Category } from "@/types/product";
-import { isNewDrop } from "@/types/product";
+import { isNewDrop, isActiveDrop } from "@/types/product";
 import { ProductGrid } from "@/components/product/product-grid";
 import { SortSelect, type SortOption } from "./sort-select";
 import { Input } from "@/components/ui/input";
@@ -59,6 +59,10 @@ export function ShopPage({ initialProducts, categories }: ShopPageProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
+  // Drop products loaded separately
+  const [dropProducts, setDropProducts] = useState<Product[]>([]);
+  const [dropsLoading, setDropsLoading] = useState(false);
+
   // Read URL params
   const [filter, setFilter] = useState<ShopFilter>(
     (searchParams.get("tab") as ShopFilter) || "all"
@@ -89,6 +93,18 @@ export function ShopPage({ initialProducts, categories }: ShopPageProps) {
 
   const debouncedSearch = useDebounce(search, 300);
   const debouncedBrand = useDebounce(brand, 300);
+
+  // Load drop products when drops tab is active
+  useEffect(() => {
+    if (filter === "drops") {
+      setDropsLoading(true);
+      fetch("/api/products?drops=true&limit=100")
+        .then((r) => r.json())
+        .then((d) => setDropProducts(d.products ?? []))
+        .catch(() => {})
+        .finally(() => setDropsLoading(false));
+    }
+  }, [filter]);
 
   // Sync URL params
   useEffect(() => {
@@ -160,7 +176,8 @@ export function ShopPage({ initialProducts, categories }: ShopPageProps) {
     // Tab filter
     switch (filter) {
       case "drops":
-        products = products.filter((p) => isNewDrop(p));
+        // Use separately loaded drop products instead of filtering initialProducts
+        products = [...dropProducts];
         break;
       case "new":
         products = products.filter((p) => p.condition === "new");
