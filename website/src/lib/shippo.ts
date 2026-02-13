@@ -10,12 +10,12 @@ function getHeaders() {
 // Default "from" address for SecuredTampa store
 export const FROM_ADDRESS = {
   name: "SecuredTampa",
-  street1: "123 Main St",
-  city: "Tampa",
+  street1: "2398 Grand Cypress Dr STE 420",
+  city: "Lutz",
   state: "FL",
-  zip: "33601",
+  zip: "33559",
   country: "US",
-  phone: "8135551234",
+  phone: "8139432777",
   email: "orders@securedtampa.com",
 };
 

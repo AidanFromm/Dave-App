@@ -373,7 +373,7 @@ export default function POSPage() {
             <div className="text-center mb-4">
               <h2 className="font-display text-2xl font-bold uppercase tracking-tight">SECURED TAMPA</h2>
               <p className="text-xs text-gray-500 mt-1">Premium Sneakers & Collectibles</p>
-              <p className="text-xs text-gray-500">5009 S Dale Mabry Hwy, Tampa, FL 33611</p>
+              <p className="text-xs text-gray-500">2398 Grand Cypress Dr STE 420, Lutz, FL 33559</p>
               <p className="text-xs text-gray-500">(813) 555-0199 | securedtampa.com</p>
               <div className="border-b border-dashed border-gray-300 my-3" />
               <p className="text-xs text-gray-500">

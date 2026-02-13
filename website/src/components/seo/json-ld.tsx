@@ -6,13 +6,13 @@ export function OrganizationJsonLd() {
     "@type": "Store",
     name: "Secured Tampa",
     url: "https://securedtampa.com",
-    telephone: "(813) 551-1771",
+    telephone: "(813) 943-2777",
     address: {
       "@type": "PostalAddress",
-      streetAddress: "5009 S Dale Mabry Hwy",
-      addressLocality: "Tampa",
+      streetAddress: "2398 Grand Cypress Dr STE 420",
+      addressLocality: "Lutz",
       addressRegion: "FL",
-      postalCode: "33611",
+      postalCode: "33559",
       addressCountry: "US",
     },
     description:

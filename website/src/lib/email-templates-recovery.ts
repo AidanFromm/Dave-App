@@ -6,8 +6,8 @@ const BRAND = {
   navy: '#002244',
   storeName: 'Secured Tampa',
   storeUrl: 'https://securedtampa.com',
-  storeAddress: '5009 S Dale Mabry Hwy, Tampa, FL 33611',
-  storePhone: '(813) 551-1771',
+  storeAddress: '2398 Grand Cypress Dr STE 420, Lutz, FL 33559',
+  storePhone: '(813) 943-2777',
 };
 
 function layout(content: string): string {
