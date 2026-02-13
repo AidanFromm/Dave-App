@@ -39,6 +39,12 @@ const CONDITION_OPTIONS = [
   { value: "used", label: "Used" },
 ];
 
+const POKEMON_TYPE_OPTIONS = [
+  { value: "raw", label: "Raw Cards" },
+  { value: "graded", label: "Graded Cards" },
+  { value: "sealed", label: "Sealed Product" },
+];
+
 const SIZE_OPTIONS = [
   "4", "4.5", "5", "5.5", "6", "6.5", "7", "7.5", "8", "8.5",
   "9", "9.5", "10", "10.5", "11", "11.5", "12", "12.5", "13", "14",
@@ -76,6 +82,9 @@ export function ShopPage({ initialProducts, categories }: ShopPageProps) {
   );
   const [priceMin, setPriceMin] = useState(searchParams.get("min") || "");
   const [priceMax, setPriceMax] = useState(searchParams.get("max") || "");
+  const [pokemonTypeFilter, setPokemonTypeFilter] = useState<string[]>(
+    searchParams.get("ptype")?.split(",").filter(Boolean) || []
+  );
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
 
   const debouncedSearch = useDebounce(search, 300);
@@ -93,9 +102,10 @@ export function ShopPage({ initialProducts, categories }: ShopPageProps) {
     if (sizeFilter.length) params.set("size", sizeFilter.join(","));
     if (priceMin) params.set("min", priceMin);
     if (priceMax) params.set("max", priceMax);
+    if (pokemonTypeFilter.length) params.set("ptype", pokemonTypeFilter.join(","));
     const qs = params.toString();
     router.replace(qs ? `?${qs}` : "/", { scroll: false });
-  }, [filter, sort, debouncedSearch, debouncedBrand, categoryFilter, conditionFilter, sizeFilter, priceMin, priceMax, router]);
+  }, [filter, sort, debouncedSearch, debouncedBrand, categoryFilter, conditionFilter, sizeFilter, pokemonTypeFilter, priceMin, priceMax, router]);
 
   // Get unique brands from products
   const allBrands = useMemo(() => {
@@ -113,13 +123,14 @@ export function ShopPage({ initialProducts, categories }: ShopPageProps) {
     return cat?.id ?? null;
   }, [categories]);
 
-  const hasActiveFilters = brand || categoryFilter.length > 0 || conditionFilter.length > 0 || sizeFilter.length > 0 || priceMin || priceMax;
+  const hasActiveFilters = brand || categoryFilter.length > 0 || conditionFilter.length > 0 || sizeFilter.length > 0 || priceMin || priceMax || pokemonTypeFilter.length > 0;
 
   const clearAdvancedFilters = () => {
     setBrand("");
     setCategoryFilter([]);
     setConditionFilter([]);
     setSizeFilter([]);
+    setPokemonTypeFilter([]);
     setPriceMin("");
     setPriceMax("");
   };
@@ -203,6 +214,17 @@ export function ShopPage({ initialProducts, categories }: ShopPageProps) {
       });
     }
 
+    // Pokemon type sub-filter (raw/graded/sealed)
+    if (pokemonTypeFilter.length > 0) {
+      products = products.filter((p) => {
+        const tags = p.tags?.map((t) => t.toLowerCase()) || [];
+        if (pokemonTypeFilter.includes("raw") && !tags.includes("graded") && !tags.includes("sealed")) return true;
+        if (pokemonTypeFilter.includes("graded") && tags.includes("graded")) return true;
+        if (pokemonTypeFilter.includes("sealed") && tags.includes("sealed")) return true;
+        return false;
+      });
+    }
+
     // Condition filter
     if (conditionFilter.length > 0) {
       products = products.filter((p) => {
@@ -267,14 +289,14 @@ export function ShopPage({ initialProducts, categories }: ShopPageProps) {
     }
 
     return { products, sizesMap };
-  }, [initialProducts, filter, sort, debouncedSearch, debouncedBrand, pokemonCategoryId, categoryFilter, conditionFilter, sizeFilter, priceMin, priceMax]);
+  }, [initialProducts, filter, sort, debouncedSearch, debouncedBrand, pokemonCategoryId, categoryFilter, conditionFilter, sizeFilter, pokemonTypeFilter, priceMin, priceMax]);
 
   const filteredProducts = filterResult.products;
   const sizesByName = filterResult.sizesMap;
 
   // Reset page on filter/search change
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  useMemo(() => { setCurrentPage(1); }, [filter, sort, debouncedSearch, debouncedBrand, categoryFilter, conditionFilter, sizeFilter, priceMin, priceMax]);
+  useMemo(() => { setCurrentPage(1); }, [filter, sort, debouncedSearch, debouncedBrand, categoryFilter, conditionFilter, sizeFilter, pokemonTypeFilter, priceMin, priceMax]);
 
   const totalPages = Math.max(1, Math.ceil(filteredProducts.length / ITEMS_PER_PAGE));
   const safePage = Math.min(currentPage, totalPages);
@@ -309,6 +331,24 @@ export function ShopPage({ initialProducts, categories }: ShopPageProps) {
           ))}
         </div>
       </div>
+
+      {/* Pokemon Type (shows when Pokemon TCG is selected or pokemon tab active) */}
+      {(categoryFilter.includes("pokemon") || filter === "pokemon") && (
+        <div>
+          <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Pokemon Type</h3>
+          <div className="space-y-2">
+            {POKEMON_TYPE_OPTIONS.map((opt) => (
+              <label key={opt.value} className="flex items-center gap-2 text-sm cursor-pointer">
+                <Checkbox
+                  checked={pokemonTypeFilter.includes(opt.value)}
+                  onCheckedChange={() => toggleArrayFilter(pokemonTypeFilter, opt.value, setPokemonTypeFilter)}
+                />
+                {opt.label}
+              </label>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Price Range */}
       <div>
@@ -348,7 +388,8 @@ export function ShopPage({ initialProducts, categories }: ShopPageProps) {
         </div>
       </div>
 
-      {/* Size */}
+      {/* Size (hidden when only Pokemon is selected) */}
+      {!(categoryFilter.length === 1 && categoryFilter[0] === "pokemon") && filter !== "pokemon" && (
       <div>
         <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Size</h3>
         <div className="flex flex-wrap gap-1.5">
@@ -368,6 +409,7 @@ export function ShopPage({ initialProducts, categories }: ShopPageProps) {
           ))}
         </div>
       </div>
+      )}
 
       {/* Clear filters */}
       {hasActiveFilters && (
