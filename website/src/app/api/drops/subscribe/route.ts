@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
-import { sanitizeEmail } from "@/lib/sanitize";
 
 export async function POST(request: Request) {
   try {
@@ -13,7 +12,7 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { email } = body;
+    const { email, dropId } = body;
 
     if (!email || typeof email !== "string" || !email.includes("@")) {
       return NextResponse.json(
@@ -23,16 +22,26 @@ export async function POST(request: Request) {
     }
 
     const supabase = createAdminClient();
+    const normalizedEmail = email.toLowerCase().trim();
 
-    // Try to save to Supabase drop_subscribers table
-    const { error } = await supabase.from("drop_subscribers").upsert(
-      { email: email.toLowerCase().trim() },
-      { onConflict: "email" }
-    );
-
-    if (error) {
-      // Table might not exist - log and still return success
-      console.error("Failed to save drop subscriber to Supabase:", error.message);
+    if (dropId) {
+      // Subscribe to specific drop
+      const { error } = await supabase.from("drop_subscribers").upsert(
+        { email: normalizedEmail, drop_id: dropId, notified: false },
+        { onConflict: "email,drop_id" }
+      );
+      if (error) {
+        console.error("Failed to save drop subscriber:", error.message);
+      }
+    } else {
+      // General subscription (backward compat)
+      const { error } = await supabase.from("drop_subscribers").upsert(
+        { email: normalizedEmail },
+        { onConflict: "email" }
+      );
+      if (error) {
+        console.error("Failed to save drop subscriber:", error.message);
+      }
     }
 
     return NextResponse.json({ success: true });
