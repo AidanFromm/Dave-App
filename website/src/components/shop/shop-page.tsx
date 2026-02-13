@@ -30,8 +30,7 @@ const FILTERS: { key: ShopFilter; label: string }[] = [
 
 const CATEGORY_OPTIONS = [
   { value: "sneakers", label: "Sneakers" },
-  { value: "pokemon", label: "Pokemon TCG" },
-  { value: "sealed", label: "Sealed Product" },
+  { value: "pokemon", label: "Pokémon" },
 ];
 
 const CONDITION_OPTIONS = [
@@ -221,12 +220,9 @@ export function ShopPage({ initialProducts, categories }: ShopPageProps) {
         const isPokemon = p.brand?.toLowerCase() === "pokemon tcg" ||
           p.name.toLowerCase().includes("pokemon") ||
           p.tags?.some((t) => t.toLowerCase().includes("pokemon"));
-        const isSealed = p.tags?.some((t) => t.toLowerCase().includes("sealed")) ||
-          p.name.toLowerCase().includes("sealed");
 
         if (categoryFilter.includes("pokemon") && isPokemon) return true;
-        if (categoryFilter.includes("sealed") && isSealed) return true;
-        if (categoryFilter.includes("sneakers") && !isPokemon && !isSealed) return true;
+        if (categoryFilter.includes("sneakers") && !isPokemon) return true;
         return false;
       });
     }
