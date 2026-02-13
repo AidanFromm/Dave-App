@@ -18,6 +18,8 @@ import {
   ScanBarcode,
   Database,
   Key,
+  DollarSign,
+  Users,
 } from "lucide-react";
 import Link from "next/link";
 import { getBarcodeCatalogCount } from "@/actions/barcode";
@@ -56,6 +58,11 @@ export default function SettingsPage() {
   const [storePhone, setStorePhone] = useState("");
   const [storeEmail, setStoreEmail] = useState("securedtampa.llc@gmail.com");
 
+  // Tax & shipping
+  const [taxRate, setTaxRate] = useState(7.5);
+  const [shippingFlat, setShippingFlat] = useState(9.99);
+  const [freeShippingMin, setFreeShippingMin] = useState(150);
+
   // Notification preferences state
   const [emailNotifications, setEmailNotifications] = useState(true);
   const [orderAlerts, setOrderAlerts] = useState(true);
@@ -77,6 +84,13 @@ export default function SettingsPage() {
         if (n.emailNotifications !== undefined) setEmailNotifications(n.emailNotifications);
         if (n.orderAlerts !== undefined) setOrderAlerts(n.orderAlerts);
         if (n.lowStockThreshold !== undefined) setLowStockThreshold(n.lowStockThreshold);
+      }
+      const taxSaved = localStorage.getItem("secured_tax_shipping");
+      if (taxSaved) {
+        const t = JSON.parse(taxSaved);
+        if (t.taxRate !== undefined) setTaxRate(t.taxRate);
+        if (t.shippingFlat !== undefined) setShippingFlat(t.shippingFlat);
+        if (t.freeShippingMin !== undefined) setFreeShippingMin(t.freeShippingMin);
       }
     } catch {
       // localStorage parse error — safe to ignore
@@ -293,7 +307,79 @@ export default function SettingsPage() {
         )}
       </div>
 
-      {/* Staff Management - hidden for now (solo operator) */}
+      {/* Tax & Shipping Rates */}
+      <div className="rounded-xl shadow-card bg-card p-6">
+        <div className="flex items-center gap-2 mb-6">
+          <DollarSign className="h-5 w-5 text-primary" />
+          <h3 className="text-lg font-semibold">Tax &amp; Shipping</h3>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="space-y-1.5">
+            <label className="text-sm text-muted-foreground">Tax Rate (%)</label>
+            <input
+              type="number"
+              step="0.01"
+              min="0"
+              max="20"
+              value={taxRate}
+              onChange={(e) => setTaxRate(parseFloat(e.target.value) || 0)}
+              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+            />
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-sm text-muted-foreground">Flat Shipping Rate ($)</label>
+            <input
+              type="number"
+              step="0.01"
+              min="0"
+              value={shippingFlat}
+              onChange={(e) => setShippingFlat(parseFloat(e.target.value) || 0)}
+              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+            />
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-sm text-muted-foreground">Free Shipping Minimum ($)</label>
+            <input
+              type="number"
+              step="1"
+              min="0"
+              value={freeShippingMin}
+              onChange={(e) => setFreeShippingMin(parseFloat(e.target.value) || 0)}
+              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+            />
+          </div>
+        </div>
+        <div className="mt-4 flex justify-end">
+          <button
+            className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
+            onClick={() => {
+              localStorage.setItem("secured_tax_shipping", JSON.stringify({ taxRate, shippingFlat, freeShippingMin }));
+              toast.success("Tax & shipping rates saved!");
+            }}
+          >
+            Save Rates
+          </button>
+        </div>
+      </div>
+
+      {/* Staff Management */}
+      <div className="rounded-xl shadow-card bg-card p-6">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <Users className="h-5 w-5 text-primary" />
+            <h3 className="text-lg font-semibold">Staff Management</h3>
+          </div>
+          <Link
+            href="/admin/staff"
+            className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
+          >
+            Manage Staff
+          </Link>
+        </div>
+        <p className="text-sm text-muted-foreground">
+          Add or remove team members, manage roles, and view time clock reports.
+        </p>
+      </div>
 
       {/* Clover Integration */}
       <div className="rounded-xl shadow-card bg-card p-6">
