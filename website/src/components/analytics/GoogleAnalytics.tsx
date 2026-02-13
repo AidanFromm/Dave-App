@@ -2,12 +2,12 @@
 
 import Script from "next/script";
 import { usePathname, useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { hasMarketingConsent } from "@/lib/analytics";
 
 const GA_ID = process.env.NEXT_PUBLIC_GA4_ID;
 
-export function GoogleAnalytics() {
+function GoogleAnalyticsInner() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [allowed, setAllowed] = useState(false);
@@ -46,5 +46,13 @@ export function GoogleAnalytics() {
         }}
       />
     </>
+  );
+}
+
+export function GoogleAnalytics() {
+  return (
+    <Suspense fallback={null}>
+      <GoogleAnalyticsInner />
+    </Suspense>
   );
 }
