@@ -5,7 +5,10 @@ export type OrderStatus =
   | "shipped"
   | "delivered"
   | "cancelled"
-  | "refunded";
+  | "refunded"
+  | "partially_refunded";
+
+export type PickupStatus = "pending" | "ready" | "picked_up";
 
 export type SalesChannel = "pos" | "ios" | "web" | "ebay" | "whatnot";
 
@@ -19,6 +22,7 @@ export const ORDER_STATUS_LABELS: Record<OrderStatus, string> = {
   delivered: "Delivered",
   cancelled: "Cancelled",
   refunded: "Refunded",
+  partially_refunded: "Partially Refunded",
 };
 
 export const ORDER_STATUS_COLORS: Record<OrderStatus, string> = {
@@ -29,6 +33,13 @@ export const ORDER_STATUS_COLORS: Record<OrderStatus, string> = {
   delivered: "green",
   cancelled: "red",
   refunded: "gray",
+  partially_refunded: "amber",
+};
+
+export const PICKUP_STATUS_LABELS: Record<PickupStatus, string> = {
+  pending: "Pending",
+  ready: "Ready for Pickup",
+  picked_up: "Picked Up",
 };
 
 export const SALES_CHANNEL_LABELS: Record<SalesChannel, string> = {
@@ -90,6 +101,10 @@ export interface Order {
   stripe_payment_status: string | null;
   customer_notes: string | null;
   internal_notes: string | null;
+  delivery_method: "shipping" | "pickup";
+  pickup_status: PickupStatus | null;
+  refund_amount: number | null;
+  refund_reason: string | null;
   created_at: string;
   updated_at: string;
 }

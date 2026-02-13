@@ -238,6 +238,48 @@ export interface WelcomeEmailData {
   customerName: string;
 }
 
+// ─── Refund Notification ───────────────────────────────────────
+
+export interface RefundEmailData {
+  orderNumber: string;
+  customerName: string;
+  refundAmount: number;
+  originalTotal: number;
+  isFullRefund: boolean;
+  reason?: string;
+}
+
+export function refundEmail(data: RefundEmailData) {
+  const reasonBlock = data.reason
+    ? `<p style="margin:16px 0 0;color:#888;font-size:13px;"><strong>Reason:</strong> ${data.reason}</p>`
+    : '';
+
+  return {
+    subject: `Refund Processed — #${data.orderNumber} | ${BRAND.storeName}`,
+    html: layout(`
+      <div style="padding:32px 24px;text-align:center;">
+        <div style="font-size:48px;">💸</div>
+        <h2 style="color:${BRAND.navy};margin:16px 0 4px;font-size:22px;">
+          ${data.isFullRefund ? 'Full Refund Processed' : 'Partial Refund Processed'}
+        </h2>
+        <p style="color:#888;margin:0;font-size:14px;">Order #${data.orderNumber}</p>
+      </div>
+      <div style="padding:0 24px 24px;text-align:center;">
+        <p style="color:#555;font-size:14px;">Hey ${data.customerName}, we've processed a refund for your order.</p>
+        <div style="background:#f8f8f8;border-radius:8px;padding:20px;margin:16px 0;">
+          <p style="margin:0 0 4px;color:#888;font-size:12px;text-transform:uppercase;letter-spacing:1px;">Refund Amount</p>
+          <p style="margin:0;font-size:28px;font-weight:bold;color:#22c55e;">$${data.refundAmount.toFixed(2)}</p>
+          ${!data.isFullRefund ? `<p style="margin:8px 0 0;color:#888;font-size:13px;">Original total: $${data.originalTotal.toFixed(2)}</p>` : ''}
+        </div>
+        <p style="color:#888;font-size:13px;">The refund will appear on your original payment method within 5–10 business days.</p>
+        ${reasonBlock}
+      </div>
+    `),
+  };
+}
+
+// ─── Welcome Email ─────────────────────────────────────────────
+
 export function welcomeEmail(data: WelcomeEmailData) {
   return {
     subject: `Welcome to ${BRAND.storeName}! 🔥`,
