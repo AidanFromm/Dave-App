@@ -11,18 +11,22 @@ import { toast } from "sonner";
 interface AddToCartButtonProps {
   product: Product;
   disabled?: boolean;
+  variant?: { id: string; size?: string | null; condition?: string | null; price?: number | null } | null;
 }
 
-export function AddToCartButton({ product, disabled }: AddToCartButtonProps) {
+export function AddToCartButton({ product, disabled, variant }: AddToCartButtonProps) {
   const addItem = useCartStore((s) => s.addItem);
   const openDrawer = useCartDrawerStore((s) => s.open);
   const [added, setAdded] = useState(false);
 
+  const effectiveQty = variant ? (product.quantity > 0 ? product.quantity : 0) : product.quantity;
+
   const handleAdd = () => {
-    addItem(product, 1);
+    addItem(product, 1, variant ?? null);
     setAdded(true);
     openDrawer();
-    toast.success(`${product.name} added to cart`);
+    const sizePart = variant?.size ? ` (Size ${variant.size})` : "";
+    toast.success(`${product.name}${sizePart} added to cart`);
     setTimeout(() => setAdded(false), 2000);
   };
 
@@ -30,10 +34,10 @@ export function AddToCartButton({ product, disabled }: AddToCartButtonProps) {
     <Button
       size="lg"
       className="w-full"
-      disabled={disabled || product.quantity <= 0}
+      disabled={disabled || effectiveQty <= 0}
       onClick={handleAdd}
     >
-      {product.quantity <= 0 ? (
+      {effectiveQty <= 0 ? (
         "Sold Out"
       ) : added ? (
         <>

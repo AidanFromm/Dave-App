@@ -7,6 +7,7 @@ import type Stripe from "stripe";
 
 interface OrderItem {
   id: string;
+  variant_id?: string | null;
   qty: number;
   price: number;
   size: string | null;
@@ -204,6 +205,7 @@ export async function POST(request: Request) {
     // Format items for order record
     const formattedItems = orderItems.map((item) => ({
       product_id: item.id,
+      variant_id: item.variant_id || null,
       name: item.name,
       price: item.price,
       quantity: item.qty,
@@ -253,7 +255,39 @@ export async function POST(request: Request) {
     for (const item of orderItems) {
       if (!item.id) continue;
 
-      // Get current product quantity
+      // If variant_id exists, decrement variant stock
+      if (item.variant_id) {
+        const { data: variant, error: variantError } = await supabase
+          .from("product_variants")
+          .select("id, quantity, product_id")
+          .eq("id", item.variant_id)
+          .single();
+
+        if (variantError || !variant) {
+          console.error(`Variant ${item.variant_id} not found for inventory update`);
+        } else {
+          const prevQty = variant.quantity;
+          const newQty = Math.max(0, prevQty - item.qty);
+          await supabase
+            .from("product_variants")
+            .update({ quantity: newQty })
+            .eq("id", item.variant_id);
+
+          // Log adjustment against the parent product
+          await supabase.from("inventory_adjustments").insert({
+            product_id: variant.product_id,
+            quantity_change: -item.qty,
+            reason: "sold_online",
+            previous_quantity: prevQty,
+            new_quantity: newQty,
+            notes: `Variant ${item.variant_id} — Stripe order ${orderNumber} (${paymentIntent.id})`,
+            adjusted_by: null,
+            source: "web_order",
+          });
+        }
+      }
+
+      // Also decrement product-level quantity (for backward compat / non-variant items)
       const { data: product, error: productError } = await supabase
         .from("products")
         .select("id, quantity, name")
@@ -265,35 +299,35 @@ export async function POST(request: Request) {
         continue;
       }
 
-      const previousQuantity = product.quantity;
-      const newQuantity = Math.max(0, previousQuantity - item.qty);
+      // Only decrement product stock if there's no variant_id (avoid double-decrement)
+      if (!item.variant_id) {
+        const previousQuantity = product.quantity;
+        const newQuantity = Math.max(0, previousQuantity - item.qty);
 
-      // Update product quantity
-      const { error: updateError } = await supabase
-        .from("products")
-        .update({ 
-          quantity: newQuantity, 
-          updated_at: now 
-        })
-        .eq("id", item.id);
+        const { error: updateError } = await supabase
+          .from("products")
+          .update({ 
+            quantity: newQuantity, 
+            updated_at: now 
+          })
+          .eq("id", item.id);
 
-      if (updateError) {
-        console.error(`Failed to update stock for product ${item.id}:`, updateError.message);
-        continue;
+        if (updateError) {
+          console.error(`Failed to update stock for product ${item.id}:`, updateError.message);
+          continue;
+        }
+
+        await supabase.from("inventory_adjustments").insert({
+          product_id: item.id,
+          quantity_change: -item.qty,
+          reason: "sold_online",
+          previous_quantity: previousQuantity,
+          new_quantity: newQuantity,
+          notes: `Stripe order ${orderNumber} (${paymentIntent.id})`,
+          adjusted_by: null,
+          source: "web_order",
+        });
       }
-
-      // Log inventory adjustment — use NULL for adjusted_by (system action)
-      // and 'web_order' for source (matches CHECK constraint)
-      await supabase.from("inventory_adjustments").insert({
-        product_id: item.id,
-        quantity_change: -item.qty,
-        reason: "sold_online",
-        previous_quantity: previousQuantity,
-        new_quantity: newQuantity,
-        notes: `Stripe order ${orderNumber} (${paymentIntent.id})`,
-        adjusted_by: null,
-        source: "web_order",
-      });
 
       // Sync stock to Clover (fire-and-forget)
       handleWebsiteSale(item.id, item.qty).catch((err) => {

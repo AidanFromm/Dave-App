@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { getProduct, getProductSizeVariants } from "@/actions/products";
+import { getVariantsForProduct } from "@/actions/variants";
 import { ProductDetailClient } from "./product-detail-client";
 import { formatCurrency } from "@/types/product";
 
@@ -33,8 +34,20 @@ export default async function ProductPage({ params }: Props) {
   const product = await getProduct(id);
   if (!product) notFound();
 
-  // Fetch all size variants for this product
-  const sizeVariants = await getProductSizeVariants(product);
+  // Fetch proper variants from product_variants table
+  const dbVariants = await getVariantsForProduct(id);
 
-  return <ProductDetailClient product={product} sizeVariants={sizeVariants} />;
+  // Fall back to legacy size variants (same-name products) if no real variants exist
+  const sizeVariants = dbVariants.length > 0
+    ? dbVariants.map((v) => ({
+        id: v.id,
+        size: v.size,
+        price: v.price,
+        condition: v.condition as "new" | "used_like_new" | "used_good" | "used_fair",
+        quantity: v.quantity,
+        variantCondition: v.condition,
+      }))
+    : await getProductSizeVariants(product);
+
+  return <ProductDetailClient product={product} sizeVariants={sizeVariants} dbVariants={dbVariants} />;
 }

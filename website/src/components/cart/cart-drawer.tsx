@@ -191,21 +191,24 @@ export function CartDrawer() {
                           <motion.button
                             whileHover={{ scale: 1.1 }}
                             whileTap={{ scale: 0.9 }}
-                            onClick={() => removeItem(item.product.id)}
+                            onClick={() => removeItem(item.id)}
                             className="flex-shrink-0 rounded-full p-1.5 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
                           >
                             <Trash2 className="h-4 w-4" />
                           </motion.button>
                         </div>
 
-                        {item.product.size && (
+                        {(item.variant_size ?? item.product.size) && (
                           <p className="mt-0.5 text-xs text-muted-foreground">
-                            Size: <span className="font-medium">{item.product.size}</span>
+                            Size: <span className="font-medium">{item.variant_size ?? item.product.size}</span>
+                            {item.variant_condition && (
+                              <> · {item.variant_condition}</>
+                            )}
                           </p>
                         )}
 
                         <p className="mt-1 text-base font-bold">
-                          {formatCurrency(item.product.price)}
+                          {formatCurrency(item.variant_price ?? item.product.price)}
                         </p>
 
                         {/* Quantity controls */}
@@ -214,7 +217,7 @@ export function CartDrawer() {
                             <motion.button
                               whileTap={{ scale: 0.9 }}
                               onClick={() =>
-                                updateQuantity(item.product.id, item.quantity - 1)
+                                updateQuantity(item.id, item.quantity - 1)
                               }
                               className="flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground transition-colors hover:text-foreground hover:bg-muted disabled:opacity-50"
                               disabled={item.quantity <= 1}
@@ -227,7 +230,7 @@ export function CartDrawer() {
                             <motion.button
                               whileTap={{ scale: 0.9 }}
                               onClick={() =>
-                                updateQuantity(item.product.id, item.quantity + 1)
+                                updateQuantity(item.id, item.quantity + 1)
                               }
                               className="flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground transition-colors hover:text-foreground hover:bg-muted disabled:opacity-50"
                               disabled={item.quantity >= item.product.quantity}

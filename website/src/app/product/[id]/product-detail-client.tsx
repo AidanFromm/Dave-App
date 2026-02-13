@@ -19,6 +19,8 @@ import {
   getStockStatus,
 } from "@/types/product";
 import type { SizeVariant } from "@/actions/products";
+import type { ProductVariant, VariantCondition } from "@/types/product";
+import { VARIANT_CONDITION_LABELS } from "@/types/product";
 import {
   Package,
   Box,
@@ -59,11 +61,19 @@ interface MergedSize {
   id: string;
 }
 
-export function ProductDetailClient({ product: initialProduct, sizeVariants = [] }: { product: Product; sizeVariants?: SizeVariant[] }) {
+export function ProductDetailClient({ product: initialProduct, sizeVariants = [], dbVariants = [] }: { product: Product; sizeVariants?: (SizeVariant & { variantCondition?: string })[]; dbVariants?: ProductVariant[] }) {
   // Lift product state so we can swap on size click
   const [activeProduct, setActiveProduct] = useState(initialProduct);
+  const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(null);
+  const [selectedCondition, setSelectedCondition] = useState<string | null>(null);
 
   const product = activeProduct;
+  const hasDbVariants = dbVariants.length > 0;
+
+  // Detect Pokemon product
+  const isPokemon = product.brand?.toLowerCase() === "pokemon tcg" ||
+    product.name.toLowerCase().includes("pokemon") ||
+    product.tags?.some((t) => t.toLowerCase().includes("pokemon"));
   const discount = discountPercentage(product);
   const newDrop = isNewDrop(product);
   const stockStatus = getStockStatus(product);
@@ -106,18 +116,28 @@ export function ProductDetailClient({ product: initialProduct, sizeVariants = []
   // Handle size click — update product state client-side
   const handleSizeClick = useCallback((merged: MergedSize) => {
     if (merged.quantity <= 0) return;
+
+    // If using real db variants, find the matching variant
+    if (hasDbVariants) {
+      const dbV = dbVariants.find((v) => v.id === merged.id);
+      if (dbV) setSelectedVariant(dbV);
+    }
+
     // Update the active product with variant data
     setActiveProduct((prev) => ({
       ...prev,
-      id: merged.id,
       size: merged.size,
       price: merged.price,
       quantity: merged.quantity,
       condition: merged.condition as Product["condition"],
     }));
-    // Update URL without reload
-    window.history.replaceState(null, "", `/product/${merged.id}`);
-  }, []);
+
+    if (!hasDbVariants) {
+      // Legacy: update URL for same-name product variants
+      window.history.replaceState(null, "", `/product/${merged.id}`);
+      setActiveProduct((prev) => ({ ...prev, id: merged.id }));
+    }
+  }, [hasDbVariants, dbVariants]);
 
   const handleWishlist = () => {
     toggleProduct(product.id);
@@ -305,10 +325,56 @@ export function ProductDetailClient({ product: initialProduct, sizeVariants = []
             </motion.div>
           )}
 
+          {/* Condition Selector for DB Variants */}
+          {hasDbVariants && selectedVariant && (
+            <motion.div variants={fadeIn} className="mt-4">
+              <span className="text-xs text-muted-foreground uppercase tracking-wide font-medium">Condition</span>
+              <div className="mt-2">
+                <Badge
+                  variant="outline"
+                  className="text-sm px-3 py-1 border-primary text-primary bg-primary/10"
+                >
+                  {VARIANT_CONDITION_LABELS[selectedVariant.condition as VariantCondition] ?? selectedVariant.condition}
+                </Badge>
+              </div>
+            </motion.div>
+          )}
+
+          {/* Condition Selector for Pokemon Cards */}
+          {isPokemon && !hasDbVariants && (
+            <motion.div variants={fadeIn} className="mt-4">
+              <span className="text-xs text-muted-foreground uppercase tracking-wide font-medium">Condition</span>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {(["new", "used_like_new", "used_good", "used_fair"] as const).map((cond) => (
+                  <button
+                    key={cond}
+                    onClick={() => setSelectedCondition(cond)}
+                    className={cn(
+                      "rounded-xl border-2 px-4 py-2 text-sm font-medium transition-all cursor-pointer",
+                      (selectedCondition ?? product.condition) === cond
+                        ? "border-primary bg-primary/10 text-primary"
+                        : "border-border hover:border-primary/50 hover:bg-primary/5"
+                    )}
+                  >
+                    {CONDITION_LABELS[cond]}
+                  </button>
+                ))}
+              </div>
+            </motion.div>
+          )}
+
           {/* Actions */}
           <motion.div variants={fadeIn} className="mt-8 flex gap-3">
             <div className="flex-1">
-              <AddToCartButton product={product} />
+              <AddToCartButton
+                product={product}
+                variant={selectedVariant ? {
+                  id: selectedVariant.id,
+                  size: selectedVariant.size,
+                  condition: selectedVariant.condition,
+                  price: selectedVariant.price,
+                } : undefined}
+              />
             </div>
             <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
               <Button

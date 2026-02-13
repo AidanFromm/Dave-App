@@ -11,6 +11,8 @@ interface CartItem {
   size?: string;
   image?: string;
   product_id?: string;
+  variant_id?: string | null;
+  condition?: string | null;
 }
 
 export async function POST(request: Request) {
@@ -57,6 +59,19 @@ export async function POST(request: Request) {
       );
     }
 
+    // Also fetch variant stock for items with variant_id
+    const variantIds = items
+      .filter((item) => item.variant_id)
+      .map((item) => item.variant_id!);
+    let variantMap = new Map<string, { id: string; quantity: number; price: number }>();
+    if (variantIds.length > 0) {
+      const { data: variants } = await supabase
+        .from("product_variants")
+        .select("id, quantity, price")
+        .in("id", variantIds);
+      variantMap = new Map((variants ?? []).map((v) => [v.id, v]));
+    }
+
     const productMap = new Map(products?.map((p) => [p.id, p]) || []);
     const outOfStock: string[] = [];
     const insufficientStock: { name: string; available: number; requested: number }[] = [];
@@ -68,7 +83,18 @@ export async function POST(request: Request) {
         outOfStock.push(item.name);
         continue;
       }
-      if (product.quantity < item.quantity) {
+
+      // Check variant stock if variant_id exists
+      if (item.variant_id && variantMap.has(item.variant_id)) {
+        const variant = variantMap.get(item.variant_id)!;
+        if (variant.quantity < item.quantity) {
+          insufficientStock.push({
+            name: `${item.name} (Size ${item.size || "?"})`,
+            available: variant.quantity,
+            requested: item.quantity,
+          });
+        }
+      } else if (product.quantity < item.quantity) {
         insufficientStock.push({
           name: item.name,
           available: product.quantity,
@@ -101,8 +127,11 @@ export async function POST(request: Request) {
 
     // === COMPUTE TOTALS SERVER-SIDE ===
     const subtotal = items.reduce((sum, item) => {
+      // Use variant price if available, else product price
+      if (item.variant_id && variantMap.has(item.variant_id)) {
+        return sum + Number(variantMap.get(item.variant_id)!.price) * item.quantity;
+      }
       const product = productMap.get(item.product_id || item.id);
-      // Use server-side price to prevent price manipulation
       const price = product ? Number(product.price) : item.price;
       return sum + price * item.quantity;
     }, 0);
@@ -151,10 +180,14 @@ export async function POST(request: Request) {
     // Serialize items for metadata (Stripe metadata values must be strings, max 500 chars)
     const itemsData = items.map((item) => {
       const product = productMap.get(item.product_id || item.id);
+      const variantPrice = item.variant_id && variantMap.has(item.variant_id)
+        ? Number(variantMap.get(item.variant_id)!.price)
+        : null;
       return {
         id: item.product_id || item.id,
+        variant_id: item.variant_id || null,
         qty: item.quantity,
-        price: product ? Number(product.price) : item.price,
+        price: variantPrice ?? (product ? Number(product.price) : item.price),
         size: item.size || null,
         name: item.name.substring(0, 50),
       };

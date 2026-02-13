@@ -84,10 +84,11 @@ export default function CartPage() {
                 </Link>
                 <p className="text-sm text-muted-foreground">
                   {item.product.brand}
-                  {item.product.size && ` · Size ${item.product.size}`}
+                  {(item.variant_size ?? item.product.size) && ` · Size ${item.variant_size ?? item.product.size}`}
+                  {item.variant_condition && ` · ${item.variant_condition}`}
                 </p>
                 <p className="text-sm font-medium">
-                  {formatCurrency(item.product.price)}
+                  {formatCurrency(item.variant_price ?? item.product.price)}
                 </p>
 
                 {/* Quantity controls */}
@@ -100,7 +101,7 @@ export default function CartPage() {
                       aria-label={`Decrease quantity of ${item.product.name}`}
                       onClick={() =>
                         updateQuantity(
-                          item.product.id,
+                          item.id,
                           item.quantity - 1
                         )
                       }
@@ -118,7 +119,7 @@ export default function CartPage() {
                       disabled={item.quantity >= item.product.quantity}
                       onClick={() =>
                         updateQuantity(
-                          item.product.id,
+                          item.id,
                           item.quantity + 1
                         )
                       }
@@ -128,13 +129,13 @@ export default function CartPage() {
                   </div>
                   <div className="flex items-center gap-3">
                     <span className="font-semibold">
-                      {formatCurrency(item.product.price * item.quantity)}
+                      {formatCurrency((item.variant_price ?? item.product.price) * item.quantity)}
                     </span>
                     <Button
                       variant="ghost"
                       size="icon"
                       className="h-7 w-7 text-destructive"
-                      onClick={() => removeItem(item.product.id)}
+                      onClick={() => removeItem(item.id)}
                     >
                       <Trash2 className="h-3.5 w-3.5" />
                     </Button>
