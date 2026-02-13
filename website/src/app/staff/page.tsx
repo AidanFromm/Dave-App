@@ -259,7 +259,7 @@ export default function StaffPortal() {
           )}
         </div>
         {orders.length === 0 ? (
-          <p className="text-sm text-muted-foreground py-4 text-center">No pending tasks 🎉</p>
+          <p className="text-sm text-muted-foreground py-4 text-center">No pending tasks</p>
         ) : (
           <div className="space-y-2">
             {orders.map((order) => (

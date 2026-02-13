@@ -39,6 +39,7 @@ interface CompletedSale {
   total: number;
   payment_method: string;
   created_at: string;
+  receipt_number?: string;
 }
 
 const TAX_RATE = 0.075; // 7.5% FL sales tax
@@ -130,6 +131,7 @@ export default function POSPage() {
 
   const handleCheckout = async () => {
     if (cart.length === 0 || !user) return;
+    const receiptNumber = `ST-${Date.now().toString(36).toUpperCase()}`;
     const transaction = {
       items: cart.map((i) => ({ id: i.id, name: i.name, price: i.price, quantity: i.quantity, sku: i.sku })),
       subtotal: Math.round(subtotal * 100) / 100,
@@ -138,6 +140,7 @@ export default function POSPage() {
       total: Math.round(total * 100) / 100,
       payment_method: paymentMethod,
       staff_id: user.id,
+      receipt_number: receiptNumber,
     };
     const { data } = await supabase.from("pos_transactions").insert(transaction).select().single();
     if (data) {
@@ -366,15 +369,19 @@ export default function POSPage() {
       {/* Receipt Modal */}
       {showReceipt && lastSale && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-          <div className="w-full max-w-sm rounded-xl border border-surface-800 bg-white text-black p-6 shadow-2xl">
+          <div id="receipt-print" className="w-full max-w-sm rounded-xl border border-surface-800 bg-white text-black p-6 shadow-2xl">
             <div className="text-center mb-4">
               <h2 className="font-display text-2xl font-bold uppercase tracking-tight">SECURED TAMPA</h2>
               <p className="text-xs text-gray-500 mt-1">Premium Sneakers & Collectibles</p>
-              <p className="text-xs text-gray-500">Tampa, FL</p>
+              <p className="text-xs text-gray-500">5009 S Dale Mabry Hwy, Tampa, FL 33611</p>
+              <p className="text-xs text-gray-500">(813) 555-0199 | securedtampa.com</p>
               <div className="border-b border-dashed border-gray-300 my-3" />
               <p className="text-xs text-gray-500">
                 {new Date(lastSale.created_at).toLocaleString()}
               </p>
+              {lastSale.receipt_number && (
+                <p className="text-xs text-gray-500 font-mono">Receipt #{lastSale.receipt_number}</p>
+              )}
             </div>
 
             <div className="space-y-1 mb-3">
@@ -417,12 +424,31 @@ export default function POSPage() {
               <p className="text-xs text-gray-400 mt-1">securedtampa.com</p>
             </div>
 
-            <button
-              onClick={() => setShowReceipt(false)}
-              className="w-full mt-4 rounded-lg bg-gray-900 text-white py-3 font-medium transition-colors hover:bg-gray-800"
-            >
-              Done
-            </button>
+            <div className="flex gap-2 mt-4">
+              <button
+                onClick={() => {
+                  const el = document.getElementById("receipt-print");
+                  if (el) {
+                    const w = window.open("", "_blank", "width=400,height=600");
+                    if (w) {
+                      w.document.write(`<html><head><title>Receipt</title><style>body{font-family:monospace;padding:20px;font-size:12px}h2{font-family:Oswald,sans-serif;margin:0}p{margin:2px 0}.line{border-top:1px dashed #999;margin:8px 0}.row{display:flex;justify-content:space-between}.bold{font-weight:bold}.center{text-align:center}</style></head><body>${el.innerHTML}</body></html>`);
+                      w.document.close();
+                      w.print();
+                    }
+                  }
+                }}
+                className="flex-1 rounded-lg bg-gray-200 text-gray-900 py-3 font-medium transition-colors hover:bg-gray-300"
+              >
+                <Printer className="inline h-4 w-4 mr-1" />
+                Print
+              </button>
+              <button
+                onClick={() => setShowReceipt(false)}
+                className="flex-1 rounded-lg bg-gray-900 text-white py-3 font-medium transition-colors hover:bg-gray-800"
+              >
+                Done
+              </button>
+            </div>
           </div>
         </div>
       )}

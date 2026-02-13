@@ -61,6 +61,7 @@ CREATE TABLE IF NOT EXISTS pos_transactions (
   total NUMERIC(10,2) NOT NULL DEFAULT 0,
   payment_method TEXT NOT NULL CHECK (payment_method IN ('cash', 'card', 'zelle')),
   staff_id UUID REFERENCES auth.users(id),
+  receipt_number TEXT,
   created_at TIMESTAMPTZ DEFAULT now()
 );
 
