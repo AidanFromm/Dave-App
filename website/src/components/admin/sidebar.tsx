@@ -32,51 +32,51 @@ import { cn } from "@/lib/utils";
 
 const NAV_SECTIONS = [
   {
-    label: "Overview",
+    label: "Main",
     items: [
       { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
-      { href: "/admin/analytics", label: "Analytics", icon: BarChart3 },
-      { href: "/admin/reports", label: "Reports", icon: FileText },
+      { href: "/admin/orders", label: "Orders", icon: ShoppingCart },
+      { href: "/admin/products", label: "Products", icon: Package },
+      { href: "/admin/customers", label: "Customers", icon: Users },
     ],
   },
   {
-    label: "Catalog",
+    label: "Inventory",
     items: [
-      { href: "/admin/products", label: "Products", icon: Package },
-      { href: "/admin/inventory", label: "Inventory", icon: Box },
-      { href: "/admin/pokemon", label: "Pokémon", icon: Sparkles },
-      { href: "/admin/drops", label: "Drops", icon: Flame },
+      { href: "/admin/inventory", label: "Stock Levels", icon: Box },
+      { href: "/admin/scan", label: "Scan In", icon: ScanBarcode },
+      { href: "/admin/pokemon", label: "Pokémon Cards", icon: Sparkles },
+      { href: "/admin/drops", label: "New Drops", icon: Flame },
+    ],
+  },
+  {
+    label: "Sales",
+    items: [
+      { href: "/admin/orders/new", label: "Create Order", icon: ShoppingCart },
+      { href: "/admin/buy", label: "Buy from Customer", icon: HandCoins },
+      { href: "/admin/payment-links", label: "Payment Links", icon: ExternalLink },
       { href: "/admin/discounts", label: "Discounts", icon: Tag },
       { href: "/admin/gift-cards", label: "Gift Cards", icon: DollarSign },
-      { href: "/admin/reviews", label: "Reviews", icon: MessageSquare },
-    ],
-  },
-  {
-    label: "Operations",
-    items: [
-      { href: "/admin/orders", label: "Orders", icon: ShoppingCart },
-      { href: "/admin/orders/new", label: "New Order", icon: ShoppingCart },
-      { href: "/admin/payment-links", label: "Payment Links", icon: ExternalLink },
       { href: "/admin/shipping", label: "Shipping", icon: Truck },
-      { href: "/admin/buy", label: "Buy from Customer", icon: HandCoins },
-      { href: "/admin/purchases", label: "Purchase History", icon: HandCoins },
-      { href: "/admin/scan", label: "Scan In", icon: ScanBarcode },
-      { href: "/admin/customers", label: "Customers", icon: Users },
-      { href: "/admin/staff", label: "Staff", icon: Users },
-      { href: "/admin/reconciliation", label: "Reconciliation", icon: ClipboardCheck },
-      { href: "/admin/notifications", label: "Notifications", icon: Bell },
-      { href: "/admin/abandoned-carts", label: "Cart Recovery", icon: ShoppingCart },
     ],
   },
   {
-    label: "System",
+    label: "Reports",
     items: [
+      { href: "/admin/analytics", label: "Analytics", icon: BarChart3 },
+      { href: "/admin/reports", label: "Reports", icon: FileText },
+      { href: "/admin/purchases", label: "Purchase History", icon: HandCoins },
+      { href: "/admin/reconciliation", label: "Reconciliation", icon: ClipboardCheck },
+    ],
+  },
+  {
+    label: "Settings",
+    items: [
+      { href: "/admin/settings", label: "Store Settings", icon: Settings },
+      { href: "/admin/staff", label: "Staff", icon: Users },
+      { href: "/admin/notifications", label: "Notifications", icon: Bell },
       { href: "/admin/clover", label: "Clover POS", icon: Store },
-      { href: "/pos", label: "POS Checkout", icon: Store },
-      { href: "/staff", label: "Staff Portal", icon: ScanBarcode },
-      { href: "/admin/price-sync", label: "Price Sync", icon: DollarSign },
-      { href: "/admin/monitoring", label: "Monitoring", icon: Activity },
-      { href: "/admin/settings", label: "Settings", icon: Settings },
+      { href: "/admin/monitoring", label: "System Health", icon: Activity },
     ],
   },
 ];

@@ -93,10 +93,33 @@ export function ProductCard({ product, availableSizes }: ProductCardProps) {
 
         {/* Badges — top left */}
         <div className="absolute left-2 top-2 flex flex-col gap-1 z-10">
-          {newDrop && (
-            <span className="bg-primary text-white text-[10px] font-bold uppercase px-2 py-0.5 rounded">
-              NEW
-            </span>
+          {isPokemon ? (
+            <>
+              <span className="bg-yellow-500/90 text-black text-[10px] font-bold uppercase px-2 py-0.5 rounded">
+                Pokemon
+              </span>
+              {product.tags?.some((t) => t.toLowerCase().includes("graded")) ? (
+                <span className="bg-blue-500/90 text-white text-[10px] font-bold uppercase px-2 py-0.5 rounded">
+                  {product.tags?.find((t) => /psa|bgs|cgc/i.test(t))?.toUpperCase() || "Graded"}
+                </span>
+              ) : product.tags?.some((t) => t.toLowerCase().includes("sealed")) ? (
+                <span className="bg-purple-500/90 text-white text-[10px] font-bold uppercase px-2 py-0.5 rounded">
+                  Sealed
+                </span>
+              ) : (
+                <span className="bg-surface-700 text-white text-[10px] font-bold uppercase px-2 py-0.5 rounded">
+                  Raw
+                </span>
+              )}
+            </>
+          ) : (
+            <>
+              {newDrop && (
+                <span className="bg-primary text-white text-[10px] font-bold uppercase px-2 py-0.5 rounded">
+                  NEW
+                </span>
+              )}
+            </>
           )}
           {discount && (
             <span className="bg-destructive text-white text-[10px] font-bold px-2 py-0.5 rounded">

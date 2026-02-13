@@ -4,6 +4,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { AdminSidebar } from "@/components/admin/sidebar";
 import { AdminHeader } from "@/components/admin/admin-header";
+import { Breadcrumbs } from "@/components/admin/breadcrumbs";
 import { useAuth } from "@/hooks/use-auth";
 import { Loader2 } from "lucide-react";
 
@@ -46,7 +47,10 @@ export default function AdminLayout({
       <AdminSidebar />
       <div className="flex flex-1 flex-col min-w-0">
         <AdminHeader />
-        <main className="flex-1 overflow-auto p-4 md:p-6 lg:p-8">{children}</main>
+        <main className="flex-1 overflow-auto p-4 md:p-6 lg:p-8">
+          <Breadcrumbs />
+          {children}
+        </main>
       </div>
     </div>
   );
