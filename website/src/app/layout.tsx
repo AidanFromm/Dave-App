@@ -11,6 +11,7 @@ import { GoogleAnalytics } from "@/components/analytics/GoogleAnalytics";
 import { MetaPixel } from "@/components/analytics/MetaPixel";
 import { CookieConsent } from "@/components/analytics/CookieConsent";
 import { CartSyncProvider } from "@/components/providers/cart-sync-provider";
+import VersionCheck from "@/components/VersionCheck";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -78,6 +79,7 @@ export default function RootLayout({
           <GoogleAnalytics />
           <MetaPixel />
           <CookieConsent />
+          <VersionCheck />
         </ThemeProvider>
       </body>
     </html>

@@ -2,6 +2,26 @@ import type { NextConfig } from "next";
 import { withSentryConfig } from "@sentry/nextjs";
 
 const nextConfig: NextConfig = {
+  headers: async () => [
+    {
+      source: "/(.*)",
+      headers: [
+        { key: "X-App-Version", value: Date.now().toString() },
+      ],
+    },
+    {
+      source: "/_next/static/(.*)",
+      headers: [
+        { key: "Cache-Control", value: "public, max-age=31536000, immutable" },
+      ],
+    },
+    {
+      source: "/((?!_next/static|_next/image|favicon.ico).*)",
+      headers: [
+        { key: "Cache-Control", value: "public, s-maxage=10, stale-while-revalidate=59" },
+      ],
+    },
+  ],
   turbopack: {
     root: process.cwd().replace(/\\/g, "/"),
   },
