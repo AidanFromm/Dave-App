@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { getStripe } from "@/lib/stripe";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { TAX_RATE, calculateShipping } from "@/lib/constants";
 
 interface CartItem {
   id: string;
@@ -8,6 +10,7 @@ interface CartItem {
   quantity: number;
   size?: string;
   image?: string;
+  product_id?: string;
 }
 
 export async function POST(request: Request) {
@@ -22,20 +25,14 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { total, email, items, fulfillmentType, shippingAddress } = body as {
-      total: number;
+    const { email, items, fulfillmentType, shippingAddress, discountCode } = body as {
+      total?: number;
       email?: string;
       items?: CartItem[];
       fulfillmentType?: string;
       shippingAddress?: object;
+      discountCode?: string;
     };
-
-    if (!total || total <= 0) {
-      return NextResponse.json(
-        { error: "Invalid order total", code: "INVALID_TOTAL" },
-        { status: 400 }
-      );
-    }
 
     if (!items || items.length === 0) {
       return NextResponse.json(
@@ -44,17 +41,97 @@ export async function POST(request: Request) {
       );
     }
 
+    // === SERVER-SIDE STOCK VALIDATION ===
+    const supabase = createAdminClient();
+    const productIds = items.map((item) => item.product_id || item.id);
+    const { data: products, error: stockError } = await supabase
+      .from("products")
+      .select("id, name, quantity, price, is_active")
+      .in("id", productIds);
+
+    if (stockError) {
+      console.error("Stock check failed:", stockError.message);
+      return NextResponse.json(
+        { error: "Failed to validate stock", code: "STOCK_CHECK_FAILED" },
+        { status: 500 }
+      );
+    }
+
+    const productMap = new Map(products?.map((p) => [p.id, p]) || []);
+    const outOfStock: string[] = [];
+    const insufficientStock: { name: string; available: number; requested: number }[] = [];
+
+    for (const item of items) {
+      const pid = item.product_id || item.id;
+      const product = productMap.get(pid);
+      if (!product || !product.is_active) {
+        outOfStock.push(item.name);
+        continue;
+      }
+      if (product.quantity < item.quantity) {
+        insufficientStock.push({
+          name: item.name,
+          available: product.quantity,
+          requested: item.quantity,
+        });
+      }
+    }
+
+    if (outOfStock.length > 0) {
+      return NextResponse.json(
+        {
+          error: `The following items are no longer available: ${outOfStock.join(", ")}`,
+          code: "OUT_OF_STOCK",
+          outOfStock,
+        },
+        { status: 409 }
+      );
+    }
+
+    if (insufficientStock.length > 0) {
+      return NextResponse.json(
+        {
+          error: `Insufficient stock for: ${insufficientStock.map((i) => `${i.name} (${i.available} left)`).join(", ")}`,
+          code: "INSUFFICIENT_STOCK",
+          insufficientStock,
+        },
+        { status: 409 }
+      );
+    }
+
+    // === COMPUTE TOTALS SERVER-SIDE ===
+    const subtotal = items.reduce((sum, item) => {
+      const product = productMap.get(item.product_id || item.id);
+      // Use server-side price to prevent price manipulation
+      const price = product ? Number(product.price) : item.price;
+      return sum + price * item.quantity;
+    }, 0);
+
+    const ft = (fulfillmentType || "ship") as "ship" | "pickup";
+    const tax = Math.round(subtotal * TAX_RATE * 100) / 100;
+    const shippingCost = calculateShipping(subtotal, ft);
+    const total = subtotal + tax + shippingCost;
+
+    if (total <= 0) {
+      return NextResponse.json(
+        { error: "Invalid order total", code: "INVALID_TOTAL" },
+        { status: 400 }
+      );
+    }
+
     const stripe = getStripe();
 
     // Serialize items for metadata (Stripe metadata values must be strings, max 500 chars)
-    // Store essential info: product ID, quantity, price, size
-    const itemsData = items.map((item) => ({
-      id: item.id,
-      qty: item.quantity,
-      price: item.price,
-      size: item.size || null,
-      name: item.name.substring(0, 50), // Truncate name to save space
-    }));
+    const itemsData = items.map((item) => {
+      const product = productMap.get(item.product_id || item.id);
+      return {
+        id: item.product_id || item.id,
+        qty: item.quantity,
+        price: product ? Number(product.price) : item.price,
+        size: item.size || null,
+        name: item.name.substring(0, 50),
+      };
+    });
 
     // Create PaymentIntent with item data in metadata
     const paymentIntent = await stripe.paymentIntents.create({
@@ -62,13 +139,14 @@ export async function POST(request: Request) {
       currency: "usd",
       receipt_email: email || undefined,
       metadata: {
-        fulfillmentType: fulfillmentType || "ship",
+        fulfillmentType: ft,
         email: email ?? "",
         itemCount: items.length.toString(),
-        // Store items as JSON string (Stripe allows up to 500 chars per value)
         items: JSON.stringify(itemsData),
-        // Store shipping address if provided
         shippingAddress: shippingAddress ? JSON.stringify(shippingAddress) : "",
+        subtotal: subtotal.toFixed(2),
+        tax: tax.toFixed(2),
+        shippingCost: shippingCost.toFixed(2),
       },
     });
 

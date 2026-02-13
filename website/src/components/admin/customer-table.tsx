@@ -1,10 +1,13 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import { Input } from "@/components/ui/input";
 import { formatCurrency, formatDateShort } from "@/lib/utils";
 import { Search, ArrowUpDown } from "lucide-react";
+import { Pagination } from "@/components/ui/pagination";
+
+const ITEMS_PER_PAGE = 20;
 
 type SortField = "total_spend" | "total_orders" | "created_at";
 type SortDir = "asc" | "desc";
@@ -17,6 +20,7 @@ export function CustomerTable({ customers }: CustomerTableProps) {
   const [search, setSearch] = useState("");
   const [sortField, setSortField] = useState<SortField>("total_spend");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
+  const [currentPage, setCurrentPage] = useState(1);
 
   const toggleSort = (field: SortField) => {
     if (sortField === field) {
@@ -53,6 +57,13 @@ export function CustomerTable({ customers }: CustomerTableProps) {
 
     return result;
   }, [customers, search, sortField, sortDir]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE));
+  const safePage = Math.min(currentPage, totalPages);
+  const paginatedCustomers = filtered.slice((safePage - 1) * ITEMS_PER_PAGE, safePage * ITEMS_PER_PAGE);
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useMemo(() => { setCurrentPage(1); }, [search]);
 
   const SortButton = ({ field, children }: { field: SortField; children: React.ReactNode }) => (
     <button
@@ -104,7 +115,7 @@ export function CustomerTable({ customers }: CustomerTableProps) {
                 </td>
               </tr>
             ) : (
-              filtered.map((customer) => (
+              paginatedCustomers.map((customer) => (
                 <tr
                   key={customer.id}
                   className="border-b border-border last:border-0 hover:bg-accent/50 transition-colors"
@@ -136,6 +147,12 @@ export function CustomerTable({ customers }: CustomerTableProps) {
           </tbody>
         </table>
       </div>
+
+      {/* Pagination */}
+      <div className="mt-4 flex items-center justify-between text-sm text-muted-foreground">
+        <span>Showing {((safePage - 1) * ITEMS_PER_PAGE) + 1}–{Math.min(safePage * ITEMS_PER_PAGE, filtered.length)} of {filtered.length}</span>
+      </div>
+      <Pagination currentPage={safePage} totalPages={totalPages} onPageChange={setCurrentPage} />
     </div>
   );
 }

@@ -10,6 +10,10 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatCurrency } from "@/lib/utils";
 import { Search, Package, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
+import { Pagination } from "@/components/ui/pagination";
+import { toast } from "sonner";
+
+const ITEMS_PER_PAGE = 20;
 
 type SortField = "name" | "totalQuantity" | "averageCost" | "sellPrice" | "variantCount";
 type SortDir = "asc" | "desc";
@@ -21,6 +25,7 @@ export default function AdminProductsPage() {
   const [sortField, setSortField] = useState<SortField>("name");
   const [sortDir, setSortDir] = useState<SortDir>("asc");
   const [category, setCategory] = useState("all");
+  const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
     async function load() {
@@ -29,7 +34,7 @@ export default function AdminProductsPage() {
         const data = await getGroupedProducts();
         setProducts(data);
       } catch (err) {
-        // Failed to load products
+        toast.error("Failed to load products");
       } finally {
         setLoading(false);
       }
@@ -59,6 +64,15 @@ export default function AdminProductsPage() {
     });
     return sorted;
   }, [products, category, search, sortField, sortDir]);
+
+  // Reset to page 1 when filters change
+  const totalPages = Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE));
+  const safePage = Math.min(currentPage, totalPages);
+  const paginatedProducts = filtered.slice((safePage - 1) * ITEMS_PER_PAGE, safePage * ITEMS_PER_PAGE);
+
+  // Reset page when search/category changes
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useMemo(() => { setCurrentPage(1); }, [search, category]);
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {
@@ -163,7 +177,7 @@ export default function AdminProductsPage() {
                       </td>
                     </tr>
                   ) : (
-                    filtered.map((product) => (
+                    paginatedProducts.map((product) => (
                       <Link
                         key={product.name}
                         href={`/admin/products/detail?name=${encodeURIComponent(product.name)}`}
@@ -213,6 +227,11 @@ export default function AdminProductsPage() {
               </table>
             </div>
           </div>
+          {/* Pagination */}
+          <div className="flex items-center justify-between text-sm text-muted-foreground">
+            <span>Showing {((safePage - 1) * ITEMS_PER_PAGE) + 1}–{Math.min(safePage * ITEMS_PER_PAGE, filtered.length)} of {filtered.length}</span>
+          </div>
+          <Pagination currentPage={safePage} totalPages={totalPages} onPageChange={setCurrentPage} />
         </TabsContent>
       </Tabs>
     </div>

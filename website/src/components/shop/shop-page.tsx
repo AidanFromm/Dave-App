@@ -9,6 +9,9 @@ import { SortSelect, type SortOption } from "./sort-select";
 import { Input } from "@/components/ui/input";
 import { useDebounce } from "@/hooks/use-debounce";
 import { cn } from "@/lib/utils";
+import { Pagination } from "@/components/ui/pagination";
+
+const ITEMS_PER_PAGE = 20;
 
 type ShopFilter = "all" | "drops" | "sneakers" | "new" | "used" | "pokemon";
 
@@ -30,6 +33,7 @@ export function ShopPage({ initialProducts, categories }: ShopPageProps) {
   const [filter, setFilter] = useState<ShopFilter>("all");
   const [sort, setSort] = useState<SortOption>("newest");
   const [search, setSearch] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
   const debouncedSearch = useDebounce(search, 300);
 
   const pokemonCategoryId = useMemo(() => {
@@ -133,6 +137,14 @@ export function ShopPage({ initialProducts, categories }: ShopPageProps) {
 
   const filteredProducts = filterResult.products;
   const sizesByName = filterResult.sizesMap;
+
+  // Reset page on filter/search change
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useMemo(() => { setCurrentPage(1); }, [filter, sort, debouncedSearch]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredProducts.length / ITEMS_PER_PAGE));
+  const safePage = Math.min(currentPage, totalPages);
+  const paginatedProducts = filteredProducts.slice((safePage - 1) * ITEMS_PER_PAGE, safePage * ITEMS_PER_PAGE);
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6 lg:px-8">

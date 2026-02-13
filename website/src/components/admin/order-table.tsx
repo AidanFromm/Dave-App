@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -12,6 +12,9 @@ import {
   type SalesChannel,
 } from "@/types/order";
 import { Search } from "lucide-react";
+import { Pagination } from "@/components/ui/pagination";
+
+const ITEMS_PER_PAGE = 20;
 
 const STATUS_COLORS: Record<string, string> = {
   pending: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400",
@@ -43,6 +46,7 @@ interface OrderTableProps {
 export function OrderTable({ orders }: OrderTableProps) {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [currentPage, setCurrentPage] = useState(1);
 
   const filtered = useMemo(() => {
     let result = orders;
@@ -69,6 +73,14 @@ export function OrderTable({ orders }: OrderTableProps) {
 
     return result;
   }, [orders, search, statusFilter]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE));
+  const safePage = Math.min(currentPage, totalPages);
+  const paginatedOrders = filtered.slice((safePage - 1) * ITEMS_PER_PAGE, safePage * ITEMS_PER_PAGE);
+
+  // Reset page on filter change
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useMemo(() => { setCurrentPage(1); }, [search, statusFilter]);
 
   const getItemCount = (order: any): number => {
     const items = order.items as Array<{ quantity: number }> | null;
@@ -136,7 +148,7 @@ export function OrderTable({ orders }: OrderTableProps) {
                 </td>
               </tr>
             ) : (
-              filtered.map((order) => (
+              paginatedOrders.map((order) => (
                 <tr
                   key={order.id}
                   className="border-b border-border last:border-0 hover:bg-accent/50 transition-colors"
@@ -181,6 +193,12 @@ export function OrderTable({ orders }: OrderTableProps) {
           </tbody>
         </table>
       </div>
+
+      {/* Pagination */}
+      <div className="mt-4 flex items-center justify-between text-sm text-muted-foreground">
+        <span>Showing {((safePage - 1) * ITEMS_PER_PAGE) + 1}–{Math.min(safePage * ITEMS_PER_PAGE, filtered.length)} of {filtered.length}</span>
+      </div>
+      <Pagination currentPage={safePage} totalPages={totalPages} onPageChange={setCurrentPage} />
     </div>
   );
 }

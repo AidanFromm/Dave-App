@@ -111,6 +111,7 @@ export default function CheckoutPage() {
       <div className="mt-8 grid gap-8 lg:grid-cols-[1fr_400px]">
         {/* Left - Form */}
         <motion.form
+          id="checkout-form"
           variants={staggerContainer}
           onSubmit={handleSubmit(onSubmit)}
           className="space-y-6"
@@ -401,7 +402,7 @@ export default function CheckoutPage() {
 
             {/* Submit - Desktop */}
             <div className="hidden lg:block p-4 border-t bg-muted/30">
-              <Button type="submit" form="checkout-form" size="lg" className="w-full h-14 text-base font-semibold" disabled={loading} onClick={handleSubmit(onSubmit)}>
+              <Button type="submit" form="checkout-form" size="lg" className="w-full h-14 text-base font-semibold" disabled={loading}>
                 {loading ? (
                   <Loader2 className="mr-2 h-5 w-5 animate-spin" />
                 ) : (

@@ -25,34 +25,7 @@ function ConfirmationContent() {
   const [showConfetti, setShowConfetti] = useState(false);
 
   useEffect(() => {
-    // Send confirmation email before clearing cart
-    const email = sessionStorage.getItem("checkout_email") ?? "";
-    if (email && paymentIntent && items.length > 0) {
-      const orderNumber = paymentIntent.slice(-8).toUpperCase();
-      fetch("/api/send-confirmation", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email,
-          orderNumber,
-          items: items.map((item) => ({
-            name: item.product.name,
-            price: item.product.price,
-            quantity: item.quantity,
-            size: item.product.size || undefined,
-          })),
-          subtotal: getSubtotal(),
-          tax: getTax(),
-          shippingCost: getShippingCost(),
-          total: getTotal(),
-          fulfillmentType,
-          shippingAddress: shippingAddress || undefined,
-        }),
-      }).catch(() => {
-        // Email send failed silently — order is still confirmed
-      });
-    }
-
+    // Confirmation email is now sent server-side via Stripe webhook + Resend API
     // Clear cart after successful payment
     clearCart();
     sessionStorage.removeItem("checkout_email");
@@ -83,7 +56,8 @@ function ConfirmationContent() {
       }
     };
     frame();
-  }, [clearCart]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <div className="min-h-[80vh] flex items-center justify-center px-4 py-12">

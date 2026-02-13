@@ -16,7 +16,9 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { useCartStore } from "@/stores/cart-store";
 import { formatCurrency } from "@/lib/utils";
-import { Loader2, CreditCard, ArrowLeft, Lock, Package, MapPin, Truck, Shield } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Loader2, CreditCard, ArrowLeft, Lock, Package, MapPin, Truck, Shield, Tag, X } from "lucide-react";
+import { toast } from "sonner";
 import { CheckoutProgress } from "@/components/checkout/checkout-progress";
 
 const stripePromise = loadStripe(
@@ -95,7 +97,7 @@ function PaymentForm() {
           ) : (
             <Lock className="mr-2 h-5 w-5" />
           )}
-          Pay {formatCurrency(getTotal())}
+          Pay Now
         </Button>
       </motion.div>
 
@@ -129,6 +131,48 @@ export default function ReviewPage() {
   const [clientSecret, setClientSecret] = useState("");
   const [loading, setLoading] = useState(true);
 
+  // Promo code state
+  const [promoCode, setPromoCode] = useState("");
+  const [promoLoading, setPromoLoading] = useState(false);
+  const [appliedDiscount, setAppliedDiscount] = useState<{
+    code: string;
+    type: string;
+    value: number;
+    discountAmount: number;
+  } | null>(null);
+
+  const discountedTotal = appliedDiscount
+    ? Math.max(0, getTotal() - appliedDiscount.discountAmount)
+    : getTotal();
+
+  const handleApplyPromo = async () => {
+    if (!promoCode.trim()) return;
+    setPromoLoading(true);
+    try {
+      const res = await fetch("/api/discounts/validate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code: promoCode, orderTotal: getSubtotal() }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        toast.error(data.error || "Invalid promo code");
+        return;
+      }
+      setAppliedDiscount(data);
+      toast.success(`Promo code ${data.code} applied!`);
+    } catch {
+      toast.error("Failed to validate promo code");
+    } finally {
+      setPromoLoading(false);
+    }
+  };
+
+  const handleRemovePromo = () => {
+    setAppliedDiscount(null);
+    setPromoCode("");
+  };
+
   useEffect(() => {
     if (items.length === 0) {
       router.push("/cart");
@@ -137,6 +181,8 @@ export default function ReviewPage() {
 
     const createPaymentIntent = async () => {
       const email = sessionStorage.getItem("checkout_email") ?? "";
+      const discount = appliedDiscount?.discountAmount || 0;
+      const finalTotal = Math.max(0, getTotal() - discount);
       try {
         const res = await fetch("/api/checkout", {
           method: "POST",
@@ -149,7 +195,9 @@ export default function ReviewPage() {
             subtotal: getSubtotal(),
             tax: getTax(),
             shippingCost: getShippingCost(),
-            total: getTotal(),
+            total: finalTotal,
+            discountCode: appliedDiscount?.code || null,
+            discountAmount: discount,
           }),
         });
 
@@ -165,7 +213,7 @@ export default function ReviewPage() {
     };
 
     createPaymentIntent();
-  }, []);
+  }, [appliedDiscount]);
 
   if (items.length === 0) return null;
 
@@ -280,6 +328,43 @@ export default function ReviewPage() {
               ))}
             </div>
 
+            {/* Promo Code */}
+            <div className="border-t p-4">
+              {appliedDiscount ? (
+                <div className="flex items-center justify-between rounded-lg bg-green-500/10 border border-green-500/20 px-3 py-2">
+                  <div className="flex items-center gap-2">
+                    <Tag className="h-4 w-4 text-green-600" />
+                    <span className="text-sm font-medium text-green-600">{appliedDiscount.code}</span>
+                    <span className="text-xs text-muted-foreground">
+                      (-{formatCurrency(appliedDiscount.discountAmount)})
+                    </span>
+                  </div>
+                  <button onClick={handleRemovePromo} className="text-muted-foreground hover:text-foreground">
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+              ) : (
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="Promo code"
+                    value={promoCode}
+                    onChange={(e) => setPromoCode(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && handleApplyPromo()}
+                    className="h-9 text-sm"
+                  />
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleApplyPromo}
+                    disabled={promoLoading || !promoCode.trim()}
+                    className="shrink-0"
+                  >
+                    {promoLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Apply"}
+                  </Button>
+                </div>
+              )}
+            </div>
+
             {/* Totals */}
             <div className="border-t p-4 space-y-2">
               <div className="flex justify-between text-sm">
@@ -296,10 +381,16 @@ export default function ReviewPage() {
                   {getShippingCost() === 0 ? "FREE" : formatCurrency(getShippingCost())}
                 </span>
               </div>
+              {appliedDiscount && (
+                <div className="flex justify-between text-sm text-green-600">
+                  <span>Discount</span>
+                  <span>-{formatCurrency(appliedDiscount.discountAmount)}</span>
+                </div>
+              )}
               <Separator />
               <div className="flex justify-between text-lg font-bold">
                 <span>Total</span>
-                <span>{formatCurrency(getTotal())}</span>
+                <span>{formatCurrency(discountedTotal)}</span>
               </div>
             </div>
           </div>
