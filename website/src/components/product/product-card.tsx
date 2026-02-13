@@ -10,6 +10,10 @@ import { Button } from "@/components/ui/button";
 import type { Product } from "@/types/product";
 import {
   isNewDrop,
+  isActiveDrop,
+  getDropStatus,
+  getDropDisplayPrice,
+  getDropRemainingQuantity,
   discountPercentage,
   CONDITION_LABELS,
   formatCurrency,
@@ -32,7 +36,13 @@ export function ProductCard({ product, availableSizes }: ProductCardProps) {
   const wishlisted = isWishlisted(product.id);
   const discount = discountPercentage(product);
   const newDrop = isNewDrop(product);
-  const soldOut = product.quantity <= 0;
+  const dropStatus = getDropStatus(product);
+  const isDrop = product.is_drop;
+  const dropDisplayPrice = getDropDisplayPrice(product);
+  const dropRemaining = getDropRemainingQuantity(product);
+  const soldOut = isDrop
+    ? (dropStatus === "sold_out" || (dropRemaining !== null && dropRemaining <= 0))
+    : product.quantity <= 0;
   const [isHovered, setIsHovered] = useState(false);
 
   const isSneaker = product.size && !product.name.toLowerCase().includes("pokemon");
@@ -182,17 +192,33 @@ export function ProductCard({ product, availableSizes }: ProductCardProps) {
         {/* Price */}
         <div className="mt-auto pt-2 flex items-baseline gap-2">
           <span className="text-base font-mono font-bold text-primary">
-            {formatCurrency(product.price)}
+            {formatCurrency(isDrop ? dropDisplayPrice : product.price)}
           </span>
-          {product.compare_at_price && product.compare_at_price > product.price && (
+          {isDrop && product.drop_price != null && product.drop_price !== product.price ? (
+            <span className="text-xs font-mono text-muted-foreground line-through">
+              {formatCurrency(product.price)}
+            </span>
+          ) : product.compare_at_price && product.compare_at_price > product.price ? (
             <span className="text-xs font-mono text-muted-foreground line-through">
               {formatCurrency(product.compare_at_price)}
             </span>
-          )}
+          ) : null}
         </div>
+
+        {/* Drop quantity remaining */}
+        {isDrop && dropRemaining !== null && dropRemaining > 0 && dropRemaining <= 10 && (
+          <p className="text-[10px] font-semibold text-red-400 mt-0.5">
+            Only {dropRemaining} left
+          </p>
+        )}
 
         {/* Tags — bottom */}
         <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+          {isDrop && (
+            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#FB4F14]/15 text-[#FB4F14] uppercase tracking-wider">
+              Limited
+            </span>
+          )}
           {isPokemon ? (
             <>
               <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-yellow-500/15 text-yellow-500">

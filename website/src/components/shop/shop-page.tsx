@@ -306,7 +306,7 @@ export function ShopPage({ initialProducts, categories }: ShopPageProps) {
     }
 
     return { products, sizesMap };
-  }, [initialProducts, filter, sort, debouncedSearch, debouncedBrand, pokemonCategoryId, categoryFilter, conditionFilter, sizeFilter, pokemonTypeFilter, priceMin, priceMax]);
+  }, [initialProducts, dropProducts, filter, sort, debouncedSearch, debouncedBrand, pokemonCategoryId, categoryFilter, conditionFilter, sizeFilter, pokemonTypeFilter, priceMin, priceMax]);
 
   const filteredProducts = filterResult.products;
   const sizesByName = filterResult.sizesMap;
@@ -482,8 +482,6 @@ export function ShopPage({ initialProducts, categories }: ShopPageProps) {
               className="pl-9 h-9 bg-surface-800/50 border-surface-700/50 focus:border-primary/50 transition-colors"
             />
           </div>
-          <SortSelect value={sort} onChange={setSort} />
-
           {/* Mobile filter button */}
           <Sheet open={mobileFiltersOpen} onOpenChange={setMobileFiltersOpen}>
             <SheetTrigger asChild>
