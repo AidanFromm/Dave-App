@@ -279,6 +279,40 @@ Waiting for Dave to send Clover login credentials. Once received:
 
 ---
 
+## 7. Sentry Error Tracking
+
+1. Create a Sentry account at https://sentry.io
+2. Create a Next.js project
+3. Get the DSN
+4. Add `NEXT_PUBLIC_SENTRY_DSN` to Vercel env vars
+5. Sentry is already wired into the app — will start capturing errors immediately
+
+---
+
+## 8. Uptime Monitoring
+
+The app has a `/api/health` endpoint. Set up a free uptime monitor:
+- **UptimeRobot** (free) or **Better Uptime** — monitor `https://securedtampa.com/api/health`
+- Alert via email/SMS when site goes down
+
+---
+
+### Migration 8: Inventory Reconciliations
+File: `supabase/migrations/20260213_inventory_reconciliations.sql`
+- Creates `inventory_reconciliations` table for daily count verification
+```sql
+-- Run the contents of supabase/migrations/20260213_inventory_reconciliations.sql
+```
+
+### Migration 9: Market Price Columns (StockX Sync)
+File: `supabase/migrations/20260213_market_price_columns.sql`
+- Adds `market_price` and `last_price_sync` columns to products table
+```sql
+-- Run the contents of supabase/migrations/20260213_market_price_columns.sql
+```
+
+---
+
 ## Summary Checklist
 
 - [ ] Run `CREATE EXTENSION IF NOT EXISTS pg_trgm;` in SQL Editor
@@ -289,7 +323,11 @@ Waiting for Dave to send Clover login credentials. Once received:
 - [ ] Run Migration 5 (Refunds + Pickup)
 - [ ] Run Migration 6 (Walk-in Purchases)
 - [ ] Run Migration 7 (Staff + POS)
-- [ ] Verify Vercel env vars (especially RESEND_API_KEY, SHIPPO_API_KEY)
+- [ ] Run Migration 8 (Inventory Reconciliations)
+- [ ] Run Migration 9 (Market Price Columns)
+- [ ] Verify Vercel env vars (RESEND_API_KEY, SHIPPO_API_KEY, NEXT_PUBLIC_SENTRY_DSN)
 - [ ] Set user roles (owner/manager) in profiles table
 - [ ] Set up GoShippo account + webhook
+- [ ] Set up Sentry project + add DSN
+- [ ] Set up uptime monitoring on /api/health
 - [ ] Get Clover credentials from Dave
