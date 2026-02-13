@@ -1,8 +1,9 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
+import { useAuth } from "@/hooks/use-auth";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,9 +14,17 @@ import { Loader2, Shield, Eye, EyeOff, AlertCircle } from "lucide-react";
 
 export default function AdminLoginPage() {
   const router = useRouter();
+  const { user, isAdmin, loading: authLoading } = useAuth();
   const [serverError, setServerError] = useState("");
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+
+  // If already logged in as admin, redirect to dashboard
+  useEffect(() => {
+    if (!authLoading && user && isAdmin) {
+      window.location.href = "/admin";
+    }
+  }, [authLoading, user, isAdmin]);
 
   const {
     register,
@@ -33,8 +42,8 @@ export default function AdminLoginPage() {
       setServerError(result.error);
       setLoading(false);
     } else {
-      router.push("/admin");
-      router.refresh();
+      // Hard navigation to ensure cookies are picked up
+      window.location.href = "/admin";
     }
   };
 

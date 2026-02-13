@@ -45,8 +45,8 @@ function SignInForm() {
       setServerError(result.error);
       setLoading(false);
     } else {
-      router.push(redirect);
-      router.refresh();
+      // Hard navigation to ensure cookies are picked up
+      window.location.href = redirect;
     }
   };
 
