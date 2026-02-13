@@ -94,6 +94,9 @@ export default function CheckoutPage() {
       setCustomerNotes(data.customerNotes);
     }
     sessionStorage.setItem("checkout_email", data.email);
+    if (data.phone) {
+      sessionStorage.setItem("checkout_phone", data.phone);
+    }
     router.push("/checkout/review");
   };
 

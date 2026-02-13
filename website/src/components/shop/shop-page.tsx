@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Search } from "lucide-react";
+import { Search, SlidersHorizontal } from "lucide-react";
 import type { Product, Category } from "@/types/product";
 import { isNewDrop } from "@/types/product";
 import { ProductGrid } from "@/components/product/product-grid";
@@ -92,7 +92,7 @@ export function ShopPage({ initialProducts, categories }: ShopPageProps) {
         break;
     }
 
-    // Group by product name — show one card per unique name (lowest price, summed quantity)
+    // Group by product name
     const grouped = new Map<string, Product>();
     const sizesMap = new Map<string, Set<string>>();
     for (const p of products) {
@@ -103,7 +103,6 @@ export function ShopPage({ initialProducts, categories }: ShopPageProps) {
       if (!existing) {
         grouped.set(key, { ...p, quantity: p.quantity });
       } else {
-        // Keep the one with the lowest price as the display card, sum quantities
         if (p.price < existing.price) {
           grouped.set(key, { ...p, quantity: existing.quantity + p.quantity });
         } else {
@@ -147,20 +146,30 @@ export function ShopPage({ initialProducts, categories }: ShopPageProps) {
   const paginatedProducts = filteredProducts.slice((safePage - 1) * ITEMS_PER_PAGE, safePage * ITEMS_PER_PAGE);
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6 lg:px-8">
-      {/* Clean filter bar */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between border-b pb-4">
-        {/* Filter tabs */}
-        <div className="flex gap-1 overflow-x-auto scrollbar-hide">
+    <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+      {/* Page title */}
+      <div className="mb-6">
+        <h1 className="font-display text-3xl md:text-4xl font-bold uppercase tracking-tight">
+          Shop
+        </h1>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Premium sneakers & collectibles, authenticated and hand-picked.
+        </p>
+      </div>
+
+      {/* Filter bar */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between pb-6 border-b border-border/50">
+        {/* Filter pills */}
+        <div className="flex gap-2 overflow-x-auto scrollbar-hide no-scrollbar">
           {FILTERS.map((f) => (
             <button
               key={f.key}
               onClick={() => setFilter(f.key)}
               className={cn(
-                "whitespace-nowrap rounded-full px-4 py-2 text-sm font-medium transition-colors",
+                "shrink-0 whitespace-nowrap rounded-full px-4 py-2 text-sm font-semibold transition-all duration-200",
                 filter === f.key
-                  ? "bg-primary text-primary-foreground"
-                  : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                  ? "bg-primary text-white shadow-md shadow-primary/20"
+                  : "bg-surface-800/50 text-muted-foreground hover:text-foreground hover:bg-surface-800 border border-surface-700/50"
               )}
             >
               {f.label}
@@ -170,14 +179,14 @@ export function ShopPage({ initialProducts, categories }: ShopPageProps) {
 
         {/* Search + Sort */}
         <div className="flex items-center gap-2">
-          <div className="relative flex-1 sm:w-48">
+          <div className="relative flex-1 sm:w-52">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               type="search"
               placeholder="Search..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="pl-9 h-9"
+              className="pl-9 h-9 bg-surface-800/50 border-surface-700/50 focus:border-primary/50 transition-colors"
             />
           </div>
           <SortSelect value={sort} onChange={setSort} />
@@ -185,10 +194,11 @@ export function ShopPage({ initialProducts, categories }: ShopPageProps) {
       </div>
 
       {/* Results info */}
-      <div className="flex items-center justify-between py-3 text-sm text-muted-foreground">
+      <div className="flex items-center justify-between py-4 text-sm text-muted-foreground">
         <span>
-          {filteredProducts.length} product{filteredProducts.length !== 1 ? "s" : ""}
-          {debouncedSearch && ` for "${debouncedSearch}"`}
+          <span className="font-mono font-semibold text-foreground">{filteredProducts.length}</span>
+          {" "}product{filteredProducts.length !== 1 ? "s" : ""}
+          {debouncedSearch && <> matching &ldquo;<span className="text-primary">{debouncedSearch}</span>&rdquo;</>}
         </span>
       </div>
 

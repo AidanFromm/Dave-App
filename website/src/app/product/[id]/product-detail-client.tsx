@@ -55,22 +55,21 @@ interface MergedSize {
   price: number;
   quantity: number;
   condition: string;
-  /** All variant IDs that share this size */
   variantIds: string[];
-  /** The "canonical" variant id to use for URL / cart */
   id: string;
 }
 
+type InfoTab = "details" | "shipping" | "returns";
+
 export function ProductDetailClient({ product: initialProduct, sizeVariants = [], dbVariants = [] }: { product: Product; sizeVariants?: (SizeVariant & { variantCondition?: string })[]; dbVariants?: ProductVariant[] }) {
-  // Lift product state so we can swap on size click
   const [activeProduct, setActiveProduct] = useState(initialProduct);
   const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(null);
   const [selectedCondition, setSelectedCondition] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<InfoTab>("details");
 
   const product = activeProduct;
   const hasDbVariants = dbVariants.length > 0;
 
-  // Detect Pokemon product
   const isPokemon = product.brand?.toLowerCase() === "pokemon tcg" ||
     product.name.toLowerCase().includes("pokemon") ||
     product.tags?.some((t) => t.toLowerCase().includes("pokemon"));
@@ -79,9 +78,8 @@ export function ProductDetailClient({ product: initialProduct, sizeVariants = []
   const stockStatus = getStockStatus(product);
   const { isWishlisted, toggleProduct } = useWishlistStore();
   const wishlisted = isWishlisted(product.id);
-  const [showDetails, setShowDetails] = useState(true);
 
-  // Deduplicate sizes: merge variants with same size
+  // Deduplicate sizes
   const mergedSizes = useMemo<MergedSize[]>(() => {
     const map = new Map<string, MergedSize>();
     for (const v of sizeVariants) {
@@ -90,7 +88,6 @@ export function ProductDetailClient({ product: initialProduct, sizeVariants = []
       if (existing) {
         existing.quantity += v.quantity;
         existing.variantIds.push(v.id);
-        // Keep lower price if they differ
         if (v.price < existing.price) {
           existing.price = v.price;
           existing.id = v.id;
@@ -113,17 +110,12 @@ export function ProductDetailClient({ product: initialProduct, sizeVariants = []
     });
   }, [sizeVariants]);
 
-  // Handle size click — update product state client-side
   const handleSizeClick = useCallback((merged: MergedSize) => {
     if (merged.quantity <= 0) return;
-
-    // If using real db variants, find the matching variant
     if (hasDbVariants) {
       const dbV = dbVariants.find((v) => v.id === merged.id);
       if (dbV) setSelectedVariant(dbV);
     }
-
-    // Update the active product with variant data
     setActiveProduct((prev) => ({
       ...prev,
       size: merged.size,
@@ -131,9 +123,7 @@ export function ProductDetailClient({ product: initialProduct, sizeVariants = []
       quantity: merged.quantity,
       condition: merged.condition as Product["condition"],
     }));
-
     if (!hasDbVariants) {
-      // Legacy: update URL for same-name product variants
       window.history.replaceState(null, "", `/product/${merged.id}`);
       setActiveProduct((prev) => ({ ...prev, id: merged.id }));
     }
@@ -149,10 +139,16 @@ export function ProductDetailClient({ product: initialProduct, sizeVariants = []
   };
 
   const features = [
-    { icon: <Shield className="h-4 w-4" />, text: "100% Authentic Guaranteed" },
-    { icon: <Truck className="h-4 w-4" />, text: "Free Shipping Over $150" },
+    { icon: <Shield className="h-4 w-4" />, text: "100% Authentic" },
+    { icon: <Truck className="h-4 w-4" />, text: "Free Over $150" },
     { icon: <RotateCcw className="h-4 w-4" />, text: "Easy Returns" },
-    { icon: <CreditCard className="h-4 w-4" />, text: "Secure Checkout" },
+    { icon: <CreditCard className="h-4 w-4" />, text: "Secure Pay" },
+  ];
+
+  const TABS: { key: InfoTab; label: string }[] = [
+    { key: "details", label: "Details" },
+    { key: "shipping", label: "Shipping" },
+    { key: "returns", label: "Returns" },
   ];
 
   return (
@@ -165,11 +161,11 @@ export function ProductDetailClient({ product: initialProduct, sizeVariants = []
       {/* Breadcrumb */}
       <motion.nav variants={fadeIn} className="mb-8 flex items-center gap-2 text-sm text-muted-foreground">
         <Link href="/" className="hover:text-foreground transition-colors">Shop</Link>
-        <ChevronRight className="h-4 w-4" />
+        <ChevronRight className="h-3.5 w-3.5" />
         {product.brand && (
           <>
             <span className="capitalize">{product.brand}</span>
-            <ChevronRight className="h-4 w-4" />
+            <ChevronRight className="h-3.5 w-3.5" />
           </>
         )}
         <span className="text-foreground truncate max-w-[200px]">{product.name}</span>
@@ -190,7 +186,7 @@ export function ProductDetailClient({ product: initialProduct, sizeVariants = []
           {product.brand && (
             <motion.p 
               variants={fadeIn}
-              className="text-sm font-medium uppercase tracking-widest text-primary"
+              className="text-xs font-semibold uppercase tracking-[0.2em] text-primary"
             >
               {product.brand}
             </motion.p>
@@ -199,96 +195,69 @@ export function ProductDetailClient({ product: initialProduct, sizeVariants = []
           {/* Name */}
           <motion.h1 
             variants={fadeIn}
-            className="mt-2 text-2xl font-bold sm:text-3xl lg:text-4xl leading-tight tracking-tight"
+            className="mt-2 font-display text-2xl font-bold uppercase sm:text-3xl lg:text-4xl leading-tight tracking-tight"
           >
             {product.name}
           </motion.h1>
 
           {/* Badges */}
-          <motion.div variants={fadeIn} className="mt-4 flex flex-wrap gap-2">
+          <motion.div variants={fadeIn} className="mt-3 flex flex-wrap gap-2">
             {newDrop && (
-              <Badge className="bg-gradient-to-r from-primary to-orange-500 text-white border-0 gap-1">
+              <span className="inline-flex items-center gap-1 bg-primary text-white text-xs font-bold uppercase px-2.5 py-1 rounded">
                 <Sparkles className="h-3 w-3" />
                 NEW DROP
-              </Badge>
+              </span>
             )}
-            <Badge
-              variant="outline"
+            <span
               className={cn(
-                "font-medium",
+                "text-xs font-semibold px-2.5 py-1 rounded",
                 product.condition === "new"
-                  ? "border-green-500 text-green-600 bg-green-500/10"
-                  : "border-amber-500 text-amber-600 bg-amber-500/10"
+                  ? "bg-green-500/10 text-green-500"
+                  : "bg-amber-500/10 text-amber-500"
               )}
             >
               {CONDITION_LABELS[product.condition]}
-            </Badge>
+            </span>
             {stockStatus === "low_stock" && (
-              <Badge className="bg-amber-500/90 text-white border-0 font-medium">
+              <span className="text-xs font-semibold px-2.5 py-1 rounded bg-amber-500/10 text-amber-500">
                 ⚡ LOW STOCK
-              </Badge>
+              </span>
             )}
             {stockStatus === "sold_out" && (
-              <Badge variant="secondary" className="font-medium">SOLD OUT</Badge>
+              <span className="text-xs font-semibold px-2.5 py-1 rounded bg-surface-800 text-muted-foreground">
+                SOLD OUT
+              </span>
             )}
           </motion.div>
 
           {/* Price */}
           <motion.div variants={fadeIn} className="mt-5 flex items-baseline gap-3">
-            <span className="text-3xl font-bold tracking-tight">
+            <span className="text-3xl font-mono font-bold text-primary tracking-tight">
               {formatCurrency(product.price)}
             </span>
             {product.compare_at_price && product.compare_at_price > product.price && (
               <>
-                <span className="text-lg text-muted-foreground line-through">
+                <span className="text-lg font-mono text-muted-foreground line-through">
                   {formatCurrency(product.compare_at_price)}
                 </span>
                 {discount && (
-                  <Badge variant="destructive" className="font-bold">
+                  <span className="text-xs font-bold bg-destructive text-white px-2 py-0.5 rounded">
                     SAVE {discount}%
-                  </Badge>
+                  </span>
                 )}
               </>
             )}
           </motion.div>
 
           <motion.div variants={fadeIn}>
-            <Separator className="my-6" />
+            <Separator className="my-6 bg-border/50" />
           </motion.div>
 
-          {/* Key Details */}
-          <motion.div variants={fadeIn} className="grid grid-cols-2 gap-3">
-            {product.size && (
-              <div className="rounded-xl bg-muted/40 p-4">
-                <span className="text-xs text-muted-foreground uppercase tracking-wide font-medium">Size</span>
-                <p className="mt-1 text-lg font-bold">{product.size}</p>
-              </div>
-            )}
-            {product.colorway && (
-              <div className="rounded-xl bg-muted/40 p-4">
-                <span className="text-xs text-muted-foreground uppercase tracking-wide font-medium">Colorway</span>
-                <p className="mt-1 text-sm font-semibold line-clamp-1">{product.colorway}</p>
-              </div>
-            )}
-            <div className="rounded-xl bg-muted/40 p-4">
-              <span className="text-xs text-muted-foreground uppercase tracking-wide font-medium">Box</span>
-              <p className="mt-1 text-sm font-semibold">
-                {product.has_box ? "✓ Included" : "No Box"}
-              </p>
-            </div>
-            {product.sku && (
-              <div className="rounded-xl bg-muted/40 p-4">
-                <span className="text-xs text-muted-foreground uppercase tracking-wide font-medium">SKU</span>
-                <p className="mt-1 text-sm font-mono">{product.sku}</p>
-              </div>
-            )}
-          </motion.div>
-
-          {/* Available Sizes — client-side switching, deduplicated */}
+          {/* Available Sizes */}
           {mergedSizes.length > 1 && (
-            <motion.div variants={fadeIn} className="mt-6">
-              <span className="text-xs text-muted-foreground uppercase tracking-wide font-medium">Available Sizes</span>
-              <div className="mt-3 flex flex-wrap gap-2">
+            <motion.div variants={fadeIn} className="mb-6">
+              <span className="text-xs font-semibold uppercase tracking-[0.15em] text-muted-foreground">Select Size</span>
+              <div className="mt-3 grid grid-cols-4 sm:grid-cols-5 gap-2">
                 {mergedSizes.map((m) => {
                   const isActive = m.variantIds.includes(product.id);
                   const isSoldOut = m.quantity <= 0;
@@ -297,26 +266,20 @@ export function ProductDetailClient({ product: initialProduct, sizeVariants = []
                       key={m.size ?? m.id}
                       onClick={() => handleSizeClick(m)}
                       disabled={isSoldOut}
-                      aria-label={`Size ${m.size}${isSoldOut ? ", sold out" : `, ${formatCurrency(m.price)}, ${m.quantity} left`}`}
+                      aria-label={`Size ${m.size}${isSoldOut ? ", sold out" : `, ${formatCurrency(m.price)}`}`}
                       aria-pressed={m.variantIds.includes(product.id)}
                       className={cn(
-                        "flex flex-col items-center rounded-xl border-2 px-4 py-2.5 text-sm font-medium transition-all min-w-[60px] cursor-pointer",
+                        "flex flex-col items-center rounded-xl border-2 px-3 py-2.5 text-sm font-medium transition-all cursor-pointer",
                         isActive
-                          ? "border-primary bg-primary/10 text-primary shadow-sm"
+                          ? "border-primary bg-primary/10 text-primary"
                           : isSoldOut
-                          ? "border-border bg-muted/50 text-muted-foreground opacity-40 cursor-not-allowed"
+                          ? "border-border bg-surface-800/30 text-muted-foreground opacity-40 cursor-not-allowed line-through"
                           : "border-border hover:border-primary/50 hover:bg-primary/5"
                       )}
                     >
                       <span className="font-bold">{m.size}</span>
-                      <span className="text-[10px] text-muted-foreground">
+                      <span className="text-[10px] font-mono text-muted-foreground mt-0.5">
                         {formatCurrency(m.price)}
-                      </span>
-                      <span className={cn(
-                        "text-[10px] mt-0.5",
-                        isSoldOut ? "text-red-400" : m.quantity <= 3 ? "text-amber-500" : "text-muted-foreground"
-                      )}>
-                        {isSoldOut ? "Sold Out" : `${m.quantity} left`}
                       </span>
                     </button>
                   );
@@ -325,25 +288,50 @@ export function ProductDetailClient({ product: initialProduct, sizeVariants = []
             </motion.div>
           )}
 
+          {/* Key details row */}
+          <motion.div variants={fadeIn} className="grid grid-cols-2 gap-2 mb-6">
+            {product.size && mergedSizes.length <= 1 && (
+              <div className="rounded-xl bg-surface-800/30 border border-border/50 p-3">
+                <span className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium">Size</span>
+                <p className="mt-0.5 text-sm font-bold">{product.size}</p>
+              </div>
+            )}
+            {product.colorway && (
+              <div className="rounded-xl bg-surface-800/30 border border-border/50 p-3">
+                <span className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium">Colorway</span>
+                <p className="mt-0.5 text-sm font-semibold line-clamp-1">{product.colorway}</p>
+              </div>
+            )}
+            <div className="rounded-xl bg-surface-800/30 border border-border/50 p-3">
+              <span className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium">Box</span>
+              <p className="mt-0.5 text-sm font-semibold">
+                {product.has_box ? "✓ Included" : "No Box"}
+              </p>
+            </div>
+            {product.sku && (
+              <div className="rounded-xl bg-surface-800/30 border border-border/50 p-3">
+                <span className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium">SKU</span>
+                <p className="mt-0.5 text-xs font-mono text-muted-foreground">{product.sku}</p>
+              </div>
+            )}
+          </motion.div>
+
           {/* Condition Selector for DB Variants */}
           {hasDbVariants && selectedVariant && (
-            <motion.div variants={fadeIn} className="mt-4">
-              <span className="text-xs text-muted-foreground uppercase tracking-wide font-medium">Condition</span>
+            <motion.div variants={fadeIn} className="mb-6">
+              <span className="text-xs font-semibold uppercase tracking-[0.15em] text-muted-foreground">Condition</span>
               <div className="mt-2">
-                <Badge
-                  variant="outline"
-                  className="text-sm px-3 py-1 border-primary text-primary bg-primary/10"
-                >
+                <span className="inline-flex text-sm px-3 py-1 rounded-full border-2 border-primary text-primary bg-primary/10 font-medium">
                   {VARIANT_CONDITION_LABELS[selectedVariant.condition as VariantCondition] ?? selectedVariant.condition}
-                </Badge>
+                </span>
               </div>
             </motion.div>
           )}
 
           {/* Condition Selector for Pokemon Cards */}
           {isPokemon && !hasDbVariants && (
-            <motion.div variants={fadeIn} className="mt-4">
-              <span className="text-xs text-muted-foreground uppercase tracking-wide font-medium">Condition</span>
+            <motion.div variants={fadeIn} className="mb-6">
+              <span className="text-xs font-semibold uppercase tracking-[0.15em] text-muted-foreground">Condition</span>
               <div className="mt-2 flex flex-wrap gap-2">
                 {(["new", "used_like_new", "used_good", "used_fair"] as const).map((cond) => (
                   <button
@@ -364,7 +352,7 @@ export function ProductDetailClient({ product: initialProduct, sizeVariants = []
           )}
 
           {/* Actions */}
-          <motion.div variants={fadeIn} className="mt-8 flex gap-3">
+          <motion.div variants={fadeIn} className="flex gap-3">
             <div className="flex-1">
               <AddToCartButton
                 product={product}
@@ -380,7 +368,7 @@ export function ProductDetailClient({ product: initialProduct, sizeVariants = []
               <Button
                 variant="outline"
                 size="lg"
-                className="h-12 w-12 p-0"
+                className="h-12 w-12 p-0 border-border hover:border-primary/50 hover:bg-primary/5"
                 onClick={handleWishlist}
               >
                 <Heart
@@ -396,61 +384,78 @@ export function ProductDetailClient({ product: initialProduct, sizeVariants = []
           {/* Trust Badges */}
           <motion.div 
             variants={fadeIn}
-            className="mt-8 grid grid-cols-2 gap-3"
+            className="mt-6 flex flex-wrap gap-4"
           >
             {features.map((feature, i) => (
               <div 
                 key={i} 
-                className="flex items-center gap-2.5 text-sm text-muted-foreground"
+                className="flex items-center gap-2 text-xs text-muted-foreground"
               >
-                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary flex-shrink-0">
+                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/10 text-primary flex-shrink-0">
                   {feature.icon}
                 </div>
-                <span>{feature.text}</span>
+                <span className="font-medium">{feature.text}</span>
               </div>
             ))}
           </motion.div>
 
-          {/* Description Accordion */}
-          {product.description && (
-            <motion.div variants={fadeIn} className="mt-8">
-              <button
-                onClick={() => setShowDetails(!showDetails)}
-                className="flex w-full items-center justify-between rounded-xl bg-muted/40 p-4 text-left hover:bg-muted/60 transition-colors"
-              >
-                <span className="font-semibold">Product Details</span>
-                <motion.div
-                  animate={{ rotate: showDetails ? 180 : 0 }}
-                  transition={{ duration: 0.2 }}
+          {/* Info Tabs */}
+          <motion.div variants={fadeIn} className="mt-8">
+            <div className="flex border-b border-border/50">
+              {TABS.map((tab) => (
+                <button
+                  key={tab.key}
+                  onClick={() => setActiveTab(tab.key)}
+                  className={cn(
+                    "px-4 py-3 text-sm font-semibold uppercase tracking-wider transition-colors border-b-2 -mb-px",
+                    activeTab === tab.key
+                      ? "text-primary border-primary"
+                      : "text-muted-foreground border-transparent hover:text-foreground hover:border-surface-700"
+                  )}
                 >
-                  <ChevronRight className="h-5 w-5 rotate-90" />
-                </motion.div>
-              </button>
-              <AnimatePresence>
-                {showDetails && (
-                  <motion.div
-                    initial={{ height: 0, opacity: 0 }}
-                    animate={{ height: "auto", opacity: 1 }}
-                    exit={{ height: 0, opacity: 0 }}
-                    transition={{ duration: 0.2 }}
-                    className="overflow-hidden"
-                  >
-                    <p className="p-4 text-sm text-muted-foreground leading-relaxed">
-                      {product.description}
-                    </p>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </motion.div>
-          )}
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+            <div className="py-5 text-sm text-muted-foreground leading-relaxed">
+              {activeTab === "details" && (
+                <div className="space-y-3">
+                  {product.description ? (
+                    <p>{product.description}</p>
+                  ) : (
+                    <p>Authentic {product.brand ?? ""} product. Verified and inspected by the Secured Tampa team before shipping.</p>
+                  )}
+                  {product.colorway && <p><span className="font-medium text-foreground">Colorway:</span> {product.colorway}</p>}
+                  {product.sku && <p><span className="font-medium text-foreground">SKU:</span> <span className="font-mono">{product.sku}</span></p>}
+                </div>
+              )}
+              {activeTab === "shipping" && (
+                <div className="space-y-3">
+                  <p>Orders are processed within <span className="font-medium text-foreground">1-2 business days</span>.</p>
+                  <p><span className="font-medium text-foreground">Free shipping</span> on orders over $150.</p>
+                  <p>Standard shipping (3-7 business days) via USPS or FedEx.</p>
+                  <p>Expedited and overnight options available at checkout.</p>
+                  <p>Local pickup available in <span className="font-medium text-foreground">Tampa, FL</span>.</p>
+                </div>
+              )}
+              {activeTab === "returns" && (
+                <div className="space-y-3">
+                  <p>Returns accepted within <span className="font-medium text-foreground">14 days</span> of delivery.</p>
+                  <p>Items must be in original condition — unworn, with tags and box.</p>
+                  <p>Used items are <span className="font-medium text-foreground">final sale</span> unless the condition was misrepresented.</p>
+                  <p>Contact <span className="font-medium text-foreground">securedtampa.llc@gmail.com</span> to initiate a return.</p>
+                </div>
+              )}
+            </div>
+          </motion.div>
 
           {/* Tags */}
           {product.tags && product.tags.length > 0 && (
-            <motion.div variants={fadeIn} className="mt-5 flex flex-wrap gap-2">
+            <motion.div variants={fadeIn} className="mt-2 flex flex-wrap gap-2">
               {product.tags.map((tag) => (
-                <Badge key={tag} variant="secondary" className="text-xs">
+                <span key={tag} className="text-[10px] font-medium uppercase tracking-wider px-2.5 py-1 rounded-full bg-surface-800/50 text-muted-foreground border border-border/50">
                   {tag}
-                </Badge>
+                </span>
               ))}
             </motion.div>
           )}

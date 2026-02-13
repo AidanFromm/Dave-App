@@ -230,6 +230,9 @@ export async function POST(request: Request) {
       stripe_payment_status: "succeeded",
       items: formattedItems,
       shipping_address: shipping,
+      delivery_method: deliveryMethodMeta || (fulfillmentType === "pickup" ? "pickup" : "shipping"),
+      pickup_status: (deliveryMethodMeta === "pickup" || fulfillmentType === "pickup") ? "pending" : null,
+      customer_phone: phoneMeta || null,
       created_at: now,
       updated_at: now,
     });

@@ -197,6 +197,7 @@ export default function ReviewPage() {
             shippingCost: getShippingCost(),
             total: finalTotal,
             discountCode: appliedDiscount?.code || null,
+            phone: sessionStorage.getItem("checkout_phone") || undefined,
           }),
         });
 
