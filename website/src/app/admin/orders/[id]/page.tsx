@@ -22,7 +22,7 @@ import {
   type Address,
 } from "@/types/order";
 import { toast } from "sonner";
-import { ArrowLeft, Truck, XCircle, MapPin, Bell, Mail, DollarSign, Package, CheckCircle, Link2, Loader2, Copy } from "lucide-react";
+import { ArrowLeft, Truck, XCircle, MapPin, Bell, Mail, DollarSign, Package, CheckCircle, Link2, Loader2, Copy, Printer } from "lucide-react";
 
 const PICKUP_STATUS_COLORS: Record<string, string> = {
   pending: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400",
@@ -373,6 +373,14 @@ export default function AdminOrderDetailPage() {
               <Link2 className="mr-1.5 h-4 w-4" />
             )}
             Payment Link
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => window.open(`/admin/orders/${orderId}/packing-slip`, "_blank")}
+          >
+            <Printer className="mr-1.5 h-4 w-4" />
+            Packing Slip
           </Button>
           {canRemind && (
             <Button

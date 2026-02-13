@@ -1,12 +1,16 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { Search, SlidersHorizontal } from "lucide-react";
+import { useMemo, useState, useEffect, useCallback } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Search, SlidersHorizontal, X } from "lucide-react";
 import type { Product, Category } from "@/types/product";
 import { isNewDrop } from "@/types/product";
 import { ProductGrid } from "@/components/product/product-grid";
 import { SortSelect, type SortOption } from "./sort-select";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { useDebounce } from "@/hooks/use-debounce";
 import { cn } from "@/lib/utils";
 import { Pagination } from "@/components/ui/pagination";
@@ -21,7 +25,23 @@ const FILTERS: { key: ShopFilter; label: string }[] = [
   { key: "sneakers", label: "Sneakers" },
   { key: "new", label: "New" },
   { key: "used", label: "Used" },
-  { key: "pokemon", label: "Pokémon" },
+  { key: "pokemon", label: "Pokemon" },
+];
+
+const CATEGORY_OPTIONS = [
+  { value: "sneakers", label: "Sneakers" },
+  { value: "pokemon", label: "Pokemon TCG" },
+  { value: "sealed", label: "Sealed Product" },
+];
+
+const CONDITION_OPTIONS = [
+  { value: "new", label: "New" },
+  { value: "used", label: "Used" },
+];
+
+const SIZE_OPTIONS = [
+  "4", "4.5", "5", "5.5", "6", "6.5", "7", "7.5", "8", "8.5",
+  "9", "9.5", "10", "10.5", "11", "11.5", "12", "12.5", "13", "14",
 ];
 
 interface ShopPageProps {
@@ -30,11 +50,61 @@ interface ShopPageProps {
 }
 
 export function ShopPage({ initialProducts, categories }: ShopPageProps) {
-  const [filter, setFilter] = useState<ShopFilter>("all");
-  const [sort, setSort] = useState<SortOption>("newest");
-  const [search, setSearch] = useState("");
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  // Read URL params
+  const [filter, setFilter] = useState<ShopFilter>(
+    (searchParams.get("tab") as ShopFilter) || "all"
+  );
+  const [sort, setSort] = useState<SortOption>(
+    (searchParams.get("sort") as SortOption) || "newest"
+  );
+  const [search, setSearch] = useState(searchParams.get("q") || "");
   const [currentPage, setCurrentPage] = useState(1);
+
+  // Advanced filters
+  const [brand, setBrand] = useState(searchParams.get("brand") || "");
+  const [categoryFilter, setCategoryFilter] = useState<string[]>(
+    searchParams.get("category")?.split(",").filter(Boolean) || []
+  );
+  const [conditionFilter, setConditionFilter] = useState<string[]>(
+    searchParams.get("condition")?.split(",").filter(Boolean) || []
+  );
+  const [sizeFilter, setSizeFilter] = useState<string[]>(
+    searchParams.get("size")?.split(",").filter(Boolean) || []
+  );
+  const [priceMin, setPriceMin] = useState(searchParams.get("min") || "");
+  const [priceMax, setPriceMax] = useState(searchParams.get("max") || "");
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
+
   const debouncedSearch = useDebounce(search, 300);
+  const debouncedBrand = useDebounce(brand, 300);
+
+  // Sync URL params
+  useEffect(() => {
+    const params = new URLSearchParams();
+    if (filter !== "all") params.set("tab", filter);
+    if (sort !== "newest") params.set("sort", sort);
+    if (debouncedSearch) params.set("q", debouncedSearch);
+    if (debouncedBrand) params.set("brand", debouncedBrand);
+    if (categoryFilter.length) params.set("category", categoryFilter.join(","));
+    if (conditionFilter.length) params.set("condition", conditionFilter.join(","));
+    if (sizeFilter.length) params.set("size", sizeFilter.join(","));
+    if (priceMin) params.set("min", priceMin);
+    if (priceMax) params.set("max", priceMax);
+    const qs = params.toString();
+    router.replace(qs ? `?${qs}` : "/", { scroll: false });
+  }, [filter, sort, debouncedSearch, debouncedBrand, categoryFilter, conditionFilter, sizeFilter, priceMin, priceMax, router]);
+
+  // Get unique brands from products
+  const allBrands = useMemo(() => {
+    const brands = new Set<string>();
+    for (const p of initialProducts) {
+      if (p.brand) brands.add(p.brand);
+    }
+    return Array.from(brands).sort();
+  }, [initialProducts]);
 
   const pokemonCategoryId = useMemo(() => {
     const cat = categories.find(
@@ -42,6 +112,25 @@ export function ShopPage({ initialProducts, categories }: ShopPageProps) {
     );
     return cat?.id ?? null;
   }, [categories]);
+
+  const hasActiveFilters = brand || categoryFilter.length > 0 || conditionFilter.length > 0 || sizeFilter.length > 0 || priceMin || priceMax;
+
+  const clearAdvancedFilters = () => {
+    setBrand("");
+    setCategoryFilter([]);
+    setConditionFilter([]);
+    setSizeFilter([]);
+    setPriceMin("");
+    setPriceMax("");
+  };
+
+  const toggleArrayFilter = (arr: string[], value: string, setter: (v: string[]) => void) => {
+    if (arr.includes(value)) {
+      setter(arr.filter((v) => v !== value));
+    } else {
+      setter([...arr, value]);
+    }
+  };
 
   const filterResult = useMemo(() => {
     let products = [...initialProducts];
@@ -57,7 +146,7 @@ export function ShopPage({ initialProducts, categories }: ShopPageProps) {
       );
     }
 
-    // Category filter
+    // Tab filter
     switch (filter) {
       case "drops":
         products = products.filter((p) => isNewDrop(p));
@@ -90,6 +179,52 @@ export function ShopPage({ initialProducts, categories }: ShopPageProps) {
           );
         }
         break;
+    }
+
+    // Brand filter
+    if (debouncedBrand) {
+      const b = debouncedBrand.toLowerCase();
+      products = products.filter((p) => p.brand?.toLowerCase().includes(b));
+    }
+
+    // Category filter
+    if (categoryFilter.length > 0) {
+      products = products.filter((p) => {
+        const isPokemon = p.brand?.toLowerCase() === "pokemon tcg" ||
+          p.name.toLowerCase().includes("pokemon") ||
+          p.tags?.some((t) => t.toLowerCase().includes("pokemon"));
+        const isSealed = p.tags?.some((t) => t.toLowerCase().includes("sealed")) ||
+          p.name.toLowerCase().includes("sealed");
+
+        if (categoryFilter.includes("pokemon") && isPokemon) return true;
+        if (categoryFilter.includes("sealed") && isSealed) return true;
+        if (categoryFilter.includes("sneakers") && !isPokemon && !isSealed) return true;
+        return false;
+      });
+    }
+
+    // Condition filter
+    if (conditionFilter.length > 0) {
+      products = products.filter((p) => {
+        if (conditionFilter.includes("new") && p.condition === "new") return true;
+        if (conditionFilter.includes("used") && p.condition !== "new") return true;
+        return false;
+      });
+    }
+
+    // Size filter
+    if (sizeFilter.length > 0) {
+      products = products.filter((p) => p.size && sizeFilter.includes(p.size));
+    }
+
+    // Price range
+    const minPrice = priceMin ? parseFloat(priceMin) : null;
+    const maxPrice = priceMax ? parseFloat(priceMax) : null;
+    if (minPrice !== null && !isNaN(minPrice)) {
+      products = products.filter((p) => p.price >= minPrice);
+    }
+    if (maxPrice !== null && !isNaN(maxPrice)) {
+      products = products.filter((p) => p.price <= maxPrice);
     }
 
     // Group by product name
@@ -132,18 +267,117 @@ export function ShopPage({ initialProducts, categories }: ShopPageProps) {
     }
 
     return { products, sizesMap };
-  }, [initialProducts, filter, sort, debouncedSearch, pokemonCategoryId]);
+  }, [initialProducts, filter, sort, debouncedSearch, debouncedBrand, pokemonCategoryId, categoryFilter, conditionFilter, sizeFilter, priceMin, priceMax]);
 
   const filteredProducts = filterResult.products;
   const sizesByName = filterResult.sizesMap;
 
   // Reset page on filter/search change
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  useMemo(() => { setCurrentPage(1); }, [filter, sort, debouncedSearch]);
+  useMemo(() => { setCurrentPage(1); }, [filter, sort, debouncedSearch, debouncedBrand, categoryFilter, conditionFilter, sizeFilter, priceMin, priceMax]);
 
   const totalPages = Math.max(1, Math.ceil(filteredProducts.length / ITEMS_PER_PAGE));
   const safePage = Math.min(currentPage, totalPages);
   const paginatedProducts = filteredProducts.slice((safePage - 1) * ITEMS_PER_PAGE, safePage * ITEMS_PER_PAGE);
+
+  // Filter sidebar content (shared between desktop and mobile)
+  const FilterContent = () => (
+    <div className="space-y-6">
+      {/* Brand */}
+      <div>
+        <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Brand</h3>
+        <Input
+          placeholder="Search brand..."
+          value={brand}
+          onChange={(e) => setBrand(e.target.value)}
+          className="h-8 text-sm bg-surface-800/50 border-surface-700/50"
+        />
+      </div>
+
+      {/* Category */}
+      <div>
+        <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Category</h3>
+        <div className="space-y-2">
+          {CATEGORY_OPTIONS.map((opt) => (
+            <label key={opt.value} className="flex items-center gap-2 text-sm cursor-pointer">
+              <Checkbox
+                checked={categoryFilter.includes(opt.value)}
+                onCheckedChange={() => toggleArrayFilter(categoryFilter, opt.value, setCategoryFilter)}
+              />
+              {opt.label}
+            </label>
+          ))}
+        </div>
+      </div>
+
+      {/* Price Range */}
+      <div>
+        <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Price Range</h3>
+        <div className="flex gap-2 items-center">
+          <Input
+            type="number"
+            placeholder="Min"
+            value={priceMin}
+            onChange={(e) => setPriceMin(e.target.value)}
+            className="h-8 text-sm bg-surface-800/50 border-surface-700/50 w-24"
+          />
+          <span className="text-muted-foreground text-sm">-</span>
+          <Input
+            type="number"
+            placeholder="Max"
+            value={priceMax}
+            onChange={(e) => setPriceMax(e.target.value)}
+            className="h-8 text-sm bg-surface-800/50 border-surface-700/50 w-24"
+          />
+        </div>
+      </div>
+
+      {/* Condition */}
+      <div>
+        <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Condition</h3>
+        <div className="space-y-2">
+          {CONDITION_OPTIONS.map((opt) => (
+            <label key={opt.value} className="flex items-center gap-2 text-sm cursor-pointer">
+              <Checkbox
+                checked={conditionFilter.includes(opt.value)}
+                onCheckedChange={() => toggleArrayFilter(conditionFilter, opt.value, setConditionFilter)}
+              />
+              {opt.label}
+            </label>
+          ))}
+        </div>
+      </div>
+
+      {/* Size */}
+      <div>
+        <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Size</h3>
+        <div className="flex flex-wrap gap-1.5">
+          {SIZE_OPTIONS.map((size) => (
+            <button
+              key={size}
+              onClick={() => toggleArrayFilter(sizeFilter, size, setSizeFilter)}
+              className={cn(
+                "px-2.5 py-1 rounded text-xs font-medium transition-colors",
+                sizeFilter.includes(size)
+                  ? "bg-primary text-white"
+                  : "bg-surface-800/50 text-muted-foreground hover:text-foreground hover:bg-surface-800"
+              )}
+            >
+              {size}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Clear filters */}
+      {hasActiveFilters && (
+        <Button variant="outline" size="sm" className="w-full" onClick={clearAdvancedFilters}>
+          <X className="h-3 w-3 mr-1.5" />
+          Clear Filters
+        </Button>
+      )}
+    </div>
+  );
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
@@ -177,7 +411,7 @@ export function ShopPage({ initialProducts, categories }: ShopPageProps) {
           ))}
         </div>
 
-        {/* Search + Sort */}
+        {/* Search + Sort + Mobile Filter toggle */}
         <div className="flex items-center gap-2">
           <div className="relative flex-1 sm:w-52">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -190,23 +424,65 @@ export function ShopPage({ initialProducts, categories }: ShopPageProps) {
             />
           </div>
           <SortSelect value={sort} onChange={setSort} />
+
+          {/* Mobile filter button */}
+          <Sheet open={mobileFiltersOpen} onOpenChange={setMobileFiltersOpen}>
+            <SheetTrigger asChild>
+              <Button variant="outline" size="icon" className="lg:hidden h-9 w-9 relative">
+                <SlidersHorizontal className="h-4 w-4" />
+                {hasActiveFilters && (
+                  <span className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-primary" />
+                )}
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="left" className="w-80 bg-surface-900 border-surface-800">
+              <SheetHeader>
+                <SheetTitle>Filters</SheetTitle>
+              </SheetHeader>
+              <div className="mt-6">
+                <FilterContent />
+              </div>
+            </SheetContent>
+          </Sheet>
         </div>
       </div>
 
-      {/* Results info */}
-      <div className="flex items-center justify-between py-4 text-sm text-muted-foreground">
-        <span>
-          <span className="font-mono font-semibold text-foreground">{filteredProducts.length}</span>
-          {" "}product{filteredProducts.length !== 1 ? "s" : ""}
-          {debouncedSearch && <> matching &ldquo;<span className="text-primary">{debouncedSearch}</span>&rdquo;</>}
-        </span>
+      {/* Main layout: sidebar + grid */}
+      <div className="flex gap-8 pt-4">
+        {/* Desktop sidebar */}
+        <aside className="hidden lg:block w-56 shrink-0">
+          <div className="sticky top-24">
+            <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-4">Filters</h2>
+            <FilterContent />
+          </div>
+        </aside>
+
+        {/* Products area */}
+        <div className="flex-1 min-w-0">
+          {/* Results info */}
+          <div className="flex items-center justify-between pb-4 text-sm text-muted-foreground">
+            <span>
+              <span className="font-mono font-semibold text-foreground">{filteredProducts.length}</span>
+              {" "}product{filteredProducts.length !== 1 ? "s" : ""}
+              {debouncedSearch && <> matching &ldquo;<span className="text-primary">{debouncedSearch}</span>&rdquo;</>}
+            </span>
+            {hasActiveFilters && (
+              <button
+                onClick={clearAdvancedFilters}
+                className="text-xs text-primary hover:underline hidden lg:block"
+              >
+                Clear filters
+              </button>
+            )}
+          </div>
+
+          {/* Products grid */}
+          <ProductGrid products={paginatedProducts} sizesByName={sizesByName} />
+
+          {/* Pagination */}
+          <Pagination currentPage={safePage} totalPages={totalPages} onPageChange={setCurrentPage} />
+        </div>
       </div>
-
-      {/* Products grid */}
-      <ProductGrid products={paginatedProducts} sizesByName={sizesByName} />
-
-      {/* Pagination */}
-      <Pagination currentPage={safePage} totalPages={totalPages} onPageChange={setCurrentPage} />
     </div>
   );
 }
