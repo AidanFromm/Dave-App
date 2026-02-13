@@ -345,10 +345,28 @@ export function ShopPage({ initialProducts, categories }: ShopPageProps) {
         </div>
       </div>
 
-      {/* Pokemon Type (shows when Pokemon TCG is selected or pokemon tab active) */}
+      {/* Sneaker Type (shows when Sneakers is selected or sneakers tab active) */}
+      {(categoryFilter.includes("sneakers") || filter === "sneakers" || (!categoryFilter.length && filter === "all")) && (
+        <div>
+          <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Sneaker Type</h3>
+          <div className="space-y-2">
+            {CONDITION_OPTIONS.map((opt) => (
+              <label key={opt.value} className="flex items-center gap-2 text-sm cursor-pointer">
+                <Checkbox
+                  checked={conditionFilter.includes(opt.value)}
+                  onCheckedChange={() => toggleArrayFilter(conditionFilter, opt.value, setConditionFilter)}
+                />
+                {opt.label}
+              </label>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Pokemon Type (shows when Pokemon is selected or pokemon tab active) */}
       {(categoryFilter.includes("pokemon") || filter === "pokemon") && (
         <div>
-          <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Pokemon Type</h3>
+          <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Pokémon Type</h3>
           <div className="space-y-2">
             {POKEMON_TYPE_OPTIONS.map((opt) => (
               <label key={opt.value} className="flex items-center gap-2 text-sm cursor-pointer">
@@ -382,22 +400,6 @@ export function ShopPage({ initialProducts, categories }: ShopPageProps) {
             onChange={(e) => setPriceMax(e.target.value)}
             className="h-8 text-sm bg-surface-800/50 border-surface-700/50 w-24"
           />
-        </div>
-      </div>
-
-      {/* Condition */}
-      <div>
-        <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Condition</h3>
-        <div className="space-y-2">
-          {CONDITION_OPTIONS.map((opt) => (
-            <label key={opt.value} className="flex items-center gap-2 text-sm cursor-pointer">
-              <Checkbox
-                checked={conditionFilter.includes(opt.value)}
-                onCheckedChange={() => toggleArrayFilter(conditionFilter, opt.value, setConditionFilter)}
-              />
-              {opt.label}
-            </label>
-          ))}
         </div>
       </div>
 
