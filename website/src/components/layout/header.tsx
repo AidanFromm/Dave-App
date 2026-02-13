@@ -14,6 +14,7 @@ import {
   Shield,
   Search,
   X,
+  Instagram,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useTheme } from "next-themes";
@@ -123,6 +124,14 @@ export function Header() {
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
+
+          {/* Instagram */}
+          <Button variant="ghost" size="icon" asChild className="hidden sm:flex h-9 w-9 text-muted-foreground hover:text-foreground">
+            <a href="https://instagram.com/securedtampa" target="_blank" rel="noopener noreferrer">
+              <Instagram className="h-4 w-4" />
+              <span className="sr-only">Instagram</span>
+            </a>
+          </Button>
 
           {/* Wishlist */}
           <Button variant="ghost" size="icon" asChild className="hidden sm:flex h-9 w-9 text-muted-foreground hover:text-foreground">

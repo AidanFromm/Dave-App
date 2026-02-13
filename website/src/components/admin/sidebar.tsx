@@ -22,6 +22,8 @@ import {
   HandCoins,
   ExternalLink,
   Truck,
+  Bell,
+  ClipboardCheck,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -56,6 +58,8 @@ const NAV_SECTIONS = [
       { href: "/admin/scan", label: "Scan In", icon: ScanBarcode },
       { href: "/admin/customers", label: "Customers", icon: Users },
       { href: "/admin/staff", label: "Staff", icon: Users },
+      { href: "/admin/reconciliation", label: "Reconciliation", icon: ClipboardCheck },
+      { href: "/admin/notifications", label: "Notifications", icon: Bell },
     ],
   },
   {

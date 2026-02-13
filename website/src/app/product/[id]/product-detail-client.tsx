@@ -33,6 +33,7 @@ import {
   ChevronRight,
   Check,
   Sparkles,
+  Share2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -395,6 +396,23 @@ export function ProductDetailClient({ product: initialProduct, sizeVariants = []
                     wishlisted && "fill-red-500 text-red-500 scale-110"
                   )}
                 />
+              </Button>
+            </motion.div>
+            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+              <Button
+                variant="outline"
+                size="lg"
+                className="h-12 w-12 p-0 border-border hover:border-primary/50 hover:bg-primary/5"
+                onClick={() => {
+                  const url = `${window.location.origin}/product/${product.id}`;
+                  const text = `Check out ${product.name} at Secured Tampa! ${url}`;
+                  navigator.clipboard.writeText(text).then(() => {
+                    toast.success("Link copied! Share it on Instagram.");
+                  });
+                }}
+                title="Share on Instagram"
+              >
+                <Share2 className="h-5 w-5" />
               </Button>
             </motion.div>
           </motion.div>

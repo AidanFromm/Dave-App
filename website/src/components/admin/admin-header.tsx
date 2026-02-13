@@ -1,7 +1,9 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useState, useCallback } from "react";
 import { useAuth } from "@/hooks/use-auth";
+import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -16,6 +18,45 @@ import { useTheme } from "next-themes";
 export function AdminHeader() {
   const { user, signOut } = useAuth();
   const { setTheme } = useTheme();
+  const [notifCount, setNotifCount] = useState(0);
+
+  const fetchNotifCount = useCallback(async () => {
+    try {
+      const supabase = createClient();
+      const weekAgo = new Date();
+      weekAgo.setDate(weekAgo.getDate() - 7);
+
+      const [ordersRes, stockRes] = await Promise.all([
+        supabase
+          .from("orders")
+          .select("id", { count: "exact", head: true })
+          .in("status", ["pending", "paid"])
+          .gte("created_at", weekAgo.toISOString()),
+        supabase
+          .from("products")
+          .select("id", { count: "exact", head: true })
+          .eq("is_active", true)
+          .lte("quantity", 5),
+      ]);
+
+      setNotifCount((ordersRes.count ?? 0) + (stockRes.count ?? 0));
+    } catch {
+      // Fail silently
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchNotifCount();
+
+    const supabase = createClient();
+    const channel = supabase
+      .channel("header-notifs")
+      .on("postgres_changes", { event: "*", schema: "public", table: "orders" }, fetchNotifCount)
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "products" }, fetchNotifCount)
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [fetchNotifCount]);
 
   return (
     <header className="flex h-16 items-center justify-between border-b border-surface-800 bg-surface-900 px-4 md:px-6">
@@ -28,6 +69,17 @@ export function AdminHeader() {
           <Link href="/">
             <Store className="h-3.5 w-3.5" />
             <span className="hidden sm:inline">View Store</span>
+          </Link>
+        </Button>
+
+        <Button variant="ghost" size="icon" asChild className="relative h-9 w-9 text-muted-foreground hover:text-foreground">
+          <Link href="/admin/notifications">
+            <Bell className="h-4 w-4" />
+            {notifCount > 0 && (
+              <span className="absolute -top-0.5 -right-0.5 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold text-white">
+                {notifCount > 99 ? "99+" : notifCount}
+              </span>
+            )}
           </Link>
         </Button>
 

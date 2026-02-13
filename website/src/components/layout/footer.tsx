@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Mail, MapPin } from "lucide-react";
+import { Mail, MapPin, Instagram } from "lucide-react";
 
 export function Footer() {
   return (
@@ -106,7 +106,16 @@ export function Footer() {
           <p className="text-xs text-muted-foreground">
             © {new Date().getFullYear()} Secured Tampa LLC. All rights reserved.
           </p>
-          <div className="flex gap-6 text-xs text-muted-foreground">
+          <div className="flex items-center gap-6 text-xs text-muted-foreground">
+            <a
+              href="https://instagram.com/securedtampa"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-primary transition-colors"
+              aria-label="Instagram"
+            >
+              <Instagram className="h-4 w-4" />
+            </a>
             <Link href="/privacy" className="hover:text-primary transition-colors">
               Privacy
             </Link>
