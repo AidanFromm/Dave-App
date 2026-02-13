@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { getStripe } from "@/lib/stripe";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { TAX_RATE, calculateShipping } from "@/lib/constants";
+import { rateLimit, getClientIp } from "@/lib/rate-limit";
+import { sanitizeString, sanitizeEmail } from "@/lib/sanitize";
 
 interface CartItem {
   id: string;
@@ -17,6 +19,16 @@ interface CartItem {
 
 export async function POST(request: Request) {
   try {
+    // Rate limit: 5 checkout attempts per minute per IP
+    const ip = getClientIp(request);
+    const rl = rateLimit(`checkout:${ip}`, { limit: 5, windowSeconds: 60 });
+    if (!rl.success) {
+      return NextResponse.json(
+        { error: "Too many requests. Please try again later.", code: "RATE_LIMITED" },
+        { status: 429 }
+      );
+    }
+
     // Check env var first
     if (!process.env.STRIPE_SECRET_KEY) {
       console.error("STRIPE_SECRET_KEY is not configured");
@@ -36,6 +48,15 @@ export async function POST(request: Request) {
       discountCode?: string;
       phone?: string;
     };
+
+    // Sanitize inputs
+    const sanitizedEmail = email ? sanitizeEmail(email) : null;
+    if (email && !sanitizedEmail) {
+      return NextResponse.json(
+        { error: "Invalid email address", code: "INVALID_EMAIL" },
+        { status: 400 }
+      );
+    }
 
     if (!items || items.length === 0) {
       return NextResponse.json(
@@ -198,7 +219,7 @@ export async function POST(request: Request) {
     const paymentIntent = await stripe.paymentIntents.create({
       amount: Math.round(total * 100), // cents
       currency: "usd",
-      receipt_email: email || undefined,
+      receipt_email: sanitizedEmail || undefined,
       metadata: {
         fulfillmentType: ft,
         email: email ?? "",

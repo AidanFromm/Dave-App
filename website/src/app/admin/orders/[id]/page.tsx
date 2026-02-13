@@ -22,7 +22,7 @@ import {
   type Address,
 } from "@/types/order";
 import { toast } from "sonner";
-import { ArrowLeft, Truck, XCircle, MapPin, Bell, Mail, DollarSign, Package, CheckCircle } from "lucide-react";
+import { ArrowLeft, Truck, XCircle, MapPin, Bell, Mail, DollarSign, Package, CheckCircle, Link2, Loader2, Copy } from "lucide-react";
 
 const PICKUP_STATUS_COLORS: Record<string, string> = {
   pending: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400",
@@ -55,6 +55,7 @@ export default function AdminOrderDetailPage() {
   const [refundAmount, setRefundAmount] = useState("");
   const [refundReason, setRefundReason] = useState("");
   const [refundLoading, setRefundLoading] = useState(false);
+  const [paymentLinkLoading, setPaymentLinkLoading] = useState(false);
 
   const fetchOrder = async () => {
     const supabase = createClient();
@@ -191,6 +192,27 @@ export default function AdminOrderDetailPage() {
       toast.error(err.message ?? "Refund failed");
     } finally {
       setRefundLoading(false);
+    }
+  };
+
+  const handleGeneratePaymentLink = async () => {
+    setPaymentLinkLoading(true);
+    try {
+      const res = await fetch("/api/admin/payment-links", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ orderId }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Failed to generate payment link");
+      await navigator.clipboard.writeText(data.url);
+      toast.success("Payment link copied to clipboard");
+      await fetchOrder();
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Failed to generate payment link";
+      toast.error(message);
+    } finally {
+      setPaymentLinkLoading(false);
     }
   };
 
@@ -338,6 +360,20 @@ export default function AdminOrderDetailPage() {
               Ready for Pickup
             </Button>
           )}
+          <Button
+            onClick={handleGeneratePaymentLink}
+            disabled={paymentLinkLoading}
+            size="sm"
+            variant="outline"
+            className="border-primary text-primary hover:bg-primary/10"
+          >
+            {paymentLinkLoading ? (
+              <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
+            ) : (
+              <Link2 className="mr-1.5 h-4 w-4" />
+            )}
+            Payment Link
+          </Button>
           {canRemind && (
             <Button
               onClick={handleSendReminder}

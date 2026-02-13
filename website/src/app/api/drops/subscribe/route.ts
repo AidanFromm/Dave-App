@@ -1,8 +1,17 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { rateLimit, getClientIp } from "@/lib/rate-limit";
+import { sanitizeEmail } from "@/lib/sanitize";
 
 export async function POST(request: Request) {
   try {
+    // Rate limit: 5 subscribe attempts per minute
+    const ip = getClientIp(request);
+    const rl = rateLimit(`drops-sub:${ip}`, { limit: 5, windowSeconds: 60 });
+    if (!rl.success) {
+      return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+    }
+
     const body = await request.json();
     const { email } = body;
 

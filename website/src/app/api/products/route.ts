@@ -80,10 +80,15 @@ export async function GET(request: Request) {
         groupedProducts.push(display);
       }
 
-      return NextResponse.json({ products: groupedProducts });
+      const resp = NextResponse.json({ products: groupedProducts });
+      resp.headers.set("Cache-Control", "public, s-maxage=60, stale-while-revalidate=120");
+      return resp;
     }
 
-    return NextResponse.json({ products });
+    const response = NextResponse.json({ products });
+    // Cache public product listings for 60 seconds
+    response.headers.set("Cache-Control", "public, s-maxage=60, stale-while-revalidate=120");
+    return response;
   } catch (error) {
     console.error("Products fetch error:", error);
     return NextResponse.json(

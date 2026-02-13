@@ -99,6 +99,50 @@ export async function getProductSizeVariants(product: Product): Promise<SizeVari
   });
 }
 
+export async function getCategoryForProduct(categoryId: string | null): Promise<Category | null> {
+  if (!categoryId) return null;
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("categories")
+    .select("*")
+    .eq("id", categoryId)
+    .single();
+  if (error) return null;
+  return data as Category;
+}
+
+export async function getRelatedProducts(
+  productId: string,
+  categoryId: string | null,
+  limit = 4
+): Promise<Product[]> {
+  const supabase = await createClient();
+
+  if (categoryId) {
+    const { data } = await supabase
+      .from("products")
+      .select("*")
+      .eq("is_active", true)
+      .eq("category_id", categoryId)
+      .neq("id", productId)
+      .gt("quantity", 0)
+      .order("created_at", { ascending: false })
+      .limit(limit);
+    if (data && data.length > 0) return data as Product[];
+  }
+
+  // Fallback: recent products
+  const { data } = await supabase
+    .from("products")
+    .select("*")
+    .eq("is_active", true)
+    .neq("id", productId)
+    .gt("quantity", 0)
+    .order("created_at", { ascending: false })
+    .limit(limit);
+  return (data ?? []) as Product[];
+}
+
 export async function getCategories(): Promise<Category[]> {
   const supabase = await createClient();
 

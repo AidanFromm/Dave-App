@@ -48,6 +48,8 @@ const NAV_SECTIONS = [
     label: "Operations",
     items: [
       { href: "/admin/orders", label: "Orders", icon: ShoppingCart },
+      { href: "/admin/orders/new", label: "New Order", icon: ShoppingCart },
+      { href: "/admin/payment-links", label: "Payment Links", icon: ExternalLink },
       { href: "/admin/shipping", label: "Shipping", icon: Truck },
       { href: "/admin/buy", label: "Buy from Customer", icon: HandCoins },
       { href: "/admin/purchases", label: "Purchase History", icon: HandCoins },

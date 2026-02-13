@@ -61,11 +61,12 @@ interface MergedSize {
 
 type InfoTab = "details" | "shipping" | "returns";
 
-export function ProductDetailClient({ product: initialProduct, sizeVariants = [], dbVariants = [] }: { product: Product; sizeVariants?: (SizeVariant & { variantCondition?: string })[]; dbVariants?: ProductVariant[] }) {
+export function ProductDetailClient({ product: initialProduct, sizeVariants = [], dbVariants = [], category, relatedProducts = [] }: { product: Product; sizeVariants?: (SizeVariant & { variantCondition?: string })[]; dbVariants?: ProductVariant[]; category?: { id: string; name: string; slug: string } | null; relatedProducts?: Product[] }) {
   const [activeProduct, setActiveProduct] = useState(initialProduct);
   const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(null);
   const [selectedCondition, setSelectedCondition] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<InfoTab>("details");
+  const [showSizeGuide, setShowSizeGuide] = useState(false);
 
   const product = activeProduct;
   const hasDbVariants = dbVariants.length > 0;
@@ -160,14 +161,21 @@ export function ProductDetailClient({ product: initialProduct, sizeVariants = []
     >
       {/* Breadcrumb */}
       <motion.nav variants={fadeIn} className="mb-8 flex items-center gap-2 text-sm text-muted-foreground">
-        <Link href="/" className="hover:text-foreground transition-colors">Shop</Link>
+        <Link href="/" className="hover:text-foreground transition-colors">Home</Link>
         <ChevronRight className="h-3.5 w-3.5" />
-        {product.brand && (
+        {category ? (
+          <>
+            <Link href={`/?category=${category.slug}`} className="hover:text-foreground transition-colors capitalize">
+              {category.name}
+            </Link>
+            <ChevronRight className="h-3.5 w-3.5" />
+          </>
+        ) : product.brand ? (
           <>
             <span className="capitalize">{product.brand}</span>
             <ChevronRight className="h-3.5 w-3.5" />
           </>
-        )}
+        ) : null}
         <span className="text-foreground truncate max-w-[200px]">{product.name}</span>
       </motion.nav>
 
@@ -256,7 +264,17 @@ export function ProductDetailClient({ product: initialProduct, sizeVariants = []
           {/* Available Sizes */}
           {mergedSizes.length > 1 && (
             <motion.div variants={fadeIn} className="mb-6">
-              <span className="text-xs font-semibold uppercase tracking-[0.15em] text-muted-foreground">Select Size</span>
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold uppercase tracking-[0.15em] text-muted-foreground">Select Size</span>
+                {!isPokemon && (
+                  <button
+                    onClick={() => setShowSizeGuide(true)}
+                    className="text-xs font-medium text-primary hover:underline transition-colors"
+                  >
+                    Size Guide
+                  </button>
+                )}
+              </div>
               <div className="mt-3 grid grid-cols-4 sm:grid-cols-5 gap-2">
                 {mergedSizes.map((m) => {
                   const isActive = m.variantIds.includes(product.id);
@@ -461,6 +479,114 @@ export function ProductDetailClient({ product: initialProduct, sizeVariants = []
           )}
         </motion.div>
       </div>
+
+      {/* Related Products */}
+      {relatedProducts.length > 0 && (
+        <motion.div variants={fadeIn} className="mt-16 border-t border-border/50 pt-12">
+          <h2 className="font-display text-xl font-bold uppercase tracking-tight mb-6">
+            You May Also Like
+          </h2>
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+            {relatedProducts.map((rp) => (
+              <Link key={rp.id} href={`/product/${rp.id}`} className="group">
+                <div className="aspect-square overflow-hidden rounded-xl border border-border bg-surface-800/30">
+                  {rp.images?.[0] ? (
+                    <img
+                      src={rp.images[0]}
+                      alt={rp.name}
+                      className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                    />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center">
+                      <Package className="h-8 w-8 text-muted-foreground/30" />
+                    </div>
+                  )}
+                </div>
+                <div className="mt-2">
+                  <p className="text-sm font-medium truncate group-hover:text-primary transition-colors">
+                    {rp.name}
+                  </p>
+                  {rp.brand && (
+                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                      {rp.brand}
+                    </p>
+                  )}
+                  <p className="mt-1 text-sm font-mono font-bold text-primary">
+                    {formatCurrency(rp.price)}
+                  </p>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </motion.div>
+      )}
+
+      {/* Size Guide Modal */}
+      {showSizeGuide && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+          <div className="mx-4 w-full max-w-lg rounded-2xl border border-border bg-card p-6 shadow-2xl max-h-[80vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-display text-lg font-bold uppercase">Sneaker Size Guide</h3>
+              <button
+                onClick={() => setShowSizeGuide(false)}
+                className="rounded-lg p-1.5 text-muted-foreground hover:bg-surface-800/50 transition-colors"
+              >
+                <span className="sr-only">Close</span>
+                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <p className="text-sm text-muted-foreground mb-4">
+              US, UK, and EU size conversions for men&apos;s sneakers. Sizes may vary slightly by brand.
+            </p>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-border text-left">
+                    <th className="pb-2 font-semibold text-primary">US</th>
+                    <th className="pb-2 font-semibold text-primary">UK</th>
+                    <th className="pb-2 font-semibold text-primary">EU</th>
+                    <th className="pb-2 font-semibold text-primary">CM</th>
+                  </tr>
+                </thead>
+                <tbody className="font-mono text-xs">
+                  {[
+                    ["6", "5.5", "38.5", "24"],
+                    ["6.5", "6", "39", "24.5"],
+                    ["7", "6", "40", "25"],
+                    ["7.5", "6.5", "40.5", "25.5"],
+                    ["8", "7", "41", "26"],
+                    ["8.5", "7.5", "42", "26.5"],
+                    ["9", "8", "42.5", "27"],
+                    ["9.5", "8.5", "43", "27.5"],
+                    ["10", "9", "44", "28"],
+                    ["10.5", "9.5", "44.5", "28.5"],
+                    ["11", "10", "45", "29"],
+                    ["11.5", "10.5", "45.5", "29.5"],
+                    ["12", "11", "46", "30"],
+                    ["13", "12", "47.5", "31"],
+                    ["14", "13", "48.5", "32"],
+                  ].map(([us, uk, eu, cm]) => (
+                    <tr key={us} className="border-b border-border/50 hover:bg-surface-800/30">
+                      <td className="py-2 font-medium">{us}</td>
+                      <td className="py-2">{uk}</td>
+                      <td className="py-2">{eu}</td>
+                      <td className="py-2">{cm}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <div className="mt-4 pt-4 border-t border-border">
+              <p className="text-xs text-muted-foreground">
+                For the best fit, measure your foot length in centimeters and compare with the CM column.
+                When between sizes, size up for a more comfortable fit.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
     </motion.div>
   );
 }
