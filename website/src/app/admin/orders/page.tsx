@@ -135,21 +135,25 @@ export default function AdminOrdersPage() {
   body { font-family: 'Segoe UI', Arial, sans-serif; margin: 0; padding: 0; color: #111; }
   .slip { page-break-after: always; padding: 40px; max-width: 700px; margin: 0 auto; }
   .slip:last-child { page-break-after: auto; }
-  .header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #FB4F14; padding-bottom: 16px; margin-bottom: 24px; }
-  .header h1 { font-size: 24px; font-weight: 800; text-transform: uppercase; letter-spacing: 2px; margin: 0; }
+  .header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 3px solid #FB4F14; padding-bottom: 16px; margin-bottom: 24px; }
+  .header h1 { font-size: 24px; font-weight: 800; text-transform: uppercase; letter-spacing: 2px; margin: 0; color: #002244; }
   .header .order-info { text-align: right; font-size: 13px; color: #555; }
   .section { margin-bottom: 20px; }
-  .section h3 { font-size: 12px; text-transform: uppercase; letter-spacing: 1px; color: #888; margin: 0 0 8px; }
+  .section h3 { font-size: 12px; text-transform: uppercase; letter-spacing: 1px; color: #888; margin: 0 0 8px; border-bottom: 1px solid #eee; padding-bottom: 4px; }
   table { width: 100%; border-collapse: collapse; font-size: 13px; }
   th { text-align: left; padding: 8px 4px; border-bottom: 1px solid #ddd; font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: #666; }
   td { padding: 8px 4px; border-bottom: 1px solid #eee; }
-  .total-row td { border-top: 2px solid #111; font-weight: 700; font-size: 15px; }
   .address { font-size: 13px; line-height: 1.6; }
+  .checklist { list-style: none; padding: 0; margin: 0; }
+  .checklist li { padding: 6px 0; border-bottom: 1px solid #f0f0f0; font-size: 13px; display: flex; align-items: center; gap: 8px; }
+  .checklist li:before { content: ''; display: inline-block; width: 14px; height: 14px; border: 1.5px solid #999; border-radius: 2px; flex-shrink: 0; }
+  .return-address { margin-top: 32px; padding-top: 16px; border-top: 1px dashed #ccc; font-size: 11px; color: #888; text-align: center; }
   @media print { body { -webkit-print-color-adjust: exact; } }
 </style></head><body>
 ${selectedOrders.map((order) => {
   const items = (order.items ?? []) as any[];
   const addr = order.shipping_address as any;
+  const customerName = addr ? `${addr.firstName ?? ""} ${addr.lastName ?? ""}`.trim() : (order.customer_name ?? "");
   return `<div class="slip">
     <div class="header">
       <div><h1>SECURED TAMPA</h1><p style="font-size:12px;color:#888;margin:4px 0 0;">Packing Slip</p></div>
@@ -160,16 +164,27 @@ ${selectedOrders.map((order) => {
     </div>
     <div class="section">
       <h3>Ship To</h3>
-      <div class="address">${addr ? `${addr.firstName ?? ""} ${addr.lastName ?? ""}<br/>${addr.street ?? ""}${addr.apartment ? "<br/>" + addr.apartment : ""}<br/>${addr.city ?? ""}, ${addr.state ?? ""} ${addr.zipCode ?? ""}${addr.phone ? "<br/>" + addr.phone : ""}` : (order.customer_email ?? "N/A")}</div>
+      <div class="address">${addr ? `${customerName}<br/>${addr.street ?? ""}${addr.apartment ? "<br/>" + addr.apartment : ""}<br/>${addr.city ?? ""}, ${addr.state ?? ""} ${addr.zipCode ?? ""}${addr.phone ? "<br/>" + addr.phone : ""}` : (order.customer_email ?? "N/A")}</div>
     </div>
     <div class="section">
       <h3>Items</h3>
       <table>
-        <thead><tr><th>Product</th><th>Size</th><th style="text-align:center">Qty</th><th style="text-align:right">Price</th></tr></thead>
-        <tbody>${items.map((item: any) => `<tr><td>${item.name}</td><td>${item.size ?? "--"}</td><td style="text-align:center">${item.quantity}</td><td style="text-align:right">$${(item.price ?? 0).toFixed(2)}</td></tr>`).join("")}
-        <tr class="total-row"><td colspan="3">Total</td><td style="text-align:right">$${(order.total ?? 0).toFixed(2)}</td></tr>
+        <thead><tr><th>Product</th><th>Size</th><th style="text-align:center">Qty</th></tr></thead>
+        <tbody>${items.map((item: any) => `<tr><td>${item.name}</td><td>${item.size ?? "--"}</td><td style="text-align:center">${item.quantity}</td></tr>`).join("")}
         </tbody>
       </table>
+    </div>
+    <div class="section">
+      <h3>Packing Checklist</h3>
+      <ul class="checklist">
+        ${items.map((item: any) => `<li>${item.name}${item.size ? " - Size " + item.size : ""} (x${item.quantity})</li>`).join("")}
+        <li>Packaging intact / no damage</li>
+        <li>Correct items verified</li>
+        <li>Receipt / invoice excluded</li>
+      </ul>
+    </div>
+    <div class="return-address">
+      SECURED TAMPA -- 123 Main St, Tampa, FL 33601 -- securedtampa.com
     </div>
   </div>`;
 }).join("")}

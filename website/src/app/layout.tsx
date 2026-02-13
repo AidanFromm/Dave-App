@@ -6,6 +6,7 @@ import { ToastProvider } from "@/components/providers/toast-provider";
 import { Header } from "@/components/layout/header";
 import { FooterWrapper } from "@/components/layout/footer-wrapper";
 import { CartDrawer } from "@/components/cart/cart-drawer";
+import { ErrorBoundary } from "@/components/error-boundary";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -60,12 +61,14 @@ export default function RootLayout({
         className={`${inter.variable} ${oswald.variable} ${jetbrainsMono.variable} font-sans antialiased`}
       >
         <ThemeProvider>
-          <div className="flex min-h-screen flex-col">
-            <Header />
-            <main className="flex-1">{children}</main>
-            <FooterWrapper />
-          </div>
-          <CartDrawer />
+          <ErrorBoundary>
+            <div className="flex min-h-screen flex-col">
+              <Header />
+              <main className="flex-1">{children}</main>
+              <FooterWrapper />
+            </div>
+            <CartDrawer />
+          </ErrorBoundary>
           <ToastProvider />
         </ThemeProvider>
       </body>

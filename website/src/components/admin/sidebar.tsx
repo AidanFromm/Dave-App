@@ -24,6 +24,8 @@ import {
   Truck,
   Bell,
   ClipboardCheck,
+  Activity,
+  DollarSign,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -68,6 +70,8 @@ const NAV_SECTIONS = [
       { href: "/admin/clover", label: "Clover POS", icon: Store },
       { href: "/pos", label: "POS Checkout", icon: Store },
       { href: "/staff", label: "Staff Portal", icon: ScanBarcode },
+      { href: "/admin/price-sync", label: "Price Sync", icon: DollarSign },
+      { href: "/admin/monitoring", label: "Monitoring", icon: Activity },
       { href: "/admin/settings", label: "Settings", icon: Settings },
     ],
   },
