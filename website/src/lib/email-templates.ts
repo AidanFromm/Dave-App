@@ -8,7 +8,7 @@ const BRAND = {
   storeUrl: 'https://securedtampa.com',
   storeAddress: '2398 Grand Cypress Dr STE 420, Lutz, FL 33559',
   storePhone: '(813) 943-2777',
-  storeHours: 'Mon–Sat 10am–9pm · Sun 11am–7pm',
+  storeHours: 'Mon–Thu 10am–8pm · Fri–Sat 10am–9pm · Sun 11am–6pm',
 };
 
 function layout(content: string): string {
