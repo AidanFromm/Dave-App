@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { getProduct, getCategories } from "@/actions/products";
+import { getVariantsForProduct } from "@/actions/variants";
 import { ProductForm } from "@/components/admin/product-form";
 
 interface Props {
@@ -8,9 +9,10 @@ interface Props {
 
 export default async function EditProductPage({ params }: Props) {
   const { id } = await params;
-  const [product, categories] = await Promise.all([
+  const [product, categories, variants] = await Promise.all([
     getProduct(id),
     getCategories(),
+    getVariantsForProduct(id),
   ]);
 
   if (!product) notFound();
@@ -19,7 +21,7 @@ export default async function EditProductPage({ params }: Props) {
     <div className="mx-auto max-w-2xl p-6">
       <h1 className="text-2xl font-bold">Edit Product</h1>
       <div className="mt-6">
-        <ProductForm product={product} categories={categories} />
+        <ProductForm product={product} categories={categories} existingVariants={variants} />
       </div>
     </div>
   );

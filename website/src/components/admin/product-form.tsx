@@ -23,18 +23,35 @@ import { createProduct, updateProduct } from "@/actions/inventory";
 import type { Product, Category } from "@/types/product";
 import { ImageUpload } from "@/components/admin/image-upload";
 import { Loader2 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { toast } from "sonner";
+import { VariantSizeMatrix, type VariantRow } from "@/components/admin/variant-size-matrix";
+import { bulkCreateVariants, deleteVariant as deleteVariantAction, updateVariant as updateVariantAction, createVariant } from "@/actions/variants";
+import type { ProductVariant, VariantCondition } from "@/types/product";
 
 interface ProductFormProps {
   product?: Product;
   categories: Category[];
+  existingVariants?: ProductVariant[];
 }
 
-export function ProductForm({ product, categories }: ProductFormProps) {
+export function ProductForm({ product, categories, existingVariants = [] }: ProductFormProps) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const isEdit = !!product;
+  const [variantRows, setVariantRows] = useState<VariantRow[]>(
+    existingVariants.map((v) => ({
+      id: v.id,
+      size: v.size ?? "",
+      condition: v.condition,
+      price: v.price,
+      cost: v.cost ?? 0,
+      quantity: v.quantity,
+      barcode: v.barcode ?? "",
+      isNew: false,
+    }))
+  );
+  const [isSneaker, setIsSneaker] = useState(false);
 
   const {
     register,
@@ -80,6 +97,64 @@ export function ProductForm({ product, categories }: ProductFormProps) {
         },
   });
 
+  // Detect sneaker category
+  const watchedCategoryId = watch("categoryId");
+  useEffect(() => {
+    if (watchedCategoryId) {
+      const cat = categories.find((c) => c.id === watchedCategoryId);
+      const slug = (cat?.slug ?? cat?.name ?? "").toLowerCase();
+      setIsSneaker(slug.includes("sneaker") || slug.includes("shoe"));
+    } else {
+      setIsSneaker(false);
+    }
+  }, [watchedCategoryId, categories]);
+
+  // Also detect from existing product
+  useEffect(() => {
+    if (product?.has_variants || existingVariants.length > 0) {
+      setIsSneaker(true);
+    }
+  }, [product, existingVariants]);
+
+  const saveVariants = async (productId: string) => {
+    // Delete removed variants
+    const currentIds = new Set(variantRows.filter((v) => v.id).map((v) => v.id!));
+    const existingIds = existingVariants.map((v) => v.id);
+    for (const id of existingIds) {
+      if (!currentIds.has(id)) {
+        await deleteVariantAction(id);
+      }
+    }
+
+    // Update existing variants
+    for (const row of variantRows.filter((v) => v.id && !v.isNew)) {
+      await updateVariantAction(row.id!, {
+        size: row.size || null,
+        condition: row.condition,
+        price: row.price,
+        cost: row.cost || null,
+        quantity: row.quantity,
+        barcode: row.barcode || null,
+      });
+    }
+
+    // Create new variants
+    const newRows = variantRows.filter((v) => v.isNew || !v.id);
+    if (newRows.length > 0) {
+      await bulkCreateVariants(
+        productId,
+        newRows.map((r) => ({
+          size: r.size,
+          condition: r.condition,
+          price: r.price,
+          cost: r.cost || null,
+          quantity: r.quantity,
+          barcode: r.barcode || null,
+        }))
+      );
+    }
+  };
+
   const onSubmit = async (data: ProductFormValues) => {
     setLoading(true);
 
@@ -111,6 +186,10 @@ export function ProductForm({ product, categories }: ProductFormProps) {
       if (result.error) {
         toast.error(result.error);
       } else {
+        // Handle variants for sneakers
+        if (isSneaker && variantRows.length > 0) {
+          await saveVariants(product.id);
+        }
         toast.success("Product updated");
         router.push("/admin/products");
         router.refresh();
@@ -120,6 +199,10 @@ export function ProductForm({ product, categories }: ProductFormProps) {
       if (result.error) {
         toast.error(result.error);
       } else {
+        // Handle variants for sneakers
+        if (isSneaker && variantRows.length > 0 && result.data?.id) {
+          await saveVariants(result.data.id);
+        }
         toast.success("Product created");
         router.push("/admin/products");
         router.refresh();
@@ -314,6 +397,11 @@ export function ProductForm({ product, categories }: ProductFormProps) {
           </div>
         </div>
       </div>
+
+      {/* Size Variants — only for sneaker category */}
+      {isSneaker && (
+        <VariantSizeMatrix variants={variantRows} onChange={setVariantRows} />
+      )}
 
       <Button type="submit" size="lg" className="w-full" disabled={loading}>
         {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
