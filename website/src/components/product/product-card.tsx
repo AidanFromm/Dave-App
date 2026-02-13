@@ -61,7 +61,7 @@ export function ProductCard({ product, availableSizes }: ProductCardProps) {
       {/* Image Container */}
       <Link 
         href={`/product/${product.id}`} 
-        className={cn("relative aspect-square overflow-hidden", isUsed ? "bg-neutral-900" : "bg-muted")}
+        className={cn("relative aspect-square overflow-hidden", isUsed ? "bg-neutral-200" : "bg-muted")}
       >
         {product.images?.[0] ? (
           <div className="relative h-full w-full">
@@ -71,8 +71,9 @@ export function ProductCard({ product, availableSizes }: ProductCardProps) {
               fill
               sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
               className={cn(
-                isUsed ? "object-cover" : "object-contain",
-                isPokemon && "object-contain p-2"
+                "object-contain",
+                isUsed && "p-3",
+                isPokemon && "p-2"
               )}
             />
           </div>
@@ -91,8 +92,8 @@ export function ProductCard({ product, availableSizes }: ProductCardProps) {
           </div>
         )}
 
-        {/* Badges - top left */}
-        <div className="absolute left-3 top-3 flex flex-col gap-1.5">
+        {/* Badges - bottom left */}
+        <div className="absolute left-3 bottom-3 flex flex-wrap gap-1.5 z-10">
           {newDrop && (
             <Badge className="bg-primary text-primary-foreground text-[10px] font-bold shadow-md">
               NEW DROP
