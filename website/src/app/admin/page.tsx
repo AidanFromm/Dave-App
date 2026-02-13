@@ -15,8 +15,10 @@ import { formatCurrency } from "@/lib/utils";
 import { formatDateShort } from "@/lib/utils";
 import type { TimePeriod } from "@/types/admin";
 import { toast } from "sonner";
-import { Package, DollarSign, Layers, TrendingUp, Plus, ScanBarcode, Sparkles } from "lucide-react";
+import { Package, DollarSign, Layers, TrendingUp, Plus, ScanBarcode, Sparkles, ClipboardList, FileText, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { getAdminOrders } from "@/actions/admin";
 
 const PERIOD_DAYS: Record<Exclude<TimePeriod, "custom">, number> = {
   today: 1,
@@ -49,6 +51,8 @@ export default function AdminDashboardPage() {
   const [topProducts, setTopProducts] = useState<ProductData>([]);
   const [inventoryStats, setInventoryStats] = useState<InventoryStats | null>(null);
   const [invLoading, setInvLoading] = useState(true);
+  const [recentOrders, setRecentOrders] = useState<any[]>([]);
+  const [ordersLoading, setOrdersLoading] = useState(true);
 
   useEffect(() => {
     async function fetchData() {
@@ -72,6 +76,21 @@ export default function AdminDashboardPage() {
 
     fetchData();
   }, [period]);
+
+  useEffect(() => {
+    async function fetchRecentOrders() {
+      setOrdersLoading(true);
+      try {
+        const orders = await getAdminOrders();
+        setRecentOrders(orders.slice(0, 8));
+      } catch {
+        // silent
+      } finally {
+        setOrdersLoading(false);
+      }
+    }
+    fetchRecentOrders();
+  }, []);
 
   useEffect(() => {
     async function fetchInventory() {
@@ -116,9 +135,21 @@ export default function AdminDashboardPage() {
           </Link>
         </Button>
         <Button asChild variant="outline" size="sm" className="gap-1.5 border-border/50">
+          <Link href="/admin/orders">
+            <ClipboardList className="h-3.5 w-3.5" />
+            Process Orders
+          </Link>
+        </Button>
+        <Button asChild variant="outline" size="sm" className="gap-1.5 border-border/50">
+          <Link href="/admin/reports">
+            <FileText className="h-3.5 w-3.5" />
+            View Reports
+          </Link>
+        </Button>
+        <Button asChild variant="outline" size="sm" className="gap-1.5 border-border/50">
           <Link href="/admin/pokemon">
             <Sparkles className="h-3.5 w-3.5" />
-            Add Pokémon
+            Add Pokemon
           </Link>
         </Button>
       </div>
@@ -237,6 +268,77 @@ export default function AdminDashboardPage() {
           </div>
         </div>
       )}
+
+      {/* Low Stock Alert */}
+      {!invLoading && inventoryStats && (inventoryStats.sneakers.units < 10 || inventoryStats.pokemon.units < 10) && (
+        <div className="rounded-xl bg-amber-500/5 border border-amber-500/20 p-4 flex items-center gap-3">
+          <AlertTriangle className="h-5 w-5 text-amber-500 flex-shrink-0" />
+          <div>
+            <p className="text-sm font-semibold text-amber-500">Low Stock Warning</p>
+            <p className="text-xs text-muted-foreground">
+              {inventoryStats.sneakers.units < 10 && `Sneakers: ${inventoryStats.sneakers.units} units remaining. `}
+              {inventoryStats.pokemon.units < 10 && `Pokemon: ${inventoryStats.pokemon.units} units remaining.`}
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Recent Orders */}
+      <div className="rounded-xl bg-card border border-border/50 overflow-hidden">
+        <div className="px-5 py-4 border-b border-border/50 flex items-center justify-between">
+          <h3 className="text-sm font-semibold">Recent Orders</h3>
+          <Link href="/admin/orders" className="text-xs text-primary hover:underline font-medium">View All</Link>
+        </div>
+        {ordersLoading ? (
+          <div className="p-5 space-y-3">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <Skeleton key={i} className="h-10 w-full" />
+            ))}
+          </div>
+        ) : recentOrders.length === 0 ? (
+          <div className="p-8 text-center text-sm text-muted-foreground">No orders yet.</div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-border/30 text-left">
+                  <th className="px-5 py-2.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Order</th>
+                  <th className="px-5 py-2.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Customer</th>
+                  <th className="px-5 py-2.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground text-right">Total</th>
+                  <th className="px-5 py-2.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground text-center">Status</th>
+                  <th className="px-5 py-2.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground text-right">Date</th>
+                </tr>
+              </thead>
+              <tbody>
+                {recentOrders.map((order) => (
+                  <tr key={order.id} className="border-b border-border/20 last:border-0 hover:bg-surface-800/20 transition-colors">
+                    <td className="px-5 py-3">
+                      <Link href={`/admin/orders/${order.id}`} className="font-medium text-primary hover:underline text-xs font-mono">
+                        {order.order_number ?? order.id.slice(0, 8)}
+                      </Link>
+                    </td>
+                    <td className="px-5 py-3 text-xs text-muted-foreground truncate max-w-[200px]">{order.customer_email ?? "--"}</td>
+                    <td className="px-5 py-3 text-xs font-mono font-medium text-right">{formatCurrency(order.total ?? 0)}</td>
+                    <td className="px-5 py-3 text-center">
+                      <Badge variant="outline" className={`text-[10px] border-0 ${
+                        order.status === "delivered" ? "bg-green-900/30 text-green-400" :
+                        order.status === "shipped" ? "bg-purple-900/30 text-purple-400" :
+                        order.status === "pending" ? "bg-yellow-900/30 text-yellow-400" :
+                        order.status === "paid" ? "bg-blue-900/30 text-blue-400" :
+                        order.status === "cancelled" ? "bg-red-900/30 text-red-400" :
+                        "bg-orange-900/30 text-orange-400"
+                      }`}>
+                        {order.status}
+                      </Badge>
+                    </td>
+                    <td className="px-5 py-3 text-xs text-muted-foreground text-right">{formatDateShort(order.created_at)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
 
       {/* Revenue Chart */}
       {loading ? (

@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { OrderTimeline } from "@/components/admin/order-timeline";
+import { ShippingSection } from "@/components/admin/shipping-section";
 import { formatCurrency, formatDate, formatDateShort } from "@/lib/utils";
 import {
   ORDER_STATUS_LABELS,
@@ -556,12 +557,18 @@ export default function AdminOrderDetailPage() {
             </div>
           )}
 
-          {/* Tracking */}
-          {order.tracking_number && (
-            <div className="rounded-lg border border-border bg-card p-4">
-              <h2 className="text-sm font-semibold mb-3">Tracking</h2>
-              <p className="text-sm font-mono text-muted-foreground">{order.tracking_number}</p>
-            </div>
+          {/* Shipping / Label Management */}
+          {order.fulfillment_type === "ship" && (
+            <ShippingSection
+              orderId={orderId}
+              trackingNumber={order.tracking_number}
+              labelUrl={order.shipping_label_url}
+              carrier={order.shipping_carrier}
+              shippingRate={order.shipping_rate}
+              trackingStatus={order.shipping_tracking_status}
+              trackingHistory={order.shipping_tracking_history || []}
+              onLabelCreated={fetchOrder}
+            />
           )}
 
           {/* Pickup Status */}

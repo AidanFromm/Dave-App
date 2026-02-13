@@ -13,7 +13,16 @@ import {
   ShoppingBag,
   DollarSign,
   TrendingUp,
+  Mail,
+  Phone,
+  StickyNote,
+  ShieldCheck,
+  ShieldX,
+  Save,
 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
+import { createClient } from "@/lib/supabase/client";
 
 const STATUS_COLORS: Record<string, string> = {
   pending: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400",
@@ -32,12 +41,47 @@ export default function AdminCustomerDetailPage() {
 
   const [customer, setCustomer] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [notes, setNotes] = useState("");
+  const [savingNotes, setSavingNotes] = useState(false);
+  const [statusLoading, setStatusLoading] = useState(false);
 
-  useEffect(() => {
-    getCustomerDetail(customerId)
-      .then((data) => setCustomer(data))
-      .finally(() => setLoading(false));
-  }, [customerId]);
+  const fetchCustomer = async () => {
+    const data = await getCustomerDetail(customerId);
+    setCustomer(data);
+    setNotes(data?.admin_notes ?? "");
+    setLoading(false);
+  };
+
+  useEffect(() => { fetchCustomer(); }, [customerId]);
+
+  const handleSaveNotes = async () => {
+    setSavingNotes(true);
+    try {
+      const supabase = createClient();
+      const { error } = await supabase.from("customers").update({ admin_notes: notes }).eq("id", customerId);
+      if (error) throw error;
+      toast.success("Notes saved");
+    } catch {
+      toast.error("Failed to save notes");
+    } finally {
+      setSavingNotes(false);
+    }
+  };
+
+  const handleToggleStatus = async (blocked: boolean) => {
+    setStatusLoading(true);
+    try {
+      const supabase = createClient();
+      const { error } = await supabase.from("customers").update({ is_blocked: blocked }).eq("id", customerId);
+      if (error) throw error;
+      setCustomer((prev: any) => prev ? { ...prev, is_blocked: blocked } : prev);
+      toast.success(blocked ? "Customer blocked" : "Customer approved");
+    } catch {
+      toast.error("Failed to update customer status");
+    } finally {
+      setStatusLoading(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -141,6 +185,64 @@ export default function AdminCustomerDetailPage() {
             <p className="mt-2 text-2xl font-bold">{stat.value}</p>
           </div>
         ))}
+      </div>
+
+      {/* Contact Info & Actions */}
+      <div className="mt-6 grid gap-4 sm:grid-cols-2">
+        {/* Contact */}
+        <div className="rounded-lg border border-border bg-card p-4">
+          <h2 className="text-sm font-semibold mb-3 flex items-center gap-2">
+            <Mail className="h-4 w-4 text-muted-foreground" />
+            Contact Information
+          </h2>
+          <div className="space-y-2 text-sm">
+            <div className="flex items-center gap-2">
+              <Mail className="h-3.5 w-3.5 text-muted-foreground" />
+              <span>{customer.email ?? "--"}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Phone className="h-3.5 w-3.5 text-muted-foreground" />
+              <span>{customer.phone ?? "--"}</span>
+            </div>
+          </div>
+          <div className="mt-4 flex gap-2">
+            {customer.is_blocked ? (
+              <Button size="sm" variant="outline" onClick={() => handleToggleStatus(false)} disabled={statusLoading} className="gap-1.5">
+                <ShieldCheck className="h-3.5 w-3.5" />
+                Approve
+              </Button>
+            ) : (
+              <Button size="sm" variant="outline" onClick={() => handleToggleStatus(true)} disabled={statusLoading} className="gap-1.5 border-red-500/30 text-red-400 hover:bg-red-500/10">
+                <ShieldX className="h-3.5 w-3.5" />
+                Block
+              </Button>
+            )}
+            {customer.is_blocked && (
+              <Badge variant="outline" className="border-0 bg-red-900/30 text-red-400 text-[10px]">Blocked</Badge>
+            )}
+          </div>
+        </div>
+
+        {/* Admin Notes */}
+        <div className="rounded-lg border border-border bg-card p-4">
+          <h2 className="text-sm font-semibold mb-3 flex items-center gap-2">
+            <StickyNote className="h-4 w-4 text-muted-foreground" />
+            Admin Notes
+          </h2>
+          <textarea
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            rows={4}
+            placeholder="Add internal notes about this customer..."
+            className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary/50"
+          />
+          <div className="mt-2 flex justify-end">
+            <Button size="sm" onClick={handleSaveNotes} disabled={savingNotes} className="gap-1.5">
+              <Save className="h-3.5 w-3.5" />
+              {savingNotes ? "Saving..." : "Save Notes"}
+            </Button>
+          </div>
+        </div>
       </div>
 
       {/* Order history */}

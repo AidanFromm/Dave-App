@@ -597,6 +597,42 @@ export default function PurchasesPage() {
         )}
       </div>
 
+      {/* Summary Stats */}
+      {!loading && purchases.length > 0 && (
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <Card className="bg-[#002244]/30 border-[#002244]/50">
+            <CardContent className="py-3 px-4">
+              <p className="text-xs text-muted-foreground">Total Spent</p>
+              <p className="text-xl font-bold text-[#FB4F14]">
+                {formatCurrency(purchases.reduce((s: number, p: PurchaseRecord) => s + (Number(p.total_paid) || 0), 0))}
+              </p>
+            </CardContent>
+          </Card>
+          <Card className="bg-[#002244]/30 border-[#002244]/50">
+            <CardContent className="py-3 px-4">
+              <p className="text-xs text-muted-foreground">Transactions</p>
+              <p className="text-xl font-bold">{purchases.length}</p>
+            </CardContent>
+          </Card>
+          <Card className="bg-[#002244]/30 border-[#002244]/50">
+            <CardContent className="py-3 px-4">
+              <p className="text-xs text-muted-foreground">Total Items</p>
+              <p className="text-xl font-bold">
+                {purchases.reduce((s: number, p: PurchaseRecord) => s + ((p.items as PurchaseItem[])?.length || 0), 0)}
+              </p>
+            </CardContent>
+          </Card>
+          <Card className="bg-[#002244]/30 border-[#002244]/50">
+            <CardContent className="py-3 px-4">
+              <p className="text-xs text-muted-foreground">Avg per Transaction</p>
+              <p className="text-xl font-bold">
+                {formatCurrency(purchases.reduce((s: number, p: PurchaseRecord) => s + (Number(p.total_paid) || 0), 0) / purchases.length)}
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
       {/* Purchase History */}
       {loading ? (
         <div className="space-y-3">

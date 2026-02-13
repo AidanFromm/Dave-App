@@ -8,6 +8,7 @@ import {
   ShoppingCart,
   Users,
   BarChart3,
+  FileText,
   Settings,
   Box,
   ScanBarcode,
@@ -20,6 +21,7 @@ import {
   Tag,
   HandCoins,
   ExternalLink,
+  Truck,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -29,6 +31,7 @@ const NAV_SECTIONS = [
     items: [
       { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
       { href: "/admin/analytics", label: "Analytics", icon: BarChart3 },
+      { href: "/admin/reports", label: "Reports", icon: FileText },
     ],
   },
   {
@@ -45,15 +48,20 @@ const NAV_SECTIONS = [
     label: "Operations",
     items: [
       { href: "/admin/orders", label: "Orders", icon: ShoppingCart },
-      { href: "/admin/purchases", label: "Buy-In", icon: HandCoins },
+      { href: "/admin/shipping", label: "Shipping", icon: Truck },
+      { href: "/admin/buy", label: "Buy from Customer", icon: HandCoins },
+      { href: "/admin/purchases", label: "Purchase History", icon: HandCoins },
       { href: "/admin/scan", label: "Scan In", icon: ScanBarcode },
       { href: "/admin/customers", label: "Customers", icon: Users },
+      { href: "/admin/staff", label: "Staff", icon: Users },
     ],
   },
   {
     label: "System",
     items: [
       { href: "/admin/clover", label: "Clover POS", icon: Store },
+      { href: "/pos", label: "POS Checkout", icon: Store },
+      { href: "/staff", label: "Staff Portal", icon: ScanBarcode },
       { href: "/admin/settings", label: "Settings", icon: Settings },
     ],
   },
