@@ -70,7 +70,7 @@ export async function POST(request: Request) {
     const productIds = items.map((item) => item.product_id || item.id);
     const { data: products, error: stockError } = await supabase
       .from("products")
-      .select("id, name, quantity, price, is_active")
+      .select("id, name, quantity, price, is_active, is_drop, drop_price, drop_quantity, drop_sold_count")
       .in("id", productIds);
 
     if (stockError) {
@@ -100,10 +100,23 @@ export async function POST(request: Request) {
 
     for (const item of items) {
       const pid = item.product_id || item.id;
-      const product = productMap.get(pid);
+      const product = productMap.get(pid) as Record<string, unknown> | undefined;
       if (!product || !product.is_active) {
         outOfStock.push(item.name);
         continue;
+      }
+
+      // Drop quantity enforcement
+      if (product.is_drop && product.drop_quantity != null) {
+        const dropRemaining = (product.drop_quantity as number) - ((product.drop_sold_count as number) || 0);
+        if (item.quantity > dropRemaining) {
+          insufficientStock.push({
+            name: `${item.name} (Drop)`,
+            available: Math.max(0, dropRemaining),
+            requested: item.quantity,
+          });
+          continue;
+        }
       }
 
       // Check variant stock if variant_id exists
@@ -116,10 +129,10 @@ export async function POST(request: Request) {
             requested: item.quantity,
           });
         }
-      } else if (product.quantity < item.quantity) {
+      } else if ((product.quantity as number) < item.quantity) {
         insufficientStock.push({
-          name: item.name,
-          available: product.quantity,
+          name: item.name as string,
+          available: product.quantity as number,
           requested: item.quantity,
         });
       }
@@ -153,8 +166,11 @@ export async function POST(request: Request) {
       if (item.variant_id && variantMap.has(item.variant_id)) {
         return sum + Number(variantMap.get(item.variant_id)!.price) * item.quantity;
       }
-      const product = productMap.get(item.product_id || item.id);
-      const price = product ? Number(product.price) : item.price;
+      const product = productMap.get(item.product_id || item.id) as Record<string, unknown> | undefined;
+      // Use drop_price for drop products
+      const price = product
+        ? (product.is_drop && product.drop_price != null ? Number(product.drop_price) : Number(product.price))
+        : item.price;
       return sum + price * item.quantity;
     }, 0);
 

@@ -121,7 +121,12 @@ export const useCartStore = create<CartStore>()(
 
       getSubtotal: () => {
         return get().items.reduce(
-          (sum, item) => sum + (item.variant_price ?? item.product.price) * item.quantity,
+          (sum, item) => {
+            // Use drop_price for drop products, variant_price for variants, else regular price
+            const price = item.variant_price
+              ?? (item.product.is_drop && item.product.drop_price != null ? item.product.drop_price : item.product.price);
+            return sum + price * item.quantity;
+          },
           0
         );
       },

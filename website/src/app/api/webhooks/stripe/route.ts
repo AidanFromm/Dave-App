@@ -334,6 +334,22 @@ export async function POST(request: Request) {
         });
       }
 
+      // Increment drop_sold_count for drop products
+      const productData = await supabase
+        .from("products")
+        .select("is_drop, drop_sold_count")
+        .eq("id", item.id)
+        .single();
+
+      if (productData.data?.is_drop) {
+        await supabase
+          .from("products")
+          .update({
+            drop_sold_count: (productData.data.drop_sold_count || 0) + item.qty,
+          })
+          .eq("id", item.id);
+      }
+
       // Sync stock to Clover (fire-and-forget)
       handleWebsiteSale(item.id, item.qty).catch((err) => {
         console.error(`Clover sync failed for product ${item.id}:`, err);
