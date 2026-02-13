@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { useCartStore } from "@/stores/cart-store";
 import { useCartDrawerStore } from "@/stores/cart-drawer-store";
 import type { Product } from "@/types/product";
+import { formatCurrency } from "@/types/product";
 import { toast } from "sonner";
 
 interface AddToCartButtonProps {
@@ -20,6 +21,7 @@ export function AddToCartButton({ product, disabled, variant }: AddToCartButtonP
   const [added, setAdded] = useState(false);
 
   const effectiveQty = variant ? (product.quantity > 0 ? product.quantity : 0) : product.quantity;
+  const displayPrice = variant?.price ?? product.price;
 
   const handleAdd = () => {
     addItem(product, 1, variant ?? null);
@@ -33,7 +35,7 @@ export function AddToCartButton({ product, disabled, variant }: AddToCartButtonP
   return (
     <Button
       size="lg"
-      className="w-full"
+      className="w-full h-13 text-sm font-semibold uppercase tracking-wider"
       disabled={disabled || effectiveQty <= 0}
       onClick={handleAdd}
     >
@@ -41,11 +43,11 @@ export function AddToCartButton({ product, disabled, variant }: AddToCartButtonP
         "Sold Out"
       ) : added ? (
         <>
-          <Check className="mr-2 h-4 w-4" /> Added!
+          <Check className="mr-2 h-4 w-4" /> Added to Cart!
         </>
       ) : (
         <>
-          <ShoppingBag className="mr-2 h-4 w-4" /> Add to Cart
+          <ShoppingBag className="mr-2 h-4 w-4" /> Add to Cart — {formatCurrency(displayPrice)}
         </>
       )}
     </Button>
