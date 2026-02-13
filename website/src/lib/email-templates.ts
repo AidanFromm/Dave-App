@@ -286,6 +286,138 @@ export function refundEmail(data: RefundEmailData) {
   };
 }
 
+// ─── Gift Card Email ───────────────────────────────────────────
+
+export interface GiftCardEmailData {
+  code: string;
+  amount: number;
+  recipientName: string;
+  message: string | null;
+  senderName?: string;
+}
+
+export function giftCardEmail(data: GiftCardEmailData) {
+  const messageBlock = data.message
+    ? `<div style="background:#f8f8f8;border-left:4px solid ${BRAND.orange};padding:16px;margin:16px 0;border-radius:0 8px 8px 0;">
+         <p style="margin:0;color:#555;font-style:italic;font-size:14px;">"${data.message}"</p>
+         ${data.senderName ? `<p style="margin:8px 0 0;color:#888;font-size:13px;">— ${data.senderName}</p>` : ''}
+       </div>`
+    : '';
+
+  return {
+    subject: `You've received a $${data.amount.toFixed(2)} Gift Card from ${BRAND.storeName}!`,
+    html: layout(`
+      <div style="padding:32px 24px;text-align:center;">
+        <div style="font-size:48px;">&#127873;</div>
+        <h2 style="color:${BRAND.navy};margin:16px 0 4px;font-size:22px;">You Got a Gift Card!</h2>
+        <p style="color:#888;margin:0;font-size:14px;">Hey ${data.recipientName}, someone sent you a gift!</p>
+      </div>
+      <div style="padding:0 24px 24px;text-align:center;">
+        <div style="background:linear-gradient(135deg, ${BRAND.navy}, #003366);border-radius:16px;padding:32px;margin:16px 0;color:#fff;">
+          <p style="margin:0 0 4px;font-size:12px;text-transform:uppercase;letter-spacing:2px;opacity:0.7;">Gift Card Value</p>
+          <p style="margin:0;font-size:40px;font-weight:bold;">$${data.amount.toFixed(2)}</p>
+          <div style="margin:16px 0;padding:12px;background:rgba(255,255,255,0.15);border-radius:8px;">
+            <p style="margin:0 0 4px;font-size:10px;text-transform:uppercase;letter-spacing:1px;opacity:0.7;">Your Code</p>
+            <p style="margin:0;font-family:monospace;font-size:20px;letter-spacing:2px;font-weight:bold;">${data.code}</p>
+          </div>
+          <p style="margin:0;font-size:12px;opacity:0.6;">SECURED TAMPA</p>
+        </div>
+        ${messageBlock}
+        <p style="color:#555;font-size:14px;margin:16px 0;">Use this code at checkout to redeem your gift card.</p>
+        ${button('Shop Now', BRAND.storeUrl)}
+      </div>
+    `),
+  };
+}
+
+// ─── Order Updated Email ───────────────────────────────────────
+
+export interface OrderUpdatedEmailData {
+  orderNumber: string;
+  customerName: string;
+  changes: string[];
+  newTotal: number;
+  items: Array<{ name: string; quantity: number; price: number; size?: string }>;
+}
+
+export function orderUpdatedEmail(data: OrderUpdatedEmailData) {
+  const changesList = data.changes.map(c =>
+    `<li style="padding:4px 0;color:#555;font-size:14px;">${c}</li>`
+  ).join('');
+
+  const itemRows = data.items.map(item => `
+    <tr>
+      <td style="padding:8px;border-bottom:1px solid #eee;">
+        ${item.name}${item.size ? ` (${item.size})` : ''}
+      </td>
+      <td style="padding:8px;border-bottom:1px solid #eee;text-align:center;">${item.quantity}</td>
+      <td style="padding:8px;border-bottom:1px solid #eee;text-align:right;">$${(item.price * item.quantity).toFixed(2)}</td>
+    </tr>`).join('');
+
+  return {
+    subject: `Order Updated — #${data.orderNumber} | ${BRAND.storeName}`,
+    html: layout(`
+      <div style="padding:32px 24px;text-align:center;">
+        <div style="display:inline-block;background:${BRAND.orange};border-radius:50%;width:56px;height:56px;line-height:56px;font-size:28px;color:#fff;">&#9998;</div>
+        <h2 style="color:${BRAND.navy};margin:16px 0 4px;font-size:22px;">Your Order Has Been Updated</h2>
+        <p style="color:#888;margin:0;font-size:14px;">Order #${data.orderNumber}</p>
+      </div>
+      <div style="padding:0 24px 24px;">
+        <p style="color:#555;font-size:14px;">Hey ${data.customerName}, we've made changes to your order:</p>
+        <div style="background:#FFF7ED;border:1px solid ${BRAND.orange}33;border-radius:8px;padding:16px;margin:16px 0;">
+          <p style="margin:0 0 8px;font-weight:bold;color:${BRAND.navy};font-size:14px;">Changes Made:</p>
+          <ul style="margin:0;padding-left:20px;">${changesList}</ul>
+        </div>
+        <table style="width:100%;border-collapse:collapse;font-size:14px;margin-top:16px;">
+          <thead><tr style="border-bottom:2px solid ${BRAND.navy};">
+            <th style="padding:8px;text-align:left;color:#888;">Item</th>
+            <th style="padding:8px;text-align:center;color:#888;">Qty</th>
+            <th style="padding:8px;text-align:right;color:#888;">Total</th>
+          </tr></thead>
+          <tbody>${itemRows}</tbody>
+        </table>
+        <div style="text-align:right;margin-top:12px;padding-top:12px;border-top:2px solid #eee;">
+          <span style="font-size:18px;font-weight:bold;color:${BRAND.navy};">New Total: $${data.newTotal.toFixed(2)}</span>
+        </div>
+      </div>
+    `),
+  };
+}
+
+// ─── Drop Notification Email ───────────────────────────────────
+
+export interface DropNotificationEmailData {
+  title: string;
+  description: string | null;
+  imageUrl: string | null;
+  productUrl: string | null;
+}
+
+export function dropNotificationEmail(data: DropNotificationEmailData) {
+  const imageBlock = data.imageUrl
+    ? `<img src="${data.imageUrl}" alt="${data.title}" style="width:100%;max-width:400px;border-radius:12px;margin:16px 0;" />`
+    : '';
+
+  return {
+    subject: `NOW LIVE: ${data.title} | ${BRAND.storeName}`,
+    html: layout(`
+      <div style="padding:32px 24px;text-align:center;">
+        <div style="font-size:48px;">&#128293;</div>
+        <h2 style="color:${BRAND.navy};margin:16px 0 4px;font-size:22px;">${data.title} Is Live!</h2>
+        <p style="color:#888;margin:0;font-size:14px;">The drop you've been waiting for is here.</p>
+      </div>
+      <div style="padding:0 24px 24px;text-align:center;">
+        ${imageBlock}
+        ${data.description ? `<p style="color:#555;font-size:14px;margin:16px 0;">${data.description}</p>` : ''}
+        <div style="margin-top:24px;">
+          ${button('Shop Now', data.productUrl || BRAND.storeUrl)}
+        </div>
+        <p style="color:#888;font-size:13px;margin-top:16px;">Limited quantities available. Don't wait!</p>
+      </div>
+    `),
+  };
+}
+
 // ─── Welcome Email ─────────────────────────────────────────────
 
 export function welcomeEmail(data: WelcomeEmailData) {

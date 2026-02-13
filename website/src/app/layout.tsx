@@ -7,6 +7,10 @@ import { Header } from "@/components/layout/header";
 import { FooterWrapper } from "@/components/layout/footer-wrapper";
 import { CartDrawer } from "@/components/cart/cart-drawer";
 import { ErrorBoundary } from "@/components/error-boundary";
+import { GoogleAnalytics } from "@/components/analytics/GoogleAnalytics";
+import { MetaPixel } from "@/components/analytics/MetaPixel";
+import { CookieConsent } from "@/components/analytics/CookieConsent";
+import { CartSyncProvider } from "@/components/providers/cart-sync-provider";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -68,8 +72,12 @@ export default function RootLayout({
               <FooterWrapper />
             </div>
             <CartDrawer />
+            <CartSyncProvider />
           </ErrorBoundary>
           <ToastProvider />
+          <GoogleAnalytics />
+          <MetaPixel />
+          <CookieConsent />
         </ThemeProvider>
       </body>
     </html>

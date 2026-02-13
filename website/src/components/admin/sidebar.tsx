@@ -26,6 +26,7 @@ import {
   ClipboardCheck,
   Activity,
   DollarSign,
+  MessageSquare,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -46,6 +47,8 @@ const NAV_SECTIONS = [
       { href: "/admin/pokemon", label: "Pokémon", icon: Sparkles },
       { href: "/admin/drops", label: "Drops", icon: Flame },
       { href: "/admin/discounts", label: "Discounts", icon: Tag },
+      { href: "/admin/gift-cards", label: "Gift Cards", icon: DollarSign },
+      { href: "/admin/reviews", label: "Reviews", icon: MessageSquare },
     ],
   },
   {
@@ -62,6 +65,7 @@ const NAV_SECTIONS = [
       { href: "/admin/staff", label: "Staff", icon: Users },
       { href: "/admin/reconciliation", label: "Reconciliation", icon: ClipboardCheck },
       { href: "/admin/notifications", label: "Notifications", icon: Bell },
+      { href: "/admin/abandoned-carts", label: "Cart Recovery", icon: ShoppingCart },
     ],
   },
   {

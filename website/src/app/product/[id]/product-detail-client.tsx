@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
@@ -37,6 +37,9 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { ReviewList } from "@/components/reviews/ReviewList";
+import { ReviewForm } from "@/components/reviews/ReviewForm";
+import { trackViewItem } from "@/lib/analytics";
 
 const fadeIn = {
   hidden: { opacity: 0, y: 20 },
@@ -80,6 +83,18 @@ export function ProductDetailClient({ product: initialProduct, sizeVariants = []
   const stockStatus = getStockStatus(product);
   const { isWishlisted, toggleProduct } = useWishlistStore();
   const wishlisted = isWishlisted(product.id);
+
+  // Track view_item
+  useEffect(() => {
+    trackViewItem({
+      id: product.id,
+      name: product.name,
+      brand: product.brand ?? undefined,
+      price: product.price,
+      category: category?.name,
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [product.id]);
 
   // Deduplicate sizes
   const mergedSizes = useMemo<MergedSize[]>(() => {
@@ -538,6 +553,12 @@ export function ProductDetailClient({ product: initialProduct, sizeVariants = []
           </div>
         </motion.div>
       )}
+
+      {/* Reviews Section */}
+      <div className="mt-16 border-t border-border/50 pt-8">
+        <ReviewList productId={product.id} />
+        <ReviewForm productId={product.id} />
+      </div>
 
       {/* Size Guide Modal */}
       {showSizeGuide && (

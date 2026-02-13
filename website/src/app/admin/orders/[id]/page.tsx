@@ -22,7 +22,7 @@ import {
   type Address,
 } from "@/types/order";
 import { toast } from "sonner";
-import { ArrowLeft, Truck, XCircle, MapPin, Bell, Mail, DollarSign, Package, CheckCircle, Link2, Loader2, Copy, Printer } from "lucide-react";
+import { ArrowLeft, Truck, XCircle, MapPin, Bell, Mail, DollarSign, Package, CheckCircle, Link2, Loader2, Copy, Printer, Pencil, Plus, Minus, Trash2, Search } from "lucide-react";
 
 const PICKUP_STATUS_COLORS: Record<string, string> = {
   pending: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400",
@@ -56,6 +56,15 @@ export default function AdminOrderDetailPage() {
   const [refundReason, setRefundReason] = useState("");
   const [refundLoading, setRefundLoading] = useState(false);
   const [paymentLinkLoading, setPaymentLinkLoading] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editItems, setEditItems] = useState<any[]>([]);
+  const [editShipping, setEditShipping] = useState("");
+  const [editDiscount, setEditDiscount] = useState("");
+  const [editNote, setEditNote] = useState("");
+  const [editLoading, setEditLoading] = useState(false);
+  const [productSearch, setProductSearch] = useState("");
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [searchLoading, setSearchLoading] = useState(false);
 
   const fetchOrder = async () => {
     const supabase = createClient();
@@ -246,6 +255,93 @@ export default function AdminOrderDetailPage() {
     }
   };
 
+  const openEditModal = () => {
+    if (!order) return;
+    setEditItems([...(order.items ?? [])]);
+    setEditShipping(String(order.shipping_cost ?? 0));
+    setEditDiscount(String(order.discount ?? 0));
+    setEditNote("");
+    setShowEditModal(true);
+  };
+
+  const handleEditItemQty = (idx: number, delta: number) => {
+    setEditItems((prev: any[]) =>
+      prev.map((item: any, i: number) =>
+        i === idx
+          ? { ...item, quantity: Math.max(1, item.quantity + delta), total: item.price * Math.max(1, item.quantity + delta) }
+          : item
+      )
+    );
+  };
+
+  const handleRemoveEditItem = (idx: number) => {
+    setEditItems((prev: any[]) => prev.filter((_: any, i: number) => i !== idx));
+  };
+
+  const handleSearchProducts = async () => {
+    if (!productSearch.trim()) return;
+    setSearchLoading(true);
+    try {
+      const res = await fetch(`/api/products?search=${encodeURIComponent(productSearch)}&limit=5`);
+      if (res.ok) {
+        const data = await res.json();
+        setSearchResults(data.products ?? []);
+      }
+    } catch { /* ignore */ } finally {
+      setSearchLoading(false);
+    }
+  };
+
+  const handleAddProduct = (product: any) => {
+    setEditItems((prev: any[]) => [
+      ...prev,
+      {
+        product_id: product.id,
+        name: product.name,
+        sku: product.sku || null,
+        size: product.size || null,
+        quantity: 1,
+        price: product.price,
+        total: product.price,
+      },
+    ]);
+    setProductSearch("");
+    setSearchResults([]);
+  };
+
+  const editSubtotal = editItems.reduce((s: number, i: any) => s + i.price * i.quantity, 0);
+  const editTax = Math.round(editSubtotal * 0.07 * 100) / 100;
+  const editTotal = editSubtotal + editTax + Number(editShipping || 0) - Number(editDiscount || 0);
+
+  const handleSaveEdit = async () => {
+    if (editItems.length === 0) {
+      toast.error("Order must have at least one item");
+      return;
+    }
+    setEditLoading(true);
+    try {
+      const res = await fetch(`/api/admin/orders/${orderId}/edit`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          items: editItems.map((i: any) => ({ ...i, total: i.price * i.quantity })),
+          shippingCost: Number(editShipping || 0),
+          discount: Number(editDiscount || 0),
+          note: editNote,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      toast.success(`Order updated. ${data.changes?.length || 0} change(s) made.`);
+      setShowEditModal(false);
+      await fetchOrder();
+    } catch (err: any) {
+      toast.error(err.message ?? "Failed to edit order");
+    } finally {
+      setEditLoading(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="p-6">
@@ -298,6 +394,7 @@ export default function AdminOrderDetailPage() {
     timelineEvents.push({ status: "refunded", date: order.updated_at ?? order.created_at });
   }
 
+  const canEdit = ["pending", "paid", "processing"].includes(order.status);
   const canShip = ["pending", "paid", "processing"].includes(order.status) && order.fulfillment_type === "ship";
   const canPickup = ["pending", "paid", "processing"].includes(order.status) && order.fulfillment_type === "pickup";
   const canRemind = order.status === "pending";
@@ -339,6 +436,18 @@ export default function AdminOrderDetailPage() {
         </div>
 
         <div className="flex flex-wrap gap-2">
+          {canEdit && (
+            <Button
+              onClick={openEditModal}
+              disabled={actionLoading}
+              size="sm"
+              variant="outline"
+              className="border-[#FB4F14] text-[#FB4F14] hover:bg-[#FB4F14]/10"
+            >
+              <Pencil className="mr-1.5 h-4 w-4" />
+              Edit Order
+            </Button>
+          )}
           {canShip && (
             <Button
               onClick={handleMarkShipped}
@@ -498,6 +607,173 @@ export default function AdminOrderDetailPage() {
                   {refundLoading ? "Processing..." : `Refund $${parseFloat(refundAmount || "0").toFixed(2)}`}
                 </Button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Order Modal */}
+      {showEditModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+          <div className="mx-4 w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl border border-border bg-card p-6 shadow-2xl">
+            <h3 className="text-lg font-bold flex items-center gap-2">
+              <Pencil className="h-5 w-5 text-[#FB4F14]" />
+              Edit Order — #{order.order_number}
+            </h3>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Modify items, quantities, shipping, and discounts. Customer will be notified of changes.
+            </p>
+
+            {/* Items */}
+            <div className="mt-4 space-y-2">
+              <h4 className="text-sm font-semibold">Line Items</h4>
+              {editItems.map((item: any, idx: number) => (
+                <div key={idx} className="flex items-center gap-3 rounded-lg border p-3">
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-sm truncate">{item.name}</p>
+                    <p className="text-xs text-muted-foreground">
+                      ${item.price.toFixed(2)} each{item.size ? ` | Size ${item.size}` : ""}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <button
+                      onClick={() => handleEditItemQty(idx, -1)}
+                      className="rounded p-1 hover:bg-muted"
+                    >
+                      <Minus className="h-4 w-4" />
+                    </button>
+                    <span className="w-8 text-center font-mono text-sm">{item.quantity}</span>
+                    <button
+                      onClick={() => handleEditItemQty(idx, 1)}
+                      className="rounded p-1 hover:bg-muted"
+                    >
+                      <Plus className="h-4 w-4" />
+                    </button>
+                  </div>
+                  <span className="text-sm font-semibold w-20 text-right">
+                    ${(item.price * item.quantity).toFixed(2)}
+                  </span>
+                  <button
+                    onClick={() => handleRemoveEditItem(idx)}
+                    className="rounded p-1 text-red-500 hover:bg-red-50 dark:hover:bg-red-950"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
+              ))}
+
+              {/* Add Product */}
+              <div className="mt-3">
+                <div className="flex gap-2">
+                  <div className="relative flex-1">
+                    <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                    <input
+                      type="text"
+                      placeholder="Search products to add..."
+                      value={productSearch}
+                      onChange={(e) => setProductSearch(e.target.value)}
+                      onKeyDown={(e) => e.key === "Enter" && handleSearchProducts()}
+                      className="w-full rounded-lg border border-border bg-background px-3 py-2 pl-10 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                    />
+                  </div>
+                  <Button size="sm" variant="outline" onClick={handleSearchProducts} disabled={searchLoading}>
+                    {searchLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Search"}
+                  </Button>
+                </div>
+                {searchResults.length > 0 && (
+                  <div className="mt-2 rounded-lg border max-h-40 overflow-y-auto">
+                    {searchResults.map((p: any) => (
+                      <button
+                        key={p.id}
+                        onClick={() => handleAddProduct(p)}
+                        className="flex w-full items-center justify-between p-2 text-sm hover:bg-muted transition-colors"
+                      >
+                        <span className="truncate">{p.name}</span>
+                        <span className="text-muted-foreground">${p.price.toFixed(2)}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Shipping & Discount */}
+            <div className="mt-4 grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-sm font-medium">Shipping ($)</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={editShipping}
+                  onChange={(e) => setEditShipping(e.target.value)}
+                  className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium">Discount ($)</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={editDiscount}
+                  onChange={(e) => setEditDiscount(e.target.value)}
+                  className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                />
+              </div>
+            </div>
+
+            {/* Totals Preview */}
+            <div className="mt-4 rounded-lg bg-muted/50 p-4 space-y-1 text-sm">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Subtotal</span>
+                <span>${editSubtotal.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Tax (7%)</span>
+                <span>${editTax.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Shipping</span>
+                <span>${Number(editShipping || 0).toFixed(2)}</span>
+              </div>
+              {Number(editDiscount || 0) > 0 && (
+                <div className="flex justify-between text-green-600">
+                  <span>Discount</span>
+                  <span>-${Number(editDiscount || 0).toFixed(2)}</span>
+                </div>
+              )}
+              <div className="flex justify-between border-t pt-1 font-bold">
+                <span>New Total</span>
+                <span>${editTotal.toFixed(2)}</span>
+              </div>
+            </div>
+
+            {/* Note */}
+            <div className="mt-4">
+              <label className="text-sm font-medium">Edit Note (optional)</label>
+              <textarea
+                value={editNote}
+                onChange={(e) => setEditNote(e.target.value)}
+                rows={2}
+                className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary"
+                placeholder="Reason for editing..."
+              />
+            </div>
+
+            <div className="mt-4 flex gap-2 justify-end">
+              <Button variant="outline" size="sm" onClick={() => setShowEditModal(false)} disabled={editLoading}>
+                Cancel
+              </Button>
+              <Button
+                size="sm"
+                onClick={handleSaveEdit}
+                disabled={editLoading || editItems.length === 0}
+                className="bg-[#FB4F14] hover:bg-[#e04400] text-white"
+              >
+                {editLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Pencil className="mr-2 h-4 w-4" />}
+                Save Changes
+              </Button>
             </div>
           </div>
         </div>

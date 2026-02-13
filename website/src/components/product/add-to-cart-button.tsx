@@ -7,6 +7,7 @@ import { useCartStore } from "@/stores/cart-store";
 import { useCartDrawerStore } from "@/stores/cart-drawer-store";
 import type { Product } from "@/types/product";
 import { formatCurrency } from "@/types/product";
+import { NotifyMeButton } from "@/components/product/notify-me-button";
 import { toast } from "sonner";
 
 interface AddToCartButtonProps {
@@ -23,6 +24,16 @@ export function AddToCartButton({ product, disabled, variant }: AddToCartButtonP
   const effectiveQty = variant ? (product.quantity > 0 ? product.quantity : 0) : product.quantity;
   const displayPrice = variant?.price ?? product.price;
 
+  // Show Notify Me button when sold out
+  if (effectiveQty <= 0) {
+    return (
+      <NotifyMeButton
+        productId={product.id}
+        variantId={variant?.id}
+      />
+    );
+  }
+
   const handleAdd = () => {
     addItem(product, 1, variant ?? null);
     setAdded(true);
@@ -36,12 +47,10 @@ export function AddToCartButton({ product, disabled, variant }: AddToCartButtonP
     <Button
       size="lg"
       className="w-full h-13 text-sm font-semibold uppercase tracking-wider"
-      disabled={disabled || effectiveQty <= 0}
+      disabled={disabled}
       onClick={handleAdd}
     >
-      {effectiveQty <= 0 ? (
-        "Sold Out"
-      ) : added ? (
+      {added ? (
         <>
           <Check className="mr-2 h-4 w-4" /> Added to Cart!
         </>

@@ -141,9 +141,21 @@ export default function ReviewPage() {
     discountAmount: number;
   } | null>(null);
 
-  const discountedTotal = appliedDiscount
+  // Gift card state
+  const [giftCardCode, setGiftCardCode] = useState("");
+  const [giftCardLoading, setGiftCardLoading] = useState(false);
+  const [appliedGiftCard, setAppliedGiftCard] = useState<{
+    id: string;
+    code: string;
+    balance: number;
+    applied: number;
+  } | null>(null);
+
+  const afterDiscount = appliedDiscount
     ? Math.max(0, getTotal() - appliedDiscount.discountAmount)
     : getTotal();
+  const giftCardApplied = appliedGiftCard?.applied ?? 0;
+  const discountedTotal = Math.max(0, afterDiscount - giftCardApplied);
 
   const handleApplyPromo = async () => {
     if (!promoCode.trim()) return;
@@ -171,6 +183,36 @@ export default function ReviewPage() {
   const handleRemovePromo = () => {
     setAppliedDiscount(null);
     setPromoCode("");
+  };
+
+  const handleApplyGiftCard = async () => {
+    if (!giftCardCode.trim()) return;
+    setGiftCardLoading(true);
+    try {
+      const res = await fetch("/api/gift-cards/validate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code: giftCardCode.trim() }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        toast.error(data.error || "Invalid gift card");
+        return;
+      }
+      const remaining = afterDiscount;
+      const applied = Math.min(data.balance, remaining);
+      setAppliedGiftCard({ id: data.id, code: data.code, balance: data.balance, applied });
+      toast.success(`Gift card applied! Using ${formatCurrency(applied)} of ${formatCurrency(data.balance)} balance.`);
+    } catch {
+      toast.error("Failed to validate gift card");
+    } finally {
+      setGiftCardLoading(false);
+    }
+  };
+
+  const handleRemoveGiftCard = () => {
+    setAppliedGiftCard(null);
+    setGiftCardCode("");
   };
 
   useEffect(() => {
@@ -365,6 +407,43 @@ export default function ReviewPage() {
               )}
             </div>
 
+            {/* Gift Card */}
+            <div className="border-t p-4">
+              {appliedGiftCard ? (
+                <div className="flex items-center justify-between rounded-lg bg-blue-500/10 border border-blue-500/20 px-3 py-2">
+                  <div className="flex items-center gap-2">
+                    <CreditCard className="h-4 w-4 text-blue-600" />
+                    <span className="text-sm font-medium text-blue-600">Gift Card</span>
+                    <span className="text-xs text-muted-foreground">
+                      (-{formatCurrency(appliedGiftCard.applied)})
+                    </span>
+                  </div>
+                  <button onClick={handleRemoveGiftCard} className="text-muted-foreground hover:text-foreground">
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+              ) : (
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="Gift card code"
+                    value={giftCardCode}
+                    onChange={(e) => setGiftCardCode(e.target.value.toUpperCase())}
+                    onKeyDown={(e) => e.key === "Enter" && handleApplyGiftCard()}
+                    className="h-9 text-sm font-mono"
+                  />
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleApplyGiftCard}
+                    disabled={giftCardLoading || !giftCardCode.trim()}
+                    className="shrink-0"
+                  >
+                    {giftCardLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Apply"}
+                  </Button>
+                </div>
+              )}
+            </div>
+
             {/* Totals */}
             <div className="border-t p-4 space-y-2">
               <div className="flex justify-between text-sm">
@@ -385,6 +464,12 @@ export default function ReviewPage() {
                 <div className="flex justify-between text-sm text-green-600">
                   <span>Discount</span>
                   <span>-{formatCurrency(appliedDiscount.discountAmount)}</span>
+                </div>
+              )}
+              {appliedGiftCard && (
+                <div className="flex justify-between text-sm text-blue-600">
+                  <span>Gift Card</span>
+                  <span>-{formatCurrency(appliedGiftCard.applied)}</span>
                 </div>
               )}
               <Separator />
