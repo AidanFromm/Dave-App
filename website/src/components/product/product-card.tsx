@@ -37,6 +37,10 @@ export function ProductCard({ product, availableSizes }: ProductCardProps) {
 
   // Check if this is a sneaker (has size and no "pokemon" in name/tags)
   const isSneaker = product.size && !product.name.toLowerCase().includes("pokemon");
+  const isPokemon = product.brand?.toLowerCase() === "pokemon tcg" || 
+    product.name.toLowerCase().includes("pokemon") ||
+    product.tags?.some((t) => t.toLowerCase().includes("pokemon"));
+  const isUsed = product.condition !== "new";
 
   const handleQuickAdd = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -57,7 +61,7 @@ export function ProductCard({ product, availableSizes }: ProductCardProps) {
       {/* Image Container */}
       <Link 
         href={`/product/${product.id}`} 
-        className="relative aspect-square overflow-hidden bg-muted"
+        className={cn("relative aspect-square overflow-hidden", isUsed ? "bg-neutral-900" : "bg-muted")}
       >
         {product.images?.[0] ? (
           <div className="relative h-full w-full">
@@ -66,7 +70,10 @@ export function ProductCard({ product, availableSizes }: ProductCardProps) {
               alt={product.name}
               fill
               sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
-              className="object-contain"
+              className={cn(
+                isUsed ? "object-cover" : "object-contain",
+                isPokemon && "object-contain p-2"
+              )}
             />
           </div>
         ) : (
@@ -88,7 +95,17 @@ export function ProductCard({ product, availableSizes }: ProductCardProps) {
         <div className="absolute left-3 top-3 flex flex-col gap-1.5">
           {newDrop && (
             <Badge className="bg-primary text-primary-foreground text-[10px] font-bold shadow-md">
-              🔥 NEW DROP
+              NEW DROP
+            </Badge>
+          )}
+          {isPokemon && (
+            <Badge className="bg-yellow-500 text-black text-[10px] font-bold shadow-md">
+              Pokemon TCG
+            </Badge>
+          )}
+          {isUsed && (
+            <Badge className="bg-orange-500 text-white text-[10px] font-bold shadow-md">
+              {CONDITION_LABELS[product.condition]}
             </Badge>
           )}
           {discount && (
