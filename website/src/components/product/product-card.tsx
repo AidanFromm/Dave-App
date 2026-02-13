@@ -35,7 +35,6 @@ export function ProductCard({ product, availableSizes }: ProductCardProps) {
   const soldOut = product.quantity <= 0;
   const [isHovered, setIsHovered] = useState(false);
 
-  // Check if this is a sneaker (has size and no "pokemon" in name/tags)
   const isSneaker = product.size && !product.name.toLowerCase().includes("pokemon");
   const isPokemon = product.brand?.toLowerCase() === "pokemon tcg" || 
     product.name.toLowerCase().includes("pokemon") ||
@@ -52,7 +51,7 @@ export function ProductCard({ product, availableSizes }: ProductCardProps) {
 
   return (
     <motion.div
-      className="group relative flex flex-col overflow-hidden rounded-xl bg-card shadow-card transition-shadow hover:shadow-lg"
+      className="group relative flex flex-col overflow-hidden rounded-xl bg-card border border-border/50 hover:border-primary/30 transition-all duration-200"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       whileHover={{ y: -4 }}
@@ -61,19 +60,19 @@ export function ProductCard({ product, availableSizes }: ProductCardProps) {
       {/* Image Container */}
       <Link 
         href={`/product/${product.id}`} 
-        className={cn("relative aspect-square overflow-hidden", isUsed ? "bg-neutral-200" : "bg-muted")}
+        className="relative aspect-square overflow-hidden bg-surface-850"
       >
         {product.images?.[0] ? (
-          <div className="relative h-full w-full">
+          <div className="relative h-full w-full p-4">
             <Image
               src={product.images[0]}
               alt={product.name}
               fill
               sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
               className={cn(
-                "object-contain",
-                isUsed && "p-3",
-                isPokemon && "p-2"
+                "object-contain transition-transform duration-300 group-hover:scale-105",
+                isUsed && "p-1",
+                isPokemon && "p-1"
               )}
             />
           </div>
@@ -85,47 +84,35 @@ export function ProductCard({ product, availableSizes }: ProductCardProps) {
 
         {/* SOLD OUT overlay */}
         {soldOut && (
-          <div className="absolute inset-0 flex items-center justify-center bg-background/70 backdrop-blur-sm">
-            <span className="rounded-full bg-muted px-4 py-2 text-sm font-bold uppercase tracking-wider text-muted-foreground">
+          <div className="absolute inset-0 flex items-center justify-center bg-surface-950/70 backdrop-blur-sm">
+            <span className="rounded-full bg-surface-800 px-4 py-2 text-xs font-bold uppercase tracking-wider text-muted-foreground">
               Sold Out
             </span>
           </div>
         )}
 
-        {/* Badges - bottom left */}
-        <div className="absolute left-3 bottom-3 flex flex-wrap gap-1.5 z-10">
+        {/* Badges — top left */}
+        <div className="absolute left-2 top-2 flex flex-col gap-1 z-10">
           {newDrop && (
-            <Badge className="bg-primary text-primary-foreground text-[10px] font-bold shadow-md">
-              NEW DROP
-            </Badge>
-          )}
-          {isPokemon && (
-            <Badge className="bg-yellow-500 text-black text-[10px] font-bold shadow-md">
-              Pokemon TCG
-            </Badge>
-          )}
-          {isUsed && (
-            <Badge className="bg-orange-500 text-white text-[10px] font-bold shadow-md">
-              {CONDITION_LABELS[product.condition]}
-            </Badge>
+            <span className="bg-primary text-white text-[10px] font-bold uppercase px-2 py-0.5 rounded">
+              NEW
+            </span>
           )}
           {discount && (
-            <Badge variant="destructive" className="text-[10px] font-bold shadow-md">
+            <span className="bg-destructive text-white text-[10px] font-bold px-2 py-0.5 rounded">
               -{discount}%
-            </Badge>
+            </span>
           )}
         </div>
 
-        {/* Wishlist button - top right */}
+        {/* Wishlist button — top right */}
         <motion.div
           initial={false}
           animate={{ opacity: wishlisted || isHovered ? 1 : 0 }}
-          className="absolute right-3 top-3"
+          className="absolute right-2 top-2 z-10"
         >
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-9 w-9 rounded-full bg-background/90 shadow-md backdrop-blur-sm hover:bg-background"
+          <button
+            className="flex h-8 w-8 items-center justify-center rounded-full bg-surface-900/80 backdrop-blur-sm transition-colors hover:bg-surface-900"
             onClick={(e) => {
               e.preventDefault();
               toggleProduct(product.id);
@@ -133,34 +120,16 @@ export function ProductCard({ product, availableSizes }: ProductCardProps) {
           >
             <Heart
               className={cn(
-                "h-4 w-4 transition-colors",
+                "h-3.5 w-3.5 transition-colors",
                 wishlisted
                   ? "fill-red-500 text-red-500"
                   : "text-muted-foreground"
               )}
             />
-          </Button>
+          </button>
         </motion.div>
 
-        {/* Size preview for sneakers - bottom left on hover */}
-        <AnimatePresence>
-          {isHovered && isSneaker && product.size && (
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 10 }}
-              transition={{ duration: 0.2 }}
-              className="absolute bottom-3 left-3"
-            >
-              <div className="flex items-center gap-1.5 rounded-full bg-background/90 px-3 py-1.5 shadow-md backdrop-blur-sm">
-                <span className="text-xs text-muted-foreground">Size</span>
-                <span className="text-sm font-bold">{product.size}</span>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* Quick actions on hover - bottom right */}
+        {/* Quick actions on hover */}
         <AnimatePresence>
           {isHovered && !soldOut && (
             <motion.div
@@ -168,24 +137,14 @@ export function ProductCard({ product, availableSizes }: ProductCardProps) {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 10 }}
               transition={{ duration: 0.2 }}
-              className="absolute bottom-3 right-3 flex gap-2"
+              className="absolute bottom-3 right-3 flex gap-2 z-10"
             >
               <Button
                 size="icon"
-                className="h-9 w-9 rounded-full shadow-lg"
+                className="h-9 w-9 rounded-full shadow-lg bg-primary hover:bg-primary/90"
                 onClick={handleQuickAdd}
               >
                 <ShoppingBag className="h-4 w-4" />
-              </Button>
-              <Button
-                size="icon"
-                variant="secondary"
-                className="h-9 w-9 rounded-full shadow-lg"
-                asChild
-              >
-                <Link href={`/product/${product.id}`} onClick={(e) => e.stopPropagation()}>
-                  <Eye className="h-4 w-4" />
-                </Link>
               </Button>
             </motion.div>
           )}
@@ -195,50 +154,58 @@ export function ProductCard({ product, availableSizes }: ProductCardProps) {
       {/* Product Info */}
       <Link
         href={`/product/${product.id}`}
-        className="flex flex-1 flex-col p-4"
+        className="flex flex-1 flex-col p-3"
       >
         {/* Brand */}
         {product.brand && (
-          <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+          <span className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground">
             {product.brand}
           </span>
         )}
         
         {/* Product Name */}
-        <h3 className="mt-1 line-clamp-2 text-sm font-semibold leading-snug group-hover:text-primary transition-colors">
+        <h3 className="mt-0.5 line-clamp-2 text-sm font-semibold leading-snug text-foreground group-hover:text-primary transition-colors">
           {product.name}
         </h3>
 
-        {/* Available Sizes */}
+        {/* Size pills for sneakers */}
         {availableSizes && availableSizes.length > 1 && (
-          <p className="mt-1 text-xs text-muted-foreground">
-            {availableSizes.length} sizes available
-          </p>
+          <div className="mt-1.5 flex flex-wrap gap-1">
+            {availableSizes.slice(0, 3).map((size) => (
+              <span key={size} className="text-[10px] px-1.5 py-0.5 bg-surface-800 rounded text-muted-foreground">
+                {size}
+              </span>
+            ))}
+            {availableSizes.length > 3 && (
+              <span className="text-[10px] px-1.5 py-0.5 bg-surface-800 rounded text-muted-foreground">
+                +{availableSizes.length - 3}
+              </span>
+            )}
+          </div>
         )}
         
         {/* Price and Condition */}
-        <div className="mt-auto pt-3 flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
-            <span className="text-lg font-bold">
+        <div className="mt-auto pt-2 flex items-center justify-between gap-2">
+          <div className="flex items-baseline gap-2">
+            <span className="text-base font-mono font-bold text-primary">
               {formatCurrency(product.price)}
             </span>
             {product.compare_at_price && product.compare_at_price > product.price && (
-              <span className="text-sm text-muted-foreground line-through">
+              <span className="text-xs font-mono text-muted-foreground line-through">
                 {formatCurrency(product.compare_at_price)}
               </span>
             )}
           </div>
-          <Badge
-            variant="outline"
+          <span
             className={cn(
-              "text-[10px] px-2 py-0.5 font-medium",
+              "text-[10px] font-semibold px-2 py-0.5 rounded-full",
               product.condition === "new"
-                ? "border-secured-condition-new text-secured-condition-new bg-secured-condition-new/10"
-                : "border-secured-condition-used text-secured-condition-used bg-secured-condition-used/10"
+                ? "bg-green-500/10 text-green-500"
+                : "bg-blue-500/10 text-blue-500"
             )}
           >
             {CONDITION_LABELS[product.condition]}
-          </Badge>
+          </span>
         </div>
       </Link>
     </motion.div>

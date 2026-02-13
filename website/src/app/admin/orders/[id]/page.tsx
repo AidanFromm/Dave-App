@@ -120,18 +120,7 @@ export default function AdminOrderDetailPage() {
   const handleReadyForPickup = async () => {
     const confirmed = window.confirm("Mark this order as ready for pickup and notify the customer?");
     if (!confirmed) return;
-
-    setActionLoading(true);
-    try {
-      await updateOrderStatus(orderId, "processing");
-      await sendNotification("pickup");
-      toast.success("Customer notified — order ready for pickup");
-      await fetchOrder();
-    } catch (err: any) {
-      toast.error(err.message ?? "Failed to update order");
-    } finally {
-      setActionLoading(false);
-    }
+    await handlePickupStatus("ready");
   };
 
   const handleSendReminder = async () => {
@@ -172,6 +161,63 @@ export default function AdminOrderDetailPage() {
       await fetchOrder();
     } catch (err: any) {
       toast.error(err.message ?? "Failed to cancel order");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleRefund = async () => {
+    const amt = parseFloat(refundAmount);
+    if (isNaN(amt) || amt <= 0) {
+      toast.error("Enter a valid refund amount");
+      return;
+    }
+    setRefundLoading(true);
+    try {
+      const res = await fetch("/api/admin/refunds", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ orderId, amount: amt, reason: refundReason }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Refund failed");
+      toast.success(`Refund of $${amt.toFixed(2)} processed`);
+      setShowRefundModal(false);
+      setRefundAmount("");
+      setRefundReason("");
+      await fetchOrder();
+    } catch (err: any) {
+      toast.error(err.message ?? "Refund failed");
+    } finally {
+      setRefundLoading(false);
+    }
+  };
+
+  const handlePickupStatus = async (status: string) => {
+    setActionLoading(true);
+    try {
+      const res = await fetch("/api/admin/pickup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ orderId, pickupStatus: status }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Failed");
+
+      // Also send pickup email when marking ready
+      if (status === "ready") {
+        await sendNotification("pickup");
+      }
+      toast.success(
+        status === "ready"
+          ? "Marked ready — customer notified via email & SMS"
+          : status === "picked_up"
+            ? "Order marked as picked up"
+            : "Pickup status updated"
+      );
+      await fetchOrder();
+    } catch (err: any) {
+      toast.error(err.message ?? "Failed to update pickup status");
     } finally {
       setActionLoading(false);
     }
@@ -233,6 +279,8 @@ export default function AdminOrderDetailPage() {
   const canPickup = ["pending", "paid", "processing"].includes(order.status) && order.fulfillment_type === "pickup";
   const canRemind = order.status === "pending";
   const canCancel = !["cancelled", "refunded", "delivered"].includes(order.status);
+  const canRefund = order.stripe_payment_id && !["refunded", "cancelled", "pending"].includes(order.status);
+  const maxRefundable = order.total - (order.refund_amount ?? 0);
 
   return (
     <div className="p-6">
@@ -309,6 +357,21 @@ export default function AdminOrderDetailPage() {
             <Mail className="mr-1.5 h-4 w-4" />
             Resend Confirmation
           </Button>
+          {canRefund && (
+            <Button
+              onClick={() => {
+                setRefundAmount(maxRefundable.toFixed(2));
+                setShowRefundModal(true);
+              }}
+              disabled={actionLoading}
+              size="sm"
+              variant="outline"
+              className="border-amber-500 text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950"
+            >
+              <DollarSign className="mr-1.5 h-4 w-4" />
+              Issue Refund
+            </Button>
+          )}
           {canCancel && (
             <Button
               variant="destructive"
@@ -322,6 +385,78 @@ export default function AdminOrderDetailPage() {
           )}
         </div>
       </div>
+
+      {/* Refund Modal */}
+      {showRefundModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+          <div className="mx-4 w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-2xl">
+            <h3 className="text-lg font-bold flex items-center gap-2">
+              <DollarSign className="h-5 w-5 text-amber-500" />
+              Issue Refund
+            </h3>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Order #{order.order_number} &middot; Max refundable: ${maxRefundable.toFixed(2)}
+            </p>
+            {order.refund_amount > 0 && (
+              <p className="mt-1 text-xs text-amber-500">
+                Previously refunded: ${order.refund_amount.toFixed(2)}
+              </p>
+            )}
+            <div className="mt-4 space-y-4">
+              <div>
+                <label className="text-sm font-medium">Refund Amount ($)</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0.01"
+                  max={maxRefundable}
+                  value={refundAmount}
+                  onChange={(e) => setRefundAmount(e.target.value)}
+                  className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                  placeholder="0.00"
+                />
+                <div className="mt-1 flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setRefundAmount(maxRefundable.toFixed(2))}
+                    className="text-xs text-primary hover:underline"
+                  >
+                    Full refund
+                  </button>
+                </div>
+              </div>
+              <div>
+                <label className="text-sm font-medium">Reason (optional)</label>
+                <textarea
+                  value={refundReason}
+                  onChange={(e) => setRefundReason(e.target.value)}
+                  rows={2}
+                  className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary"
+                  placeholder="Customer request, defective item, etc."
+                />
+              </div>
+              <div className="flex gap-2 justify-end">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowRefundModal(false)}
+                  disabled={refundLoading}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={handleRefund}
+                  disabled={refundLoading}
+                  className="bg-amber-500 hover:bg-amber-600 text-white"
+                >
+                  {refundLoading ? "Processing..." : `Refund $${parseFloat(refundAmount || "0").toFixed(2)}`}
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Content grid */}
       <div className="mt-6 grid gap-6 lg:grid-cols-3">
@@ -426,6 +561,69 @@ export default function AdminOrderDetailPage() {
             <div className="rounded-lg border border-border bg-card p-4">
               <h2 className="text-sm font-semibold mb-3">Tracking</h2>
               <p className="text-sm font-mono text-muted-foreground">{order.tracking_number}</p>
+            </div>
+          )}
+
+          {/* Pickup Status */}
+          {order.fulfillment_type === "pickup" && (
+            <div className="rounded-lg border border-border bg-card p-4">
+              <h2 className="text-sm font-semibold mb-3">Pickup Status</h2>
+              <Badge
+                variant="outline"
+                className={`border-0 ${PICKUP_STATUS_COLORS[order.pickup_status ?? "pending"] ?? ""}`}
+              >
+                {order.pickup_status === "ready"
+                  ? "Ready for Pickup"
+                  : order.pickup_status === "picked_up"
+                    ? "Picked Up"
+                    : "Pending"}
+              </Badge>
+              <div className="mt-3 flex flex-col gap-2">
+                {(!order.pickup_status || order.pickup_status === "pending") && (
+                  <Button
+                    size="sm"
+                    className="bg-[#FB4F14] hover:bg-[#e04400]"
+                    onClick={() => handlePickupStatus("ready")}
+                    disabled={actionLoading}
+                  >
+                    <MapPin className="mr-1.5 h-4 w-4" />
+                    Mark Ready for Pickup
+                  </Button>
+                )}
+                {order.pickup_status === "ready" && (
+                  <Button
+                    size="sm"
+                    onClick={() => handlePickupStatus("picked_up")}
+                    disabled={actionLoading}
+                  >
+                    <CheckCircle className="mr-1.5 h-4 w-4" />
+                    Mark as Picked Up
+                  </Button>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Refund Info */}
+          {(order.refund_amount ?? 0) > 0 && (
+            <div className="rounded-lg border border-amber-500/30 bg-amber-50/5 p-4">
+              <h2 className="text-sm font-semibold mb-3 text-amber-500">Refund Details</h2>
+              <div className="space-y-1 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Refunded</span>
+                  <span className="font-medium text-amber-500">{formatCurrency(order.refund_amount)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Original Total</span>
+                  <span>{formatCurrency(order.total)}</span>
+                </div>
+                {order.refund_reason && (
+                  <div className="mt-2 pt-2 border-t border-border">
+                    <p className="text-xs text-muted-foreground">Reason</p>
+                    <p className="text-sm">{order.refund_reason}</p>
+                  </div>
+                )}
+              </div>
             </div>
           )}
 

@@ -27,13 +27,14 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { email, items, fulfillmentType, shippingAddress, discountCode } = body as {
+    const { email, items, fulfillmentType, shippingAddress, discountCode, phone } = body as {
       total?: number;
       email?: string;
       items?: CartItem[];
       fulfillmentType?: string;
       shippingAddress?: object;
       discountCode?: string;
+      phone?: string;
     };
 
     if (!items || items.length === 0) {
@@ -209,6 +210,8 @@ export async function POST(request: Request) {
         shippingCost: shippingCost.toFixed(2),
         discountCode: validatedDiscountCode || "",
         discountAmount: discountAmount.toFixed(2),
+        phone: phone ?? "",
+        deliveryMethod: ft === "pickup" ? "pickup" : "shipping",
       },
     });
 

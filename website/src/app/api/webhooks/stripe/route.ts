@@ -168,6 +168,8 @@ export async function POST(request: Request) {
       shippingCost: shippingCostStr,
       discountCode: discountCodeMeta,
       discountAmount: discountAmountStr,
+      phone: phoneMeta,
+      deliveryMethod: deliveryMethodMeta,
     } = paymentIntent.metadata;
 
     const supabase = createAdminClient();

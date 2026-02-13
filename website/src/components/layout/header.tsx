@@ -12,6 +12,8 @@ import {
   Monitor,
   LogOut,
   Shield,
+  Search,
+  X,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useTheme } from "next-themes";
@@ -29,6 +31,13 @@ import { useCartStore } from "@/stores/cart-store";
 import { useCartDrawerStore } from "@/stores/cart-drawer-store";
 import { useAuth } from "@/hooks/use-auth";
 import { cn } from "@/lib/utils";
+
+const NAV_LINKS = [
+  { href: "/", label: "Shop" },
+  { href: "/drops", label: "Drops" },
+  { href: "/pokemon", label: "Pokémon" },
+  { href: "/about", label: "About" },
+];
 
 export function Header() {
   const pathname = usePathname();
@@ -49,35 +58,60 @@ export function Header() {
   if (isAdminRoute) return null;
 
   return (
-    <header 
+    <header
       className={cn(
-        "sticky top-0 z-50 w-full transition-all duration-200",
-        scrolled 
-          ? "bg-background/95 backdrop-blur-md shadow-sm border-b" 
-          : "bg-background border-b border-border/50"
+        "sticky top-0 z-50 w-full transition-all duration-300",
+        scrolled
+          ? "bg-surface-950/95 backdrop-blur-xl shadow-lg shadow-black/5 dark:shadow-black/20 border-b border-surface-800/50"
+          : "bg-surface-950 border-b border-surface-800/30"
       )}
     >
-      <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
         {/* Logo */}
-        <Link href="/" className="flex items-center">
-          <span className="text-xl font-black tracking-tight">
-            <span className="text-primary">S</span>
-            <span className="text-foreground">ECURED</span>
+        <Link href="/" className="flex items-center gap-0.5 group">
+          <span className="font-display text-2xl font-bold uppercase tracking-tight text-foreground transition-colors">
+            SECURED
+          </span>
+          <span className="font-display text-2xl font-bold uppercase tracking-tight text-primary transition-colors">
+            TAMPA
           </span>
         </Link>
+
+        {/* Center navigation — desktop */}
+        <nav className="hidden md:flex items-center gap-1">
+          {NAV_LINKS.map((link) => {
+            const isActive = link.href === "/"
+              ? pathname === "/"
+              : pathname.startsWith(link.href);
+            return (
+              <Link
+                key={link.href}
+                href={link.href}
+                className={cn(
+                  "px-4 py-2 text-sm font-semibold uppercase tracking-wider transition-colors rounded-lg",
+                  isActive
+                    ? "text-primary bg-primary/10"
+                    : "text-muted-foreground hover:text-foreground hover:bg-surface-800/50"
+                )}
+              >
+                {link.label}
+              </Link>
+            );
+          })}
+        </nav>
 
         {/* Right side actions */}
         <div className="flex items-center gap-1">
           {/* Theme toggle */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="hidden sm:flex h-9 w-9">
+              <Button variant="ghost" size="icon" className="hidden sm:flex h-9 w-9 text-muted-foreground hover:text-foreground">
                 <Sun className="h-4 w-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
                 <Moon className="absolute h-4 w-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
                 <span className="sr-only">Toggle theme</span>
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
+            <DropdownMenuContent align="end" className="bg-surface-900 border-surface-800">
               <DropdownMenuItem onClick={() => setTheme("light")}>
                 <Sun className="mr-2 h-4 w-4" /> Light
               </DropdownMenuItem>
@@ -91,7 +125,7 @@ export function Header() {
           </DropdownMenu>
 
           {/* Wishlist */}
-          <Button variant="ghost" size="icon" asChild className="hidden sm:flex h-9 w-9">
+          <Button variant="ghost" size="icon" asChild className="hidden sm:flex h-9 w-9 text-muted-foreground hover:text-foreground">
             <Link href="/wishlist">
               <Heart className="h-4 w-4" />
               <span className="sr-only">Wishlist</span>
@@ -100,7 +134,7 @@ export function Header() {
 
           {/* Admin button */}
           {user && isAdmin && (
-            <Button variant="ghost" size="sm" asChild className="hidden sm:flex gap-1.5 h-9 px-3 text-xs">
+            <Button variant="ghost" size="sm" asChild className="hidden sm:flex gap-1.5 h-9 px-3 text-xs text-muted-foreground hover:text-primary">
               <Link href="/admin">
                 <Shield className="h-3.5 w-3.5" />
                 Admin
@@ -112,7 +146,7 @@ export function Header() {
           <Button
             variant="ghost"
             size="icon"
-            className="relative h-9 w-9"
+            className="relative h-9 w-9 text-muted-foreground hover:text-foreground"
             onClick={openCartDrawer}
           >
             <ShoppingBag className="h-4 w-4" />
@@ -122,7 +156,7 @@ export function Header() {
                   initial={{ scale: 0 }}
                   animate={{ scale: 1 }}
                   exit={{ scale: 0 }}
-                  className="absolute -right-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground"
+                  className="absolute -right-0.5 -top-0.5 flex h-4.5 w-4.5 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-white"
                   aria-live="polite"
                   aria-label={`${itemCount} items in cart`}
                 >
@@ -137,11 +171,11 @@ export function Header() {
           {user ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-9 w-9">
+                <Button variant="ghost" size="icon" className="h-9 w-9 text-muted-foreground hover:text-foreground">
                   <User className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48">
+              <DropdownMenuContent align="end" className="w-48 bg-surface-900 border-surface-800">
                 <DropdownMenuItem asChild>
                   <Link href="/account">My Account</Link>
                 </DropdownMenuItem>
@@ -150,7 +184,7 @@ export function Header() {
                 </DropdownMenuItem>
                 {isAdmin && (
                   <>
-                    <DropdownMenuSeparator />
+                    <DropdownMenuSeparator className="bg-surface-800" />
                     <DropdownMenuItem asChild>
                       <Link href="/admin">
                         <Shield className="mr-2 h-4 w-4" /> Admin
@@ -158,14 +192,14 @@ export function Header() {
                     </DropdownMenuItem>
                   </>
                 )}
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={signOut}>
+                <DropdownMenuSeparator className="bg-surface-800" />
+                <DropdownMenuItem onClick={signOut} className="text-destructive">
                   <LogOut className="mr-2 h-4 w-4" /> Sign Out
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           ) : (
-            <Button variant="ghost" size="icon" asChild className="h-9 w-9">
+            <Button variant="ghost" size="icon" asChild className="h-9 w-9 text-muted-foreground hover:text-foreground">
               <Link href="/auth/sign-in">
                 <User className="h-4 w-4" />
                 <span className="sr-only">Sign In</span>
@@ -176,23 +210,48 @@ export function Header() {
           {/* Mobile menu */}
           <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
             <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" className="sm:hidden h-9 w-9">
+              <Button variant="ghost" size="icon" className="md:hidden h-9 w-9 text-muted-foreground hover:text-foreground">
                 <Menu className="h-5 w-5" />
                 <span className="sr-only">Menu</span>
               </Button>
             </SheetTrigger>
-            <SheetContent side="right" className="w-72">
-              <SheetTitle className="text-xl font-black">
-                <span className="text-primary">S</span>
-                <span className="text-foreground">ECURED</span>
-              </SheetTitle>
-              <nav className="mt-6 flex flex-col gap-2">
+            <SheetContent side="right" className="w-80 bg-surface-950 border-surface-800 p-0">
+              <div className="flex items-center justify-between px-6 py-5 border-b border-surface-800">
+                <SheetTitle className="font-display text-xl font-bold uppercase tracking-tight">
+                  <span className="text-foreground">SECURED</span>
+                  <span className="text-primary">TAMPA</span>
+                </SheetTitle>
+              </div>
+              <nav className="flex flex-col px-4 py-4">
+                {NAV_LINKS.map((link) => {
+                  const isActive = link.href === "/"
+                    ? pathname === "/"
+                    : pathname.startsWith(link.href);
+                  return (
+                    <Link
+                      key={link.href}
+                      href={link.href}
+                      onClick={() => setMobileOpen(false)}
+                      className={cn(
+                        "flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold uppercase tracking-wider transition-colors",
+                        isActive
+                          ? "bg-primary/10 text-primary"
+                          : "text-muted-foreground hover:bg-surface-800 hover:text-foreground"
+                      )}
+                    >
+                      {link.label}
+                    </Link>
+                  );
+                })}
+
+                <div className="h-px bg-surface-800 my-3" />
+
                 <Link
                   href="/wishlist"
                   onClick={() => setMobileOpen(false)}
-                  className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-muted"
+                  className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-muted-foreground hover:bg-surface-800 hover:text-foreground transition-colors"
                 >
-                  <Heart className="h-5 w-5" />
+                  <Heart className="h-4 w-4" />
                   Wishlist
                 </Link>
                 <button
@@ -200,10 +259,14 @@ export function Header() {
                     setMobileOpen(false);
                     openCartDrawer();
                   }}
-                  className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-muted text-left"
+                  className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-muted-foreground hover:bg-surface-800 hover:text-foreground transition-colors text-left"
                 >
-                  <ShoppingBag className="h-5 w-5" />
-                  Cart {itemCount > 0 && `(${itemCount})`}
+                  <ShoppingBag className="h-4 w-4" />
+                  Cart {itemCount > 0 && (
+                    <span className="ml-auto flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-white">
+                      {itemCount}
+                    </span>
+                  )}
                 </button>
                 
                 {user ? (
@@ -211,29 +274,32 @@ export function Header() {
                     <Link
                       href="/account"
                       onClick={() => setMobileOpen(false)}
-                      className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-muted"
+                      className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-muted-foreground hover:bg-surface-800 hover:text-foreground transition-colors"
                     >
-                      <User className="h-5 w-5" />
+                      <User className="h-4 w-4" />
                       Account
                     </Link>
                     {isAdmin && (
                       <Link
                         href="/admin"
                         onClick={() => setMobileOpen(false)}
-                        className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-muted text-primary"
+                        className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-primary hover:bg-primary/10 transition-colors"
                       >
-                        <Shield className="h-5 w-5" />
-                        Admin
+                        <Shield className="h-4 w-4" />
+                        Admin Panel
                       </Link>
                     )}
+
+                    <div className="h-px bg-surface-800 my-3" />
+
                     <button
                       onClick={() => {
                         signOut();
                         setMobileOpen(false);
                       }}
-                      className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-muted text-destructive text-left"
+                      className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-destructive hover:bg-destructive/10 transition-colors text-left"
                     >
-                      <LogOut className="h-5 w-5" />
+                      <LogOut className="h-4 w-4" />
                       Sign Out
                     </button>
                   </>
@@ -241,31 +307,32 @@ export function Header() {
                   <Link
                     href="/auth/sign-in"
                     onClick={() => setMobileOpen(false)}
-                    className="flex items-center gap-3 px-3 py-2 rounded-lg bg-primary/10 text-primary"
+                    className="flex items-center gap-3 mx-4 mt-4 px-4 py-3 rounded-xl text-sm font-semibold bg-primary text-white justify-center uppercase tracking-wider hover:bg-primary/90 transition-colors"
                   >
-                    <User className="h-5 w-5" />
                     Sign In
                   </Link>
                 )}
 
-                <div className="mt-4 pt-4 border-t">
-                  <p className="text-xs text-muted-foreground mb-2 px-3">Theme</p>
-                  <div className="flex gap-2 px-3">
+                <div className="h-px bg-surface-800 my-3" />
+
+                <div className="px-4">
+                  <p className="text-xs text-muted-foreground mb-2 uppercase tracking-wider font-medium">Theme</p>
+                  <div className="flex gap-2">
                     <Button
                       variant={theme === "light" ? "default" : "outline"}
                       size="sm"
                       onClick={() => setTheme("light")}
-                      className="flex-1 h-8 text-xs"
+                      className="flex-1 h-9 text-xs"
                     >
-                      Light
+                      <Sun className="mr-1.5 h-3.5 w-3.5" /> Light
                     </Button>
                     <Button
                       variant={theme === "dark" ? "default" : "outline"}
                       size="sm"
                       onClick={() => setTheme("dark")}
-                      className="flex-1 h-8 text-xs"
+                      className="flex-1 h-9 text-xs"
                     >
-                      Dark
+                      <Moon className="mr-1.5 h-3.5 w-3.5" /> Dark
                     </Button>
                   </div>
                 </div>

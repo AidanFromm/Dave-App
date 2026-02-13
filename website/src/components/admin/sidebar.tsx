@@ -29,6 +29,7 @@ const NAV_ITEMS = [
   { href: "/admin/purchases", label: "Buy-In", icon: HandCoins },
   { href: "/admin/scan", label: "Scan In", icon: ScanBarcode },
   { href: "/admin/pokemon", label: "Pokemon", icon: Sparkles },
+  { href: "/admin/pokemon-inventory", label: "Pokemon Cards", icon: Sparkles },
   { href: "/admin/drops", label: "Drops", icon: Flame },
   { href: "/admin/discounts", label: "Discounts", icon: Tag },
   { href: "/admin/orders", label: "Orders", icon: ShoppingCart },
