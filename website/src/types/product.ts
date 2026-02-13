@@ -7,6 +7,35 @@ export const CONDITION_LABELS: Record<ProductCondition, string> = {
   used_fair: "Fair",
 };
 
+// Sneaker-specific condition scale
+export type VariantCondition = "DS" | "VNDS" | "Used-Excellent" | "Used-Good" | "Used-Fair";
+
+export const VARIANT_CONDITION_LABELS: Record<VariantCondition, string> = {
+  DS: "Deadstock (DS)",
+  VNDS: "Very Near Deadstock",
+  "Used-Excellent": "Used — Excellent",
+  "Used-Good": "Used — Good",
+  "Used-Fair": "Used — Fair",
+};
+
+export const VARIANT_CONDITIONS: VariantCondition[] = [
+  "DS", "VNDS", "Used-Excellent", "Used-Good", "Used-Fair",
+];
+
+export interface ProductVariant {
+  id: string;
+  product_id: string;
+  size: string | null;
+  condition: VariantCondition;
+  sku: string | null;
+  barcode: string | null;
+  price: number;
+  cost: number | null;
+  quantity: number;
+  clover_item_id: string | null;
+  created_at: string;
+}
+
 export interface Product {
   id: string;
   sku: string | null;
@@ -34,6 +63,8 @@ export interface Product {
   tags: string[];
   created_at: string;
   updated_at: string;
+  has_variants?: boolean;
+  variants?: ProductVariant[];
 }
 
 export interface Category {

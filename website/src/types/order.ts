@@ -46,9 +46,11 @@ export const FULFILLMENT_LABELS: Record<FulfillmentType, string> = {
 
 export interface OrderItem {
   product_id: string;
+  variant_id?: string | null;
   name: string;
   sku: string | null;
   size: string | null;
+  condition?: string | null;
   quantity: number;
   price: number;
   total: number;

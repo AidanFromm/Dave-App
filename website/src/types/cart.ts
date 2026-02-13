@@ -5,6 +5,10 @@ export interface CartItem {
   id: string;
   product: Product;
   quantity: number;
+  variant_id?: string | null;
+  variant_size?: string | null;
+  variant_condition?: string | null;
+  variant_price?: number | null;
 }
 
 export interface CartState {

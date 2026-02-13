@@ -18,6 +18,7 @@ import {
   Menu,
   X,
   Tag,
+  HandCoins,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -25,6 +26,7 @@ const NAV_ITEMS = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
   { href: "/admin/products", label: "Products", icon: Package },
   { href: "/admin/inventory", label: "Inventory", icon: Box },
+  { href: "/admin/purchases", label: "Buy-In", icon: HandCoins },
   { href: "/admin/scan", label: "Scan In", icon: ScanBarcode },
   { href: "/admin/pokemon", label: "Pokemon", icon: Sparkles },
   { href: "/admin/drops", label: "Drops", icon: Flame },

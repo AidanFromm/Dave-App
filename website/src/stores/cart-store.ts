@@ -10,6 +10,10 @@ interface CartItem {
   id: string;
   product: Product;
   quantity: number;
+  variant_id?: string | null;
+  variant_size?: string | null;
+  variant_condition?: string | null;
+  variant_price?: number | null;
 }
 
 interface CartStore {
@@ -19,9 +23,9 @@ interface CartStore {
   customerNotes: string;
 
   // Actions
-  addItem: (product: Product, quantity?: number) => void;
-  removeItem: (productId: string) => void;
-  updateQuantity: (productId: string, quantity: number) => void;
+  addItem: (product: Product, quantity?: number, variant?: { id: string; size?: string | null; condition?: string | null; price?: number | null } | null) => void;
+  removeItem: (cartItemId: string) => void;
+  updateQuantity: (cartItemId: string, quantity: number) => void;
   setFulfillmentType: (type: FulfillmentType) => void;
   setShippingAddress: (address: Address | null) => void;
   setCustomerNotes: (notes: string) => void;
@@ -44,15 +48,17 @@ export const useCartStore = create<CartStore>()(
       shippingAddress: null,
       customerNotes: "",
 
-      addItem: (product, quantity = 1) => {
+      addItem: (product, quantity = 1, variant = null) => {
         set((state) => {
+          // Match by variant_id if present, else by product.id
+          const matchKey = variant?.id ?? product.id;
           const existing = state.items.find(
-            (item) => item.product.id === product.id
+            (item) => (item.variant_id ?? item.product.id) === matchKey
           );
           if (existing) {
             return {
               items: state.items.map((item) =>
-                item.product.id === product.id
+                (item.variant_id ?? item.product.id) === matchKey
                   ? { ...item, quantity: item.quantity + quantity }
                   : item
               ),
@@ -61,27 +67,44 @@ export const useCartStore = create<CartStore>()(
           return {
             items: [
               ...state.items,
-              { id: crypto.randomUUID(), product, quantity },
+              {
+                id: crypto.randomUUID(),
+                product,
+                quantity,
+                variant_id: variant?.id ?? null,
+                variant_size: variant?.size ?? null,
+                variant_condition: variant?.condition ?? null,
+                variant_price: variant?.price ?? null,
+              },
             ],
           };
         });
       },
 
-      removeItem: (productId) => {
+      removeItem: (cartItemId) => {
         set((state) => ({
-          items: state.items.filter((item) => item.product.id !== productId),
+          items: state.items.filter((item) => {
+            // Support both cart item id and product/variant id for backward compat
+            if (item.id === cartItemId) return false;
+            if (item.variant_id === cartItemId) return false;
+            if (item.product.id === cartItemId) return false;
+            return true;
+          }),
         }));
       },
 
-      updateQuantity: (productId, quantity) => {
+      updateQuantity: (cartItemId, quantity) => {
         if (quantity <= 0) {
-          get().removeItem(productId);
+          get().removeItem(cartItemId);
           return;
         }
         set((state) => ({
-          items: state.items.map((item) =>
-            item.product.id === productId ? { ...item, quantity } : item
-          ),
+          items: state.items.map((item) => {
+            if (item.id === cartItemId || item.variant_id === cartItemId || item.product.id === cartItemId) {
+              return { ...item, quantity };
+            }
+            return item;
+          }),
         }));
       },
 
@@ -98,7 +121,7 @@ export const useCartStore = create<CartStore>()(
 
       getSubtotal: () => {
         return get().items.reduce(
-          (sum, item) => sum + item.product.price * item.quantity,
+          (sum, item) => sum + (item.variant_price ?? item.product.price) * item.quantity,
           0
         );
       },
@@ -121,15 +144,20 @@ export const useCartStore = create<CartStore>()(
       },
 
       toOrderItems: () => {
-        return get().items.map((item) => ({
-          product_id: item.product.id,
-          name: item.product.name,
-          sku: item.product.sku,
-          size: item.product.size,
-          quantity: item.quantity,
-          price: item.product.price,
-          total: item.product.price * item.quantity,
-        }));
+        return get().items.map((item) => {
+          const price = item.variant_price ?? item.product.price;
+          return {
+            product_id: item.product.id,
+            variant_id: item.variant_id ?? null,
+            name: item.product.name,
+            sku: item.product.sku,
+            size: item.variant_size ?? item.product.size,
+            condition: item.variant_condition ?? null,
+            quantity: item.quantity,
+            price,
+            total: price * item.quantity,
+          };
+        });
       },
     }),
     {

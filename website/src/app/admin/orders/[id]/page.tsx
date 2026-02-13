@@ -21,7 +21,7 @@ import {
   type Address,
 } from "@/types/order";
 import { toast } from "sonner";
-import { ArrowLeft, Truck, XCircle } from "lucide-react";
+import { ArrowLeft, Truck, XCircle, MapPin, Bell, Mail } from "lucide-react";
 
 const STATUS_COLORS: Record<string, string> = {
   pending: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400",
@@ -66,17 +66,85 @@ export default function AdminOrderDetailPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [orderId]);
 
+  const sendNotification = async (type: string, customData?: Record<string, unknown>) => {
+    try {
+      const res = await fetch("/api/notifications/send", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ type, orderId, customData }),
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error ?? "Failed to send notification");
+      }
+      toast.success("Notification email sent!");
+    } catch (err: any) {
+      toast.error(err.message ?? "Failed to send notification");
+    }
+  };
+
   const handleMarkShipped = async () => {
-    const tracking = window.prompt("Enter tracking number (optional):");
-    if (tracking === null) return; // User cancelled
+    const tracking = window.prompt("Enter tracking number:");
+    if (tracking === null) return;
+    if (!tracking.trim()) {
+      toast.error("Tracking number is required");
+      return;
+    }
+    const carrier = window.prompt("Enter carrier (usps, ups, fedex):", "usps");
+    if (carrier === null) return;
 
     setActionLoading(true);
     try {
-      await updateOrderStatus(orderId, "shipped", tracking || undefined);
-      toast.success("Order marked as shipped");
+      await updateOrderStatus(orderId, "shipped", tracking.trim());
+      await sendNotification("shipped", { trackingNumber: tracking.trim(), carrier: carrier.trim() || "other" });
+      toast.success("Order marked as shipped & customer notified");
       await fetchOrder();
     } catch (err: any) {
       toast.error(err.message ?? "Failed to update order");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleReadyForPickup = async () => {
+    const confirmed = window.confirm("Mark this order as ready for pickup and notify the customer?");
+    if (!confirmed) return;
+
+    setActionLoading(true);
+    try {
+      await updateOrderStatus(orderId, "processing");
+      await sendNotification("pickup");
+      toast.success("Customer notified — order ready for pickup");
+      await fetchOrder();
+    } catch (err: any) {
+      toast.error(err.message ?? "Failed to update order");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleSendReminder = async () => {
+    const confirmed = window.confirm("Send a payment reminder email to this customer?");
+    if (!confirmed) return;
+
+    setActionLoading(true);
+    try {
+      await sendNotification("reminder");
+      toast.success("Payment reminder sent");
+    } catch (err: any) {
+      toast.error(err.message ?? "Failed to send reminder");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleResendConfirmation = async () => {
+    setActionLoading(true);
+    try {
+      await sendNotification("confirmation");
+      toast.success("Confirmation email resent");
+    } catch (err: any) {
+      toast.error(err.message ?? "Failed to resend confirmation");
     } finally {
       setActionLoading(false);
     }
@@ -150,7 +218,9 @@ export default function AdminOrderDetailPage() {
     timelineEvents.push({ status: "refunded", date: order.updated_at ?? order.created_at });
   }
 
-  const canShip = ["pending", "paid", "processing"].includes(order.status);
+  const canShip = ["pending", "paid", "processing"].includes(order.status) && order.fulfillment_type === "ship";
+  const canPickup = ["pending", "paid", "processing"].includes(order.status) && order.fulfillment_type === "pickup";
+  const canRemind = order.status === "pending";
   const canCancel = !["cancelled", "refunded", "delivered"].includes(order.status);
 
   return (
@@ -186,7 +256,7 @@ export default function AdminOrderDetailPage() {
           </p>
         </div>
 
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           {canShip && (
             <Button
               onClick={handleMarkShipped}
@@ -197,6 +267,37 @@ export default function AdminOrderDetailPage() {
               Mark Shipped
             </Button>
           )}
+          {canPickup && (
+            <Button
+              onClick={handleReadyForPickup}
+              disabled={actionLoading}
+              size="sm"
+              className="bg-[#FB4F14] hover:bg-[#e04400]"
+            >
+              <MapPin className="mr-1.5 h-4 w-4" />
+              Ready for Pickup
+            </Button>
+          )}
+          {canRemind && (
+            <Button
+              onClick={handleSendReminder}
+              disabled={actionLoading}
+              size="sm"
+              variant="outline"
+            >
+              <Bell className="mr-1.5 h-4 w-4" />
+              Payment Reminder
+            </Button>
+          )}
+          <Button
+            onClick={handleResendConfirmation}
+            disabled={actionLoading}
+            size="sm"
+            variant="outline"
+          >
+            <Mail className="mr-1.5 h-4 w-4" />
+            Resend Confirmation
+          </Button>
           {canCancel && (
             <Button
               variant="destructive"
