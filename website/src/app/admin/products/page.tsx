@@ -8,7 +8,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, cn } from "@/lib/utils";
 import { Search, Package, ArrowUpDown, ArrowUp, ArrowDown, Plus } from "lucide-react";
 import { Pagination } from "@/components/ui/pagination";
 import { toast } from "sonner";
@@ -44,7 +44,9 @@ export default function AdminProductsPage() {
 
   const filtered = useMemo(() => {
     let list = products;
-    if (category !== "all") {
+    if (category === "lowstock") {
+      list = list.filter((p) => p.totalQuantity <= 3);
+    } else if (category !== "all") {
       list = list.filter((p) => p.category === category);
     }
     if (search.trim()) {
@@ -107,18 +109,28 @@ export default function AdminProductsPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">Products</h1>
-        <p className="text-sm text-muted-foreground">
-          {products.length} unique products across all categories
-        </p>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Inventory</h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            View and manage all your products, stock levels, and variants.
+          </p>
+        </div>
+        <Link
+          href="/admin/products/new"
+          className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors self-start"
+        >
+          <Plus className="h-4 w-4" />
+          Add Product
+        </Link>
       </div>
 
       <Tabs value={category} onValueChange={setCategory}>
         <TabsList>
-          <TabsTrigger value="all">All ({products.length})</TabsTrigger>
+          <TabsTrigger value="all">All Products ({products.length})</TabsTrigger>
           <TabsTrigger value="sneaker">Sneakers ({sneakerCount})</TabsTrigger>
           <TabsTrigger value="pokemon">Pokemon ({pokemonCount})</TabsTrigger>
+          <TabsTrigger value="lowstock">Low Stock</TabsTrigger>
         </TabsList>
 
         <TabsContent value={category} className="mt-4 space-y-4">
@@ -163,15 +175,16 @@ export default function AdminProductsPage() {
                     </th>
                     <th className="px-4 py-3 text-left font-medium text-muted-foreground">
                       <button onClick={() => handleSort("sellPrice")} className="flex items-center hover:text-foreground transition-colors">
-                        Sell Price <SortIcon field="sellPrice" />
+                        Price <SortIcon field="sellPrice" />
                       </button>
                     </th>
+                    <th className="px-4 py-3 text-left font-medium text-muted-foreground">Status</th>
                   </tr>
                 </thead>
                 <tbody>
                   {filtered.length === 0 ? (
                     <tr>
-                      <td colSpan={7} className="px-4 py-16 text-center">
+                      <td colSpan={8} className="px-4 py-16 text-center">
                         <div className="flex flex-col items-center">
                           <div className="flex h-14 w-14 items-center justify-center rounded-full bg-primary/10 mb-4">
                             <Package className="h-7 w-7 text-primary" />
@@ -231,6 +244,11 @@ export default function AdminProductsPage() {
                           </td>
                           <td className="px-4 py-3 font-medium">
                             {formatCurrency(product.sellPrice)}
+                          </td>
+                          <td className="px-4 py-3">
+                            <Badge variant="secondary" className={cn("text-xs", product.totalQuantity === 0 ? "bg-red-900/30 text-red-400" : product.totalQuantity <= 3 ? "bg-yellow-900/30 text-yellow-400" : "bg-green-900/30 text-green-400")}>
+                              {product.totalQuantity === 0 ? "Out of Stock" : product.totalQuantity <= 3 ? "Low Stock" : "In Stock"}
+                            </Badge>
                           </td>
                         </tr>
                       </Link>

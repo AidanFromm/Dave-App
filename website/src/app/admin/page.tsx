@@ -15,7 +15,7 @@ import { formatCurrency } from "@/lib/utils";
 import { formatDateShort } from "@/lib/utils";
 import type { TimePeriod } from "@/types/admin";
 import { toast } from "sonner";
-import { Package, DollarSign, Layers, TrendingUp, Plus, ScanBarcode, Sparkles, ClipboardList, FileText, AlertTriangle } from "lucide-react";
+import { Package, DollarSign, Layers, TrendingUp, Plus, ScanBarcode, ShoppingCart, HandCoins, ClipboardList, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { getAdminOrders } from "@/actions/admin";
@@ -114,7 +114,7 @@ export default function AdminDashboardPage() {
         <div>
           <h1 className="font-display text-2xl md:text-3xl font-bold uppercase tracking-tight">Dashboard</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Welcome back, Dave. Here&apos;s what&apos;s happening with your store.
+            Your daily overview — sales, orders, and what needs attention.
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -148,37 +148,28 @@ export default function AdminDashboardPage() {
       )}
 
       {/* Quick Actions */}
-      <div className="flex flex-wrap gap-2">
-        <Button asChild size="sm" className="gap-1.5">
-          <Link href="/admin/products/new">
-            <Plus className="h-3.5 w-3.5" />
-            Add Product
-          </Link>
-        </Button>
-        <Button asChild variant="outline" size="sm" className="gap-1.5 border-border/50">
-          <Link href="/admin/scan">
-            <ScanBarcode className="h-3.5 w-3.5" />
-            Scan In
-          </Link>
-        </Button>
-        <Button asChild variant="outline" size="sm" className="gap-1.5 border-border/50">
-          <Link href="/admin/orders">
-            <ClipboardList className="h-3.5 w-3.5" />
-            Process Orders
-          </Link>
-        </Button>
-        <Button asChild variant="outline" size="sm" className="gap-1.5 border-border/50">
-          <Link href="/admin/reports">
-            <FileText className="h-3.5 w-3.5" />
-            View Reports
-          </Link>
-        </Button>
-        <Button asChild variant="outline" size="sm" className="gap-1.5 border-border/50">
-          <Link href="/admin/pokemon">
-            <Sparkles className="h-3.5 w-3.5" />
-            Add Pokemon
-          </Link>
-        </Button>
+      <div>
+        <h2 className="text-xs font-semibold uppercase tracking-[0.15em] text-muted-foreground mb-3">Quick Actions</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <Button asChild size="lg" className="gap-2 h-14 text-base">
+            <Link href="/admin/scan">
+              <ScanBarcode className="h-5 w-5" />
+              Scan In Product
+            </Link>
+          </Button>
+          <Button asChild variant="outline" size="lg" className="gap-2 h-14 text-base border-border/50">
+            <Link href="/admin/orders/new">
+              <ShoppingCart className="h-5 w-5" />
+              Create Order
+            </Link>
+          </Button>
+          <Button asChild variant="outline" size="lg" className="gap-2 h-14 text-base border-border/50">
+            <Link href="/admin/buy">
+              <HandCoins className="h-5 w-5" />
+              Buy from Customer
+            </Link>
+          </Button>
+        </div>
       </div>
 
       {/* Inventory Overview */}

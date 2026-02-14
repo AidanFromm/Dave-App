@@ -8,24 +8,21 @@ import {
   ShoppingCart,
   Users,
   BarChart3,
-  FileText,
   Settings,
-  Box,
-  ScanBarcode,
   Package,
+  ScanBarcode,
   Flame,
   Sparkles,
-  Store,
   Menu,
   X,
   Tag,
   HandCoins,
   ExternalLink,
   Truck,
-  Bell,
-  ClipboardCheck,
-  Activity,
   DollarSign,
+  HelpCircle,
+  CreditCard,
+  Gift,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -35,37 +32,32 @@ const NAV_SECTIONS = [
     items: [
       { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
       { href: "/admin/orders", label: "Orders", icon: ShoppingCart },
-      { href: "/admin/products", label: "Products", icon: Package },
+      { href: "/admin/products", label: "Inventory", icon: Package },
       { href: "/admin/customers", label: "Customers", icon: Users },
     ],
   },
   {
-    label: "Inventory",
+    label: "Store",
     items: [
-      { href: "/admin/inventory", label: "Stock Levels", icon: Box },
       { href: "/admin/scan", label: "Scan In", icon: ScanBarcode },
-      { href: "/admin/pokemon", label: "Pokémon Cards", icon: Sparkles },
-      { href: "/admin/drops", label: "New Drops", icon: Flame },
-    ],
-  },
-  {
-    label: "Sales",
-    items: [
-      { href: "/admin/orders/new", label: "Create Order", icon: ShoppingCart },
       { href: "/admin/buy", label: "Buy from Customer", icon: HandCoins },
-      { href: "/admin/payment-links", label: "Payment Links", icon: ExternalLink },
-      { href: "/admin/discounts", label: "Discounts", icon: Tag },
-      { href: "/admin/gift-cards", label: "Gift Cards", icon: DollarSign },
+      { href: "/admin/drops", label: "Drops", icon: Flame },
       { href: "/admin/shipping", label: "Shipping", icon: Truck },
     ],
   },
   {
-    label: "Reports",
+    label: "Pokemon",
+    items: [
+      { href: "/admin/pokemon", label: "Pokemon Cards", icon: Sparkles },
+    ],
+  },
+  {
+    label: "Money",
     items: [
       { href: "/admin/analytics", label: "Analytics", icon: BarChart3 },
-      { href: "/admin/reports", label: "Reports", icon: FileText },
-      { href: "/admin/purchases", label: "Purchase History", icon: HandCoins },
-      { href: "/admin/reconciliation", label: "Reconciliation", icon: ClipboardCheck },
+      { href: "/admin/payment-links", label: "Payment Links", icon: CreditCard },
+      { href: "/admin/discounts", label: "Discounts", icon: Tag },
+      { href: "/admin/gift-cards", label: "Gift Cards", icon: Gift },
     ],
   },
   {
@@ -73,9 +65,7 @@ const NAV_SECTIONS = [
     items: [
       { href: "/admin/settings", label: "Store Settings", icon: Settings },
       { href: "/admin/staff", label: "Staff", icon: Users },
-      { href: "/admin/notifications", label: "Notifications", icon: Bell },
-      { href: "/admin/clover", label: "Clover POS", icon: Store },
-      { href: "/admin/monitoring", label: "System Health", icon: Activity },
+      { href: "/admin/help", label: "Help & Guides", icon: HelpCircle },
     ],
   },
 ];
