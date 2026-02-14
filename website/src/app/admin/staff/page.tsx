@@ -141,16 +141,14 @@ export default function AdminStaffPage() {
 
   const tabs = [
     { id: "members" as const, label: "Members", icon: Users },
-    { id: "timeclock" as const, label: "Time Clock", icon: Clock },
-    { id: "activity" as const, label: "Activity Log", icon: Activity },
   ];
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="font-display text-2xl font-bold uppercase tracking-tight">Staff Management</h1>
-          <p className="text-sm text-muted-foreground mt-1">Manage team members, time tracking, and activity</p>
+          <h1 className="font-display text-2xl font-bold uppercase tracking-tight">Staff</h1>
+          <p className="text-sm text-muted-foreground mt-1">Manage team members and permissions</p>
         </div>
         <button
           onClick={() => setShowAddModal(true)}
@@ -161,26 +159,8 @@ export default function AdminStaffPage() {
         </button>
       </div>
 
-      {/* Tabs */}
-      <div className="flex gap-1 rounded-lg bg-surface-900 p-1 border border-surface-800">
-        {tabs.map((t) => (
-          <button
-            key={t.id}
-            onClick={() => setTab(t.id)}
-            className={`flex items-center gap-2 rounded-md px-4 py-2.5 text-sm font-medium transition-colors flex-1 justify-center ${
-              tab === t.id
-                ? "bg-primary/10 text-primary"
-                : "text-muted-foreground hover:text-foreground hover:bg-surface-800/50"
-            }`}
-          >
-            <t.icon className="h-4 w-4" />
-            {t.label}
-          </button>
-        ))}
-      </div>
-
-      {/* Members Tab */}
-      {tab === "members" && (
+      {/* Members */}
+      {(
         <div className="rounded-xl border border-surface-800 bg-surface-900 overflow-hidden">
           <table className="w-full">
             <thead>
@@ -230,95 +210,6 @@ export default function AdminStaffPage() {
               )}
             </tbody>
           </table>
-        </div>
-      )}
-
-      {/* Time Clock Tab */}
-      {tab === "timeclock" && (
-        <div className="space-y-4">
-          <div className="flex gap-2">
-            {(["today", "week"] as const).map((p) => (
-              <button
-                key={p}
-                onClick={() => setPeriod(p)}
-                className={`rounded-md px-3 py-1.5 text-sm font-medium capitalize transition-colors ${
-                  period === p ? "bg-primary text-white" : "bg-surface-800 text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                {p === "today" ? "Today" : "This Week"}
-              </button>
-            ))}
-          </div>
-          <div className="rounded-xl border border-surface-800 bg-surface-900 overflow-hidden">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-surface-800 text-left">
-                  <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Staff</th>
-                  <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Hours</th>
-                  <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Shifts</th>
-                  <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Overtime</th>
-                </tr>
-              </thead>
-              <tbody>
-                {clockReports.map((r) => (
-                  <tr key={r.user_id} className="border-b border-surface-800/50 hover:bg-surface-850/50">
-                    <td className="px-4 py-3 text-sm font-medium">{r.full_name || r.email}</td>
-                    <td className="px-4 py-3 font-mono text-sm font-bold">{r.total_hours.toFixed(2)}h</td>
-                    <td className="px-4 py-3 text-sm text-muted-foreground">{r.entries_count}</td>
-                    <td className="px-4 py-3">
-                      {period === "week" && r.total_hours > 40 ? (
-                        <span className="text-secured-warning text-sm font-bold">
-                          +{(r.total_hours - 40).toFixed(2)}h OT
-                        </span>
-                      ) : (
-                        <span className="text-sm text-muted-foreground">—</span>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-                {clockReports.length === 0 && (
-                  <tr>
-                    <td colSpan={4} className="px-4 py-8 text-center text-sm text-muted-foreground">
-                      No clock data for this period
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
-
-      {/* Activity Log Tab */}
-      {tab === "activity" && (
-        <div className="rounded-xl border border-surface-800 bg-surface-900 overflow-hidden">
-          <div className="divide-y divide-surface-800/50">
-            {activities.map((a) => (
-              <div key={a.id} className="flex items-center gap-4 px-4 py-3 hover:bg-surface-850/50">
-                <div className="rounded-full bg-primary/10 p-2">
-                  <Activity className="h-3.5 w-3.5 text-primary" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm">
-                    <span className="font-medium">{(a as any).profiles?.full_name || (a as any).profiles?.email || "Unknown"}</span>
-                    {" "}
-                    <span className="text-muted-foreground">{a.action.replace(/_/g, " ")}</span>
-                  </p>
-                  {a.details && (
-                    <p className="text-xs text-muted-foreground mt-0.5 truncate">
-                      {JSON.stringify(a.details)}
-                    </p>
-                  )}
-                </div>
-                <span className="text-xs text-muted-foreground whitespace-nowrap">
-                  {new Date(a.created_at).toLocaleString()}
-                </span>
-              </div>
-            ))}
-            {activities.length === 0 && (
-              <p className="px-4 py-8 text-center text-sm text-muted-foreground">No activity logged yet</p>
-            )}
-          </div>
         </div>
       )}
 
