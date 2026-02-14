@@ -10,6 +10,7 @@ import {
   Settings,
   Package,
   ScanBarcode,
+  Flame,
   Menu,
   X,
   ExternalLink,
@@ -32,6 +33,7 @@ const NAV_SECTIONS = [
     label: "Store",
     items: [
       { href: "/admin/scan", label: "Scan In", icon: ScanBarcode },
+      { href: "/admin/drops", label: "Drops", icon: Flame },
       { href: "/admin/shipping", label: "Shipping", icon: Truck },
     ],
   },
