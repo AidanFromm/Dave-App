@@ -73,7 +73,10 @@ export function ProductCard({ product, availableSizes }: ProductCardProps) {
         className="relative aspect-square overflow-hidden bg-surface-850"
       >
         {product.images?.[0] ? (
-          <div className="relative h-full w-full overflow-hidden">
+          <div className={cn(
+            "relative h-full w-full overflow-hidden",
+            isUsed && !isPokemon ? "" : "bg-white p-4"
+          )}>
             <Image
               src={product.images[0]}
               alt={product.name}
@@ -81,8 +84,7 @@ export function ProductCard({ product, availableSizes }: ProductCardProps) {
               sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
               className={cn(
                 "transition-transform duration-300 group-hover:scale-[1.03]",
-                isUsed ? "object-cover" : "object-contain p-6",
-                isPokemon && !isUsed && "p-2"
+                isUsed && !isPokemon ? "object-cover" : "object-contain"
               )}
             />
           </div>
