@@ -49,9 +49,7 @@ function getPokemonSubType(product: GroupedProduct & { tags?: string[] }): "raw"
 }
 
 function getSneakerCondition(product: GroupedProduct): "new" | "used" {
-  // GroupedProduct doesn't carry condition — we infer from name or default
-  const name = product.name.toLowerCase();
-  if (name.includes("used") || name.includes("pre-owned") || name.includes("preowned")) return "used";
+  if (product.condition && product.condition !== "new") return "used";
   return "new";
 }
 
