@@ -1,6 +1,26 @@
 import { NextResponse } from "next/server";
 
 const POKEMON_TCG_API = "https://api.pokemontcg.io/v2/cards";
+const API_KEY = process.env.POKEMON_TCG_API_KEY || "";
+
+async function fetchWithRetry(url: string, headers: Record<string, string>, retries = 2): Promise<Response> {
+  for (let i = 0; i <= retries; i++) {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 25000);
+    try {
+      const res = await fetch(url, { headers, signal: controller.signal });
+      clearTimeout(timeout);
+      if (res.ok) return res;
+      if (i === retries) return res;
+    } catch {
+      clearTimeout(timeout);
+      if (i === retries) throw new Error("All retries failed");
+    }
+  }
+  throw new Error("Unreachable");
+}
+
+export const maxDuration = 30;
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -23,19 +43,12 @@ export async function GET(request: Request) {
       q = `name:"${trimmed}*"`;
     }
 
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 15000);
-
     const url = `${POKEMON_TCG_API}?q=${encodeURIComponent(q)}&page=${page}&pageSize=20&orderBy=-set.releaseDate`;
 
-    const res = await fetch(url, {
-      headers: {
-        Accept: "application/json",
-      },
-      signal: controller.signal,
-    });
+    const headers: Record<string, string> = { Accept: "application/json" };
+    if (API_KEY) headers["X-Api-Key"] = API_KEY;
 
-    clearTimeout(timeout);
+    const res = await fetchWithRetry(url, headers);
 
     if (!res.ok) {
       return NextResponse.json(
