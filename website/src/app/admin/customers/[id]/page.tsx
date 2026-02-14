@@ -145,11 +145,11 @@ export default function AdminCustomerDetailPage() {
   ];
 
   return (
-    <div className="p-6">
+    <div className="p-4 sm:p-6">
       {/* Back link */}
       <Link
         href="/admin/customers"
-        className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+        className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors min-h-[44px]"
       >
         <ArrowLeft className="h-4 w-4" />
         Back to Customers
@@ -248,7 +248,8 @@ export default function AdminCustomerDetailPage() {
       {/* Order history */}
       <div className="mt-6">
         <h2 className="text-lg font-semibold">Order History</h2>
-        <div className="mt-3 overflow-x-auto">
+        {/* Desktop table */}
+        <div className="mt-3 hidden md:block overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-border text-left">
@@ -310,6 +311,40 @@ export default function AdminCustomerDetailPage() {
               )}
             </tbody>
           </table>
+        </div>
+        {/* Mobile cards */}
+        <div className="mt-3 md:hidden space-y-2">
+          {orders.length === 0 ? (
+            <div className="py-8 text-center text-muted-foreground">No orders yet.</div>
+          ) : (
+            orders.map((order: any) => {
+              const itemCount =
+                (order.items as Array<{ quantity: number }> | null)?.reduce(
+                  (sum: number, i: { quantity: number }) => sum + (i.quantity ?? 1),
+                  0
+                ) ?? 0;
+              const statusLabel =
+                ORDER_STATUS_LABELS[order.status as OrderStatus] ?? order.status;
+              return (
+                <Link
+                  key={order.id}
+                  href={`/admin/orders/${order.id}`}
+                  className="block rounded-lg border border-border p-3 hover:bg-accent/50 transition-colors"
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="font-medium text-primary text-sm">{order.order_number ?? order.id.slice(0, 8)}</span>
+                    <Badge variant="outline" className={`text-[10px] border-0 ${STATUS_COLORS[order.status] ?? ""}`}>
+                      {statusLabel}
+                    </Badge>
+                  </div>
+                  <div className="flex items-center justify-between mt-1">
+                    <span className="text-xs text-muted-foreground">{formatDateShort(order.created_at)} -- {itemCount} item{itemCount !== 1 ? "s" : ""}</span>
+                    <span className="text-sm font-medium">{formatCurrency(order.total ?? 0)}</span>
+                  </div>
+                </Link>
+              );
+            })
+          )}
         </div>
       </div>
     </div>

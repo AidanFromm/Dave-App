@@ -403,11 +403,11 @@ export default function AdminOrderDetailPage() {
   const maxRefundable = order.total - (order.refund_amount ?? 0);
 
   return (
-    <div className="p-6">
+    <div className="p-4 sm:p-6">
       {/* Back link */}
       <Link
         href="/admin/orders"
-        className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+        className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors min-h-[44px]"
       >
         <ArrowLeft className="h-4 w-4" />
         Back to Orders
@@ -435,7 +435,7 @@ export default function AdminOrderDetailPage() {
           </p>
         </div>
 
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-2 w-full sm:w-auto">
           {canEdit && (
             <Button
               onClick={openEditModal}
@@ -786,7 +786,8 @@ export default function AdminOrderDetailPage() {
           {/* Line items */}
           <div className="rounded-lg border border-border bg-card p-4">
             <h2 className="text-sm font-semibold mb-3">Line Items</h2>
-            <div className="overflow-x-auto">
+            {/* Desktop table */}
+            <div className="hidden md:block overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-border text-left">
@@ -813,6 +814,22 @@ export default function AdminOrderDetailPage() {
                   ))}
                 </tbody>
               </table>
+            </div>
+            {/* Mobile cards */}
+            <div className="md:hidden space-y-3">
+              {items.map((item, idx) => (
+                <div key={idx} className="rounded-lg border border-border/50 p-3">
+                  <p className="text-sm font-medium">{item.name}</p>
+                  <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
+                    {item.size && <span>Size {item.size}</span>}
+                    {item.sku && <span>SKU: {item.sku}</span>}
+                  </div>
+                  <div className="flex items-center justify-between mt-2">
+                    <span className="text-xs text-muted-foreground">Qty {item.quantity} x {formatCurrency(item.price)}</span>
+                    <span className="text-sm font-medium">{formatCurrency(item.total ?? item.price * item.quantity)}</span>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
 

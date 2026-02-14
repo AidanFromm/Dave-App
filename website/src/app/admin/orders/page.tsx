@@ -272,15 +272,17 @@ ${selectedOrders.map((order) => {
 
       {/* Bulk Actions */}
       {selected.size > 0 && (
-        <div className="flex items-center gap-3 rounded-xl bg-primary/5 border border-primary/20 px-4 py-3">
-          <span className="text-sm font-medium">{selected.size} selected</span>
-          <div className="flex gap-2 ml-auto">
+        <div className="rounded-xl bg-primary/5 border border-primary/20 px-4 py-3">
+          <div className="flex items-center justify-between mb-2 sm:mb-0">
+            <span className="text-sm font-medium">{selected.size} selected</span>
+          </div>
+          <div className="flex flex-wrap gap-2 mt-2">
             <Button
               size="sm"
               variant="outline"
               onClick={() => handleBulkUpdate("processing")}
               disabled={bulkLoading}
-              className="gap-1.5"
+              className="gap-1.5 w-full sm:w-auto"
             >
               <Package className="h-3.5 w-3.5" />
               Mark Processing
@@ -290,7 +292,7 @@ ${selectedOrders.map((order) => {
               variant="outline"
               onClick={() => handleBulkUpdate("shipped")}
               disabled={bulkLoading}
-              className="gap-1.5"
+              className="gap-1.5 w-full sm:w-auto"
             >
               <Truck className="h-3.5 w-3.5" />
               Mark Shipped
@@ -299,7 +301,7 @@ ${selectedOrders.map((order) => {
               size="sm"
               variant="outline"
               onClick={handlePrintPackingSlips}
-              className="gap-1.5"
+              className="gap-1.5 w-full sm:w-auto"
             >
               <Printer className="h-3.5 w-3.5" />
               Print Packing Slips
@@ -309,7 +311,7 @@ ${selectedOrders.map((order) => {
               variant="outline"
               onClick={() => handleBulkUpdate("cancelled")}
               disabled={bulkLoading}
-              className="gap-1.5 border-red-500/30 text-red-400 hover:bg-red-500/10"
+              className="gap-1.5 w-full sm:w-auto border-red-500/30 text-red-400 hover:bg-red-500/10"
             >
               <XCircle className="h-3.5 w-3.5" />
               Cancel
@@ -318,8 +320,8 @@ ${selectedOrders.map((order) => {
         </div>
       )}
 
-      {/* Table */}
-      <div className="rounded-xl bg-card border border-border/50 overflow-hidden">
+      {/* Desktop Table */}
+      <div className="hidden md:block rounded-xl bg-card border border-border/50 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
@@ -388,6 +390,48 @@ ${selectedOrders.map((order) => {
             </tbody>
           </table>
         </div>
+      </div>
+
+      {/* Mobile Cards */}
+      <div className="md:hidden space-y-2">
+        {filtered.length === 0 ? (
+          <div className="flex flex-col items-center py-16">
+            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-primary/10 mb-4">
+              <Package className="h-7 w-7 text-primary" />
+            </div>
+            <p className="text-sm font-medium">{search || statusFilter !== "all" ? "No orders match your filters" : "No orders yet"}</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              {search || statusFilter !== "all" ? "Try adjusting your search or filters." : "Orders will appear here when customers make purchases."}
+            </p>
+          </div>
+        ) : (
+          paginated.map((order) => (
+            <div key={order.id} className="rounded-xl bg-card border border-border/50 p-4">
+              <div className="flex items-start gap-3">
+                <button onClick={() => toggleSelect(order.id)} className="mt-0.5 text-muted-foreground hover:text-foreground min-h-[44px] min-w-[44px] flex items-center justify-center -ml-2">
+                  {selected.has(order.id) ? (
+                    <CheckSquare className="h-5 w-5 text-primary" />
+                  ) : (
+                    <Square className="h-5 w-5" />
+                  )}
+                </button>
+                <Link href={`/admin/orders/${order.id}`} className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between">
+                    <span className="font-medium text-primary font-mono text-sm">{order.order_number ?? order.id.slice(0, 8)}</span>
+                    <Badge variant="outline" className={`text-[10px] border-0 ${STATUS_COLORS[order.status] ?? ""}`}>
+                      {ORDER_STATUS_LABELS[order.status as OrderStatus] ?? order.status}
+                    </Badge>
+                  </div>
+                  <p className="text-xs text-muted-foreground truncate mt-1">{order.customer_email ?? "--"}</p>
+                  <div className="flex items-center justify-between mt-2">
+                    <span className="text-xs text-muted-foreground">{formatDateShort(order.created_at)} -- {getItemCount(order)} item{getItemCount(order) !== 1 ? "s" : ""}</span>
+                    <span className="text-sm font-mono font-medium">{formatCurrency(order.total ?? 0)}</span>
+                  </div>
+                </Link>
+              </div>
+            </div>
+          ))
+        )}
       </div>
 
       {/* Pagination */}

@@ -314,7 +314,7 @@ export default function SettingsPage() {
       </div>
 
       {/* Tax & Shipping Rates */}
-      <div className="rounded-xl shadow-card bg-card p-6">
+      <div className="rounded-xl shadow-card bg-card p-4 sm:p-6">
         <div className="flex items-center gap-2 mb-6">
           <DollarSign className="h-5 w-5 text-primary" />
           <div>
@@ -322,7 +322,7 @@ export default function SettingsPage() {
             <p className="text-xs text-muted-foreground">These rates apply to all online orders. Florida default tax is 7.5%.</p>
           </div>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
           <div className="space-y-1.5">
             <label className="text-sm text-muted-foreground">Tax Rate (%)</label>
             <input

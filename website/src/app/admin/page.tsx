@@ -316,7 +316,9 @@ export default function AdminDashboardPage() {
         ) : recentOrders.length === 0 ? (
           <div className="p-8 text-center text-sm text-muted-foreground">No orders yet.</div>
         ) : (
-          <div className="overflow-x-auto">
+          <>
+          {/* Desktop Table */}
+          <div className="hidden md:block overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-border/30 text-left">
@@ -355,6 +357,32 @@ export default function AdminDashboardPage() {
               </tbody>
             </table>
           </div>
+          {/* Mobile Cards */}
+          <div className="md:hidden divide-y divide-border/30">
+            {recentOrders.map((order) => (
+              <Link key={order.id} href={`/admin/orders/${order.id}`} className="block px-4 py-3 hover:bg-surface-800/20 transition-colors">
+                <div className="flex items-center justify-between">
+                  <span className="font-medium text-primary text-xs font-mono">{order.order_number ?? order.id.slice(0, 8)}</span>
+                  <Badge variant="outline" className={`text-[10px] border-0 ${
+                    order.status === "delivered" ? "bg-green-900/30 text-green-400" :
+                    order.status === "shipped" ? "bg-purple-900/30 text-purple-400" :
+                    order.status === "pending" ? "bg-yellow-900/30 text-yellow-400" :
+                    order.status === "paid" ? "bg-blue-900/30 text-blue-400" :
+                    order.status === "cancelled" ? "bg-red-900/30 text-red-400" :
+                    "bg-orange-900/30 text-orange-400"
+                  }`}>
+                    {order.status}
+                  </Badge>
+                </div>
+                <div className="flex items-center justify-between mt-1">
+                  <span className="text-xs text-muted-foreground truncate max-w-[180px]">{order.customer_email ?? "--"}</span>
+                  <span className="text-xs font-mono font-medium">{formatCurrency(order.total ?? 0)}</span>
+                </div>
+                <p className="text-[10px] text-muted-foreground mt-0.5">{formatDateShort(order.created_at)}</p>
+              </Link>
+            ))}
+          </div>
+          </>
         )}
       </div>
 

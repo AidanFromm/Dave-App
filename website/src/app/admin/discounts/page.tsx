@@ -151,8 +151,8 @@ export default function AdminDiscountsPage() {
   }
 
   return (
-    <div className="p-6">
-      <div className="flex items-center justify-between">
+    <div className="p-4 sm:p-6">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-2xl font-bold flex items-center gap-2">
           <Tag className="h-6 w-6" />
           Discount Codes ({discounts.length})
@@ -247,7 +247,7 @@ export default function AdminDiscountsPage() {
               return (
                 <div
                   key={d.id}
-                  className="flex items-center gap-4 rounded-xl border bg-card p-4"
+                  className="flex flex-wrap items-center gap-3 sm:gap-4 rounded-xl border bg-card p-4"
                 >
                   <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
                     {d.type === "percentage" ? (

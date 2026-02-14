@@ -88,8 +88,8 @@ export function CustomerTable({ customers }: CustomerTableProps) {
         />
       </div>
 
-      {/* Table */}
-      <div className="mt-4 overflow-x-auto">
+      {/* Desktop Table */}
+      <div className="mt-4 hidden md:block overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-border text-left">
@@ -146,6 +146,34 @@ export function CustomerTable({ customers }: CustomerTableProps) {
             )}
           </tbody>
         </table>
+      </div>
+
+      {/* Mobile Cards */}
+      <div className="mt-4 md:hidden space-y-2">
+        {filtered.length === 0 ? (
+          <div className="py-8 text-center text-muted-foreground">No customers found.</div>
+        ) : (
+          paginatedCustomers.map((customer) => (
+            <Link
+              key={customer.id}
+              href={`/admin/customers/${customer.id}`}
+              className="block rounded-xl border border-border p-4 hover:bg-accent/50 transition-colors"
+            >
+              <div className="flex items-center justify-between">
+                <span className="font-medium text-primary text-sm">
+                  {customer.first_name ?? ""} {customer.last_name ?? ""}
+                </span>
+                <span className="text-sm font-medium">{formatCurrency(customer.total_spend ?? 0)}</span>
+              </div>
+              <p className="text-xs text-muted-foreground truncate mt-1">{customer.email ?? "--"}</p>
+              <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
+                <span>{customer.total_orders ?? 0} orders</span>
+                <span>AOV: {formatCurrency(customer.avg_order_value ?? 0)}</span>
+                {customer.created_at && <span>{formatDateShort(customer.created_at)}</span>}
+              </div>
+            </Link>
+          ))
+        )}
       </div>
 
       {/* Pagination */}

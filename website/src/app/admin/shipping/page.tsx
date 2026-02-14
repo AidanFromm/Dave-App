@@ -193,7 +193,9 @@ export default function AdminShippingPage() {
           </p>
         </div>
       ) : (
-        <div className="rounded-lg border border-border bg-card overflow-hidden">
+        <>
+        {/* Desktop Table */}
+        <div className="hidden md:block rounded-lg border border-border bg-card overflow-hidden">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-border bg-muted/30">
@@ -271,7 +273,7 @@ export default function AdminShippingPage() {
                         <td className="px-4 py-3">
                           <span className="font-mono text-xs">
                             {order.tracking_number?.slice(0, 16)}
-                            {(order.tracking_number?.length || 0) > 16 ? "…" : ""}
+                            {(order.tracking_number?.length || 0) > 16 ? "..." : ""}
                           </span>
                         </td>
                       </>
@@ -300,6 +302,65 @@ export default function AdminShippingPage() {
             </tbody>
           </table>
         </div>
+
+        {/* Mobile Cards */}
+        <div className="md:hidden space-y-2">
+          {orders.map((order) => {
+            const addr = order.shipping_address;
+            return (
+              <div key={order.id} className="rounded-lg border border-border bg-card p-4">
+                <div className="flex items-start gap-3">
+                  {tab === "needs_label" && (
+                    <label className="flex items-center min-h-[44px] min-w-[44px] justify-center -ml-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={selectedIds.has(order.id)}
+                        onChange={() => toggleSelect(order.id)}
+                        className="rounded accent-[#FB4F14]"
+                      />
+                    </label>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between">
+                      <Link href={`/admin/orders/${order.id}`} className="font-medium text-sm hover:text-[#FB4F14] transition-colors">
+                        {order.order_number || order.id.slice(0, 8)}
+                      </Link>
+                      <span className="text-sm font-medium">{formatCurrency(order.total)}</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">{order.customer_name || order.customer_email}</p>
+                    <div className="flex items-center justify-between mt-1">
+                      <span className="text-xs text-muted-foreground">
+                        {addr ? `${addr.city}, ${addr.state} ${addr.zipCode}` : "--"}
+                      </span>
+                      <span className="text-[10px] text-muted-foreground">{formatDateShort(order.created_at)}</span>
+                    </div>
+                    {tab === "shipped" && order.tracking_number && (
+                      <div className="flex items-center gap-2 mt-2">
+                        {order.shipping_carrier && (
+                          <Badge variant="outline" className="text-[10px]">{order.shipping_carrier}</Badge>
+                        )}
+                        <span className="font-mono text-[10px] text-muted-foreground truncate">{order.tracking_number}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+                <div className="flex items-center justify-end gap-2 mt-2">
+                  {order.shipping_label_url && (
+                    <Button size="sm" variant="ghost" onClick={() => window.open(order.shipping_label_url!, "_blank")} className="min-h-[44px]">
+                      <Printer className="h-4 w-4" />
+                    </Button>
+                  )}
+                  <Link href={`/admin/orders/${order.id}`}>
+                    <Button size="sm" variant="ghost" className="min-h-[44px]">
+                      <ArrowRight className="h-4 w-4" />
+                    </Button>
+                  </Link>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+        </>
       )}
     </div>
   );

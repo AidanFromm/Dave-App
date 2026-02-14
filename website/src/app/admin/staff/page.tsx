@@ -159,64 +159,98 @@ export default function AdminStaffPage() {
         </button>
       </div>
 
-      {/* Members */}
-      {(
-        <div className="rounded-xl border border-surface-800 bg-surface-900 overflow-hidden">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-surface-800 text-left">
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Name</th>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Email</th>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Role</th>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Joined</th>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground w-12"></th>
+      {/* Desktop Table */}
+      <div className="hidden md:block rounded-xl border border-surface-800 bg-surface-900 overflow-hidden">
+        <table className="w-full">
+          <thead>
+            <tr className="border-b border-surface-800 text-left">
+              <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Name</th>
+              <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Email</th>
+              <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Role</th>
+              <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Joined</th>
+              <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground w-12"></th>
+            </tr>
+          </thead>
+          <tbody>
+            {staff.map((member) => (
+              <tr key={member.id} className="border-b border-surface-800/50 hover:bg-surface-850/50">
+                <td className="px-4 py-3 text-sm font-medium">{member.full_name || "—"}</td>
+                <td className="px-4 py-3 text-sm text-muted-foreground">{member.email}</td>
+                <td className="px-4 py-3">
+                  <select
+                    value={member.role}
+                    onChange={(e) => handleRoleChange(member.id, e.target.value)}
+                    className="rounded-md border border-surface-700 bg-surface-850 px-2 py-1 text-xs font-medium capitalize"
+                  >
+                    <option value="staff">Staff</option>
+                    <option value="manager">Manager</option>
+                    <option value="owner">Owner</option>
+                  </select>
+                </td>
+                <td className="px-4 py-3 text-sm text-muted-foreground">
+                  {new Date(member.created_at).toLocaleDateString()}
+                </td>
+                <td className="px-4 py-3">
+                  <button
+                    onClick={() => handleRemoveStaff(member.id)}
+                    className="rounded-md p-1.5 text-muted-foreground hover:text-secured-error hover:bg-secured-error/10 transition-colors"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </td>
               </tr>
-            </thead>
-            <tbody>
-              {staff.map((member) => (
-                <tr key={member.id} className="border-b border-surface-800/50 hover:bg-surface-850/50">
-                  <td className="px-4 py-3 text-sm font-medium">{member.full_name || "—"}</td>
-                  <td className="px-4 py-3 text-sm text-muted-foreground">{member.email}</td>
-                  <td className="px-4 py-3">
-                    <select
-                      value={member.role}
-                      onChange={(e) => handleRoleChange(member.id, e.target.value)}
-                      className="rounded-md border border-surface-700 bg-surface-850 px-2 py-1 text-xs font-medium capitalize"
-                    >
-                      <option value="staff">Staff</option>
-                      <option value="manager">Manager</option>
-                      <option value="owner">Owner</option>
-                    </select>
-                  </td>
-                  <td className="px-4 py-3 text-sm text-muted-foreground">
-                    {new Date(member.created_at).toLocaleDateString()}
-                  </td>
-                  <td className="px-4 py-3">
-                    <button
-                      onClick={() => handleRemoveStaff(member.id)}
-                      className="rounded-md p-1.5 text-muted-foreground hover:text-secured-error hover:bg-secured-error/10 transition-colors"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
-                  </td>
-                </tr>
-              ))}
-              {staff.length === 0 && !loading && (
-                <tr>
-                  <td colSpan={5} className="px-4 py-8 text-center text-sm text-muted-foreground">
-                    No staff members yet
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      )}
+            ))}
+            {staff.length === 0 && !loading && (
+              <tr>
+                <td colSpan={5} className="px-4 py-8 text-center text-sm text-muted-foreground">
+                  No staff members yet
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Mobile Cards */}
+      <div className="md:hidden space-y-2">
+        {staff.length === 0 && !loading ? (
+          <div className="py-8 text-center text-sm text-muted-foreground">No staff members yet</div>
+        ) : (
+          staff.map((member) => (
+            <div key={member.id} className="rounded-xl border border-surface-800 bg-surface-900 p-4">
+              <div className="flex items-center justify-between">
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-medium">{member.full_name || "--"}</p>
+                  <p className="text-xs text-muted-foreground truncate">{member.email}</p>
+                </div>
+                <button
+                  onClick={() => handleRemoveStaff(member.id)}
+                  className="rounded-md p-2 text-muted-foreground hover:text-secured-error hover:bg-secured-error/10 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              </div>
+              <div className="flex items-center justify-between mt-2">
+                <select
+                  value={member.role}
+                  onChange={(e) => handleRoleChange(member.id, e.target.value)}
+                  className="rounded-md border border-surface-700 bg-surface-850 px-2 py-1.5 text-xs font-medium capitalize min-h-[36px]"
+                >
+                  <option value="staff">Staff</option>
+                  <option value="manager">Manager</option>
+                  <option value="owner">Owner</option>
+                </select>
+                <span className="text-xs text-muted-foreground">{new Date(member.created_at).toLocaleDateString()}</span>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
 
       {/* Add Staff Modal */}
       {showAddModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-          <div className="w-full max-w-md rounded-xl border border-surface-800 bg-surface-900 p-6 shadow-2xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="w-full max-w-md rounded-xl border border-surface-800 bg-surface-900 p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-6">
               <h3 className="font-display text-lg font-bold uppercase">Add Staff Member</h3>
               <button onClick={() => setShowAddModal(false)} className="text-muted-foreground hover:text-foreground">

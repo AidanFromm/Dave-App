@@ -237,7 +237,8 @@ function ProductDetailPage() {
         </Button>
       </div>
 
-      <div className="rounded-lg border overflow-hidden">
+      {/* Desktop Table */}
+      <div className="hidden md:block rounded-lg border overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
@@ -294,6 +295,39 @@ function ProductDetailPage() {
             </tbody>
           </table>
         </div>
+      </div>
+
+      {/* Mobile Cards */}
+      <div className="md:hidden space-y-2">
+        {variants.length === 0 ? (
+          <div className="py-12 text-center text-muted-foreground">
+            No variants found. Add one to get started.
+          </div>
+        ) : (
+          variants.map((v) => (
+            <div key={v.id} className="rounded-lg border p-4 flex items-center gap-3">
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <span className="font-medium text-sm">Size {v.size ?? "--"}</span>
+                  <Badge variant="secondary" className="text-[10px]">
+                    {CONDITION_LABELS[v.condition]}
+                  </Badge>
+                </div>
+                <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
+                  <span className={v.quantity === 0 ? "text-destructive font-bold" : ""}>Qty: {v.quantity}</span>
+                  <span>Cost: {v.cost != null && v.cost > 0 ? formatCurrency(v.cost) : "--"}</span>
+                </div>
+                <div className="flex items-center justify-between mt-1">
+                  <span className="text-sm font-medium">{formatCurrency(v.price)}</span>
+                  {v.sku && <span className="text-[10px] text-muted-foreground font-mono">{v.sku}</span>}
+                </div>
+              </div>
+              <Button variant="ghost" size="icon" onClick={() => openEdit(v)} className="min-h-[44px] min-w-[44px]">
+                <Pencil className="h-4 w-4" />
+              </Button>
+            </div>
+          ))
+        )}
       </div>
 
       {/* Edit Dialog */}
