@@ -7,19 +7,14 @@ import {
   LayoutDashboard,
   ShoppingCart,
   Users,
-  BarChart3,
   Settings,
   Package,
   ScanBarcode,
-  Flame,
   Menu,
   X,
-  Tag,
   ExternalLink,
   Truck,
   HelpCircle,
-  CreditCard,
-  Gift,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -37,17 +32,7 @@ const NAV_SECTIONS = [
     label: "Store",
     items: [
       { href: "/admin/scan", label: "Scan In", icon: ScanBarcode },
-      { href: "/admin/drops", label: "Drops", icon: Flame },
       { href: "/admin/shipping", label: "Shipping", icon: Truck },
-    ],
-  },
-  {
-    label: "Money",
-    items: [
-      { href: "/admin/analytics", label: "Analytics", icon: BarChart3 },
-      { href: "/admin/payment-links", label: "Payment Links", icon: CreditCard },
-      { href: "/admin/discounts", label: "Discounts", icon: Tag },
-      { href: "/admin/gift-cards", label: "Gift Cards", icon: Gift },
     ],
   },
   {
