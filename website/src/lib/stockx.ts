@@ -1,6 +1,10 @@
 import { createClient } from "@supabase/supabase-js";
 import { STOCKX_TOKEN_URL } from "./constants";
 
+const STOCKX_CLIENT_ID = (process.env.STOCKX_CLIENT_ID || "CQN5rKVX2haC1VWcRH1uAAFiWsQuHv7h").trim();
+const STOCKX_CLIENT_SECRET = (process.env.STOCKX_CLIENT_SECRET || "aw7KR2ZbGlY43sG84yf11UDYfAVGAgkYhad317ll-fU32lm-O75jmYaimw-oVpO4").trim();
+const STOCKX_API_KEY = (process.env.STOCKX_API_KEY || "").trim();
+
 function getServiceClient() {
   return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -54,16 +58,50 @@ export async function saveStockXTokens(tokens: {
   });
 }
 
+export async function deleteStockXTokens(): Promise<void> {
+  const supabase = getServiceClient();
+  await supabase
+    .from("stockx_tokens")
+    .delete()
+    .gt("created_at", "1900-01-01T00:00:00Z");
+}
+
+async function refreshAccessToken(refreshToken: string): Promise<{
+  access_token: string;
+  refresh_token?: string;
+  expires_in: number;
+  token_type: string;
+} | null> {
+  try {
+    const res = await fetch(STOCKX_TOKEN_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        grant_type: "refresh_token",
+        client_id: STOCKX_CLIENT_ID,
+        client_secret: STOCKX_CLIENT_SECRET,
+        refresh_token: refreshToken,
+      }),
+    });
+
+    if (!res.ok) {
+      console.error("StockX refresh token failed:", res.status, await res.text());
+      return null;
+    }
+    return await res.json();
+  } catch (err) {
+    console.error("StockX refresh token exception:", err);
+    return null;
+  }
+}
+
 async function fetchClientCredentialsToken(): Promise<{
   access_token: string;
   expires_in: number;
   token_type: string;
 } | null> {
-  const clientId = (process.env.STOCKX_CLIENT_ID || "").trim();
-  const clientSecret = (process.env.STOCKX_CLIENT_SECRET || "").trim();
-
-  if (!clientId || !clientSecret) {
-    console.error("StockX credentials missing: CLIENT_ID or CLIENT_SECRET not set");
+  if (!STOCKX_CLIENT_ID || !STOCKX_CLIENT_SECRET) {
+    console.error("StockX credentials missing");
     return null;
   }
 
@@ -73,63 +111,101 @@ async function fetchClientCredentialsToken(): Promise<{
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         grant_type: "client_credentials",
-        client_id: clientId,
-        client_secret: clientSecret,
+        client_id: STOCKX_CLIENT_ID,
+        client_secret: STOCKX_CLIENT_SECRET,
         audience: "gateway.stockx.com",
       }),
     });
 
     if (!res.ok) {
-      const errorText = await res.text();
-      console.error("StockX token fetch failed:", res.status, errorText);
-      console.error("This may indicate the OAuth app doesn't support client_credentials grant.");
-      console.error("Check StockX developer portal: https://developer.stockx.com/");
+      console.error("StockX client_credentials failed:", res.status, await res.text());
       return null;
     }
-    const data = await res.json();
-    // Token fetched successfully
-    return data;
+    return await res.json();
   } catch (err) {
-    console.error("StockX token fetch exception:", err);
+    console.error("StockX client_credentials exception:", err);
     return null;
   }
 }
 
-export async function getStockXHeaders(): Promise<Record<string, string> | null> {
-  let tokens = await getStockXTokens();
+export async function getStockXToken(): Promise<string | null> {
+  const tokens = await getStockXTokens();
+  if (!tokens) return null;
 
-  // Auto-fetch if no tokens exist
-  if (!tokens) {
-    const newTokens = await fetchClientCredentialsToken();
-    if (!newTokens) return null;
-    await saveStockXTokens({
-      access_token: newTokens.access_token,
-      expires_in: newTokens.expires_in,
-    });
-    tokens = await getStockXTokens();
-    if (!tokens) return null;
-  }
-
-  // Check expiry - fetch new token if within 5 min of expiring
   const now = new Date();
   const expiresAt = new Date(tokens.expires_at);
-  if (expiresAt.getTime() - now.getTime() < 5 * 60 * 1000) {
-    const newTokens = await fetchClientCredentialsToken();
-    if (!newTokens) return null;
+
+  // If token is still valid (with 5 min buffer), return it
+  if (expiresAt.getTime() - now.getTime() > 5 * 60 * 1000) {
+    return tokens.access_token;
+  }
+
+  // Try refresh token first (from OAuth authorization_code flow)
+  if (tokens.refresh_token) {
+    const refreshed = await refreshAccessToken(tokens.refresh_token);
+    if (refreshed) {
+      await saveStockXTokens({
+        access_token: refreshed.access_token,
+        refresh_token: refreshed.refresh_token || tokens.refresh_token,
+        token_type: refreshed.token_type,
+        expires_in: refreshed.expires_in,
+      });
+      return refreshed.access_token;
+    }
+  }
+
+  // Fallback to client_credentials
+  const ccToken = await fetchClientCredentialsToken();
+  if (ccToken) {
     await saveStockXTokens({
-      access_token: newTokens.access_token,
-      expires_in: newTokens.expires_in,
+      access_token: ccToken.access_token,
+      expires_in: ccToken.expires_in,
+      token_type: ccToken.token_type,
+    });
+    return ccToken.access_token;
+  }
+
+  return null;
+}
+
+export async function stockxFetch(url: string): Promise<Response> {
+  const token = await getStockXToken();
+  const headers: Record<string, string> = {
+    Accept: "application/json",
+  };
+
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
+
+  if (STOCKX_API_KEY) {
+    headers["x-api-key"] = STOCKX_API_KEY;
+  }
+
+  return fetch(url, { headers });
+}
+
+export async function getStockXHeaders(): Promise<Record<string, string> | null> {
+  const token = await getStockXToken();
+
+  // If no OAuth token, try fetching fresh client credentials
+  if (!token) {
+    const ccToken = await fetchClientCredentialsToken();
+    if (!ccToken) return null;
+    await saveStockXTokens({
+      access_token: ccToken.access_token,
+      expires_in: ccToken.expires_in,
     });
     return {
-      "x-api-key": (process.env.STOCKX_API_KEY || "").trim(),
-      Authorization: `Bearer ${newTokens.access_token}`,
+      "x-api-key": STOCKX_API_KEY,
+      Authorization: `Bearer ${ccToken.access_token}`,
       Accept: "application/json",
     };
   }
 
   return {
-    "x-api-key": (process.env.STOCKX_API_KEY || "").trim(),
-    Authorization: `Bearer ${tokens.access_token}`,
+    "x-api-key": STOCKX_API_KEY,
+    Authorization: `Bearer ${token}`,
     Accept: "application/json",
   };
 }
@@ -137,9 +213,8 @@ export async function getStockXHeaders(): Promise<Record<string, string> | null>
 export async function isStockXConnected(): Promise<boolean> {
   const tokens = await getStockXTokens();
   if (!tokens) return false;
-
-  // Check if token is still valid
   const now = new Date();
   const expiresAt = new Date(tokens.expires_at);
-  return expiresAt.getTime() > now.getTime();
+  // Connected if token valid or has refresh token
+  return expiresAt.getTime() > now.getTime() || !!tokens.refresh_token;
 }

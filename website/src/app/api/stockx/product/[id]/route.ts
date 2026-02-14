@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
-
-const STOCKX_API_KEY = process.env.STOCKX_API_KEY || "SQijlNY3Vl1QtyztWOb2R5cKdzyTvi272fpepFH6";
+import { stockxFetch } from "@/lib/stockx";
 
 export async function GET(
   _request: Request,
@@ -9,14 +8,8 @@ export async function GET(
   const { id } = await params;
 
   try {
-    const res = await fetch(
-      `https://api.stockx.com/v2/catalog/products/${id}`,
-      {
-        headers: {
-          "x-api-key": STOCKX_API_KEY,
-          Accept: "application/json",
-        },
-      }
+    const res = await stockxFetch(
+      `https://api.stockx.com/v2/catalog/products/${id}`
     );
 
     if (!res.ok) {
@@ -32,14 +25,8 @@ export async function GET(
     // Get variants
     let variants: any[] = [];
     try {
-      const varRes = await fetch(
-        `https://api.stockx.com/v2/catalog/products/${id}/variants`,
-        {
-          headers: {
-            "x-api-key": STOCKX_API_KEY,
-            Accept: "application/json",
-          },
-        }
+      const varRes = await stockxFetch(
+        `https://api.stockx.com/v2/catalog/products/${id}/variants`
       );
       if (varRes.ok) {
         const varData = await varRes.json();

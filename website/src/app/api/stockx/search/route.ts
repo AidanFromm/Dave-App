@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
-
-const STOCKX_API_KEY = process.env.STOCKX_API_KEY || "SQijlNY3Vl1QtyztWOb2R5cKdzyTvi272fpepFH6";
+import { stockxFetch } from "@/lib/stockx";
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -11,15 +10,8 @@ export async function GET(request: Request) {
   }
 
   try {
-    // StockX catalog search
-    const res = await fetch(
-      `https://api.stockx.com/v2/catalog/search?query=${encodeURIComponent(query)}&pageSize=10`,
-      {
-        headers: {
-          "x-api-key": STOCKX_API_KEY,
-          Accept: "application/json",
-        },
-      }
+    const res = await stockxFetch(
+      `https://api.stockx.com/v2/catalog/search?query=${encodeURIComponent(query)}&pageSize=10`
     );
 
     if (!res.ok) {

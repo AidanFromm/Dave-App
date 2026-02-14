@@ -25,11 +25,7 @@ import Link from "next/link";
 import { getBarcodeCatalogCount } from "@/actions/barcode";
 import { checkStockXConnection } from "@/actions/stockx-auth";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  STOCKX_AUTH_URL,
-  STOCKX_REDIRECT_URI,
-  STOCKX_AUDIENCE,
-} from "@/lib/constants";
+import { disconnectStockX } from "@/actions/stockx-auth";
 
 interface CloverStatus {
   isConnected: boolean;
@@ -492,28 +488,32 @@ export default function SettingsPage() {
                 )}
               </div>
             </div>
-            <button
-              onClick={() => {
-                // Use proper OAuth flow - redirects to StockX login
-                const state = crypto.randomUUID();
-                sessionStorage.setItem("stockx_state", state);
-                
-                const clientId = process.env.NEXT_PUBLIC_STOCKX_CLIENT_ID ?? "";
-                const params = new URLSearchParams({
-                  response_type: "code",
-                  client_id: clientId,
-                  redirect_uri: STOCKX_REDIRECT_URI,
-                  scope: "offline_access openid",
-                  audience: STOCKX_AUDIENCE,
-                  state,
-                });
-                
-                window.location.href = `${STOCKX_AUTH_URL}?${params}`;
-              }}
-              className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
-            >
-              {stockxConnected ? "Reconnect" : "Connect StockX"}
-            </button>
+            <div className="flex items-center gap-2">
+              {stockxConnected && (
+                <button
+                  onClick={async () => {
+                    try {
+                      await disconnectStockX();
+                      setStockxConnected(false);
+                      toast.success("StockX disconnected");
+                    } catch {
+                      toast.error("Failed to disconnect StockX");
+                    }
+                  }}
+                  className="rounded-lg border border-border px-4 py-2 text-sm font-medium hover:bg-muted transition-colors"
+                >
+                  Disconnect
+                </button>
+              )}
+              <button
+                onClick={() => {
+                  window.location.href = "/api/stockx/auth";
+                }}
+                className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
+              >
+                {stockxConnected ? "Reconnect" : "Connect StockX"}
+              </button>
+            </div>
           </div>
 
           <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">

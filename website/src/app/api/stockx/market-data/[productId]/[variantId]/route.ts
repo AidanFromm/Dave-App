@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
-
-const STOCKX_API_KEY = process.env.STOCKX_API_KEY || "SQijlNY3Vl1QtyztWOb2R5cKdzyTvi272fpepFH6";
+import { stockxFetch } from "@/lib/stockx";
 
 export async function GET(
   _request: Request,
@@ -9,14 +8,8 @@ export async function GET(
   const { productId, variantId } = await params;
 
   try {
-    const res = await fetch(
-      `https://api.stockx.com/v2/catalog/products/${productId}/variants/${variantId}/market-data`,
-      {
-        headers: {
-          "x-api-key": STOCKX_API_KEY,
-          Accept: "application/json",
-        },
-      }
+    const res = await stockxFetch(
+      `https://api.stockx.com/v2/catalog/products/${productId}/variants/${variantId}/market-data`
     );
 
     if (!res.ok) {
@@ -27,7 +20,7 @@ export async function GET(
     }
 
     const data = await res.json();
-    
+
     return NextResponse.json({
       lowestAsk: data.lowestAsk || data.lowestAskAmount || null,
       highestBid: data.highestBid || data.highestBidAmount || null,

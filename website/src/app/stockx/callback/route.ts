@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
-import { STOCKX_TOKEN_URL } from "@/lib/constants";
+import { cookies } from "next/headers";
+import { STOCKX_TOKEN_URL, STOCKX_REDIRECT_URI } from "@/lib/constants";
 import { saveStockXTokens } from "@/lib/stockx";
+
+const STOCKX_CLIENT_ID = process.env.STOCKX_CLIENT_ID || "CQN5rKVX2haC1VWcRH1uAAFiWsQuHv7h";
+const STOCKX_CLIENT_SECRET = process.env.STOCKX_CLIENT_SECRET || "aw7KR2ZbGlY43sG84yf11UDYfAVGAgkYhad317ll-fU32lm-O75jmYaimw-oVpO4";
 
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
@@ -8,17 +12,14 @@ export async function GET(request: Request) {
   const state = searchParams.get("state");
   const error = searchParams.get("error");
   const errorDescription = searchParams.get("error_description");
-  const userAgent = request.headers.get("user-agent") || "";
 
-  // Only redirect to iOS app if explicitly requested via platform=ios
-  // (iOS app should add this param, web browsers won't)
+  // iOS deep link support
   const isIOS = searchParams.get("platform") === "ios";
 
   // Handle errors from StockX
   if (error) {
     console.error("StockX OAuth error:", error, errorDescription);
     if (isIOS) {
-      // Redirect to iOS app with error
       return NextResponse.redirect(
         `securedapp://stockx/callback?error=${encodeURIComponent(errorDescription || error)}`
       );
@@ -44,28 +45,36 @@ export async function GET(request: Request) {
     return NextResponse.redirect(`securedapp://stockx/callback?${iosParams}`);
   }
 
-  // For web: exchange code for tokens
+  // Verify CSRF state from cookie
+  if (state) {
+    const cookieStore = await cookies();
+    const savedState = cookieStore.get("stockx_oauth_state")?.value;
+    if (savedState && savedState !== state) {
+      return NextResponse.redirect(
+        `${origin}/admin/settings?stockx=error&error=${encodeURIComponent("Invalid state - possible CSRF attack")}`
+      );
+    }
+    // Clear the state cookie
+    cookieStore.delete("stockx_oauth_state");
+  }
+
+  // Exchange code for tokens
   try {
-    // Hardcoded credentials (same as iOS app)
-    const clientId = "6iancV9MkHjtn9dlE8VoflhwK0H3jCFc";
-    const clientSecret = "oTNzarbhweQGzF2aQJn_TPWFbT5y5wvRHuQFxjH-hJ5oweeFocZJx_NF6js0JI4I";
-    
     const res = await fetch(STOCKX_TOKEN_URL, {
       method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: new URLSearchParams({
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
         grant_type: "authorization_code",
-        client_id: clientId,
-        client_secret: clientSecret,
+        client_id: STOCKX_CLIENT_ID,
+        client_secret: STOCKX_CLIENT_SECRET,
         code,
-        redirect_uri: "https://securedtampa.com/stockx/callback",
-      }).toString(),
+        redirect_uri: STOCKX_REDIRECT_URI,
+      }),
     });
 
     if (!res.ok) {
       const errorText = await res.text();
       console.error("StockX token exchange failed:", res.status, errorText);
-      // Show the actual error from StockX
       let errorMsg = "Token exchange failed";
       try {
         const errorJson = JSON.parse(errorText);
@@ -79,31 +88,22 @@ export async function GET(request: Request) {
     }
 
     const tokens = await res.json();
-    
+
     if (!tokens.access_token) {
       console.error("No access_token in response:", tokens);
       return NextResponse.redirect(
         `${origin}/admin/settings?stockx=error&error=${encodeURIComponent("No access token received")}`
       );
     }
-    
-    // Save tokens to Supabase
-    try {
-      await saveStockXTokens({
-        access_token: tokens.access_token,
-        refresh_token: tokens.refresh_token,
-        token_type: tokens.token_type,
-        expires_in: tokens.expires_in || 43200,
-        scope: tokens.scope,
-      });
-    } catch (dbErr) {
-      console.error("Failed to save tokens to database:", dbErr);
-      return NextResponse.redirect(
-        `${origin}/admin/settings?stockx=error&error=${encodeURIComponent("Failed to save tokens - check Supabase config")}`
-      );
-    }
 
-    // Redirect back to settings with success
+    await saveStockXTokens({
+      access_token: tokens.access_token,
+      refresh_token: tokens.refresh_token,
+      token_type: tokens.token_type,
+      expires_in: tokens.expires_in || 43200,
+      scope: tokens.scope,
+    });
+
     return NextResponse.redirect(`${origin}/admin/settings?stockx=connected`);
   } catch (err) {
     console.error("StockX callback error:", err);
