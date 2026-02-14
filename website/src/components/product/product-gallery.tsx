@@ -10,9 +10,10 @@ import { cn } from "@/lib/utils";
 interface ProductGalleryProps {
   images: string[];
   name: string;
+  condition?: string;
 }
 
-export function ProductGallery({ images, name }: ProductGalleryProps) {
+export function ProductGallery({ images, name, condition }: ProductGalleryProps) {
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
@@ -60,7 +61,9 @@ export function ProductGallery({ images, name }: ProductGalleryProps) {
                 alt={`${name} - Image ${selectedIndex + 1}`}
                 fill
                 sizes="(max-width: 768px) 100vw, 50vw"
-                className="object-contain p-8 sm:p-12"
+                className={cn(
+                  condition?.includes('used') ? "object-cover" : "object-contain p-8 sm:p-12"
+                )}
                 priority
               />
             </motion.div>

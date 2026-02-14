@@ -198,7 +198,7 @@ export function ProductDetailClient({ product: initialProduct, sizeVariants = []
       <div className="grid gap-10 lg:grid-cols-2 lg:gap-16">
         {/* Gallery */}
         <motion.div variants={fadeIn}>
-          <ProductGallery images={product.images ?? []} name={product.name} />
+          <ProductGallery images={product.images ?? []} name={product.name} condition={product.condition} />
         </motion.div>
 
         {/* Product Info */}
