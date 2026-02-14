@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-const STOCKX_API_KEY = process.env.STOCKX_API_KEY || "qAYBY1lFUv2PVXRldvSf4ya1pkjGhQZ9rxBj4LW7";
+const STOCKX_API_KEY = process.env.STOCKX_API_KEY || "SQijlNY3Vl1QtyztWOb2R5cKdzyTvi272fpepFH6";
 
 export async function GET(
   _request: Request,
