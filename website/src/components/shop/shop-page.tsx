@@ -238,9 +238,13 @@ export function ShopPage({ initialProducts, categories }: ShopPageProps) {
       });
     }
 
-    // Condition filter
+    // Condition filter (Sneaker Type — only applies to sneakers, excludes Pokemon)
     if (conditionFilter.length > 0) {
       products = products.filter((p) => {
+        const isPokemon = p.brand?.toLowerCase() === "pokemon tcg" ||
+          p.name.toLowerCase().includes("pokemon") ||
+          p.tags?.some((t) => t.toLowerCase().includes("pokemon"));
+        if (isPokemon) return false;
         if (conditionFilter.includes("new") && p.condition === "new") return true;
         if (conditionFilter.includes("used") && p.condition !== "new") return true;
         return false;
