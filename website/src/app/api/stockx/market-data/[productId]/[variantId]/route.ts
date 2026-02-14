@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { STOCKX_API_BASE } from "@/lib/constants";
-import { getStockXHeaders } from "@/lib/stockx";
+
+const STOCKX_API_KEY = process.env.STOCKX_API_KEY || "qAYBY1lFUv2PVXRldvSf4ya1pkjGhQZ9rxBj4LW7";
 
 export async function GET(
   _request: Request,
@@ -8,52 +8,38 @@ export async function GET(
 ) {
   const { productId, variantId } = await params;
 
-  if (!productId || !variantId) {
-    return NextResponse.json(
-      { error: "Product ID and Variant ID required" },
-      { status: 400 }
-    );
-  }
-
-  const headers = await getStockXHeaders();
-  if (!headers) {
-    return NextResponse.json({
-      lastSale: null,
-      highestBid: null,
-      lowestAsk: null,
-      salesLast72Hours: null,
-    });
-  }
-
   try {
     const res = await fetch(
-      `${STOCKX_API_BASE}/v2/catalog/products/${productId}/variants/${variantId}/market-data`,
-      { headers }
+      `https://api.stockx.com/v2/catalog/products/${productId}/variants/${variantId}/market-data`,
+      {
+        headers: {
+          "x-api-key": STOCKX_API_KEY,
+          Accept: "application/json",
+        },
+      }
     );
 
     if (!res.ok) {
-      return NextResponse.json({
-        lastSale: null,
-        highestBid: null,
-        lowestAsk: null,
-        salesLast72Hours: null,
-      });
+      return NextResponse.json(
+        { error: `StockX API error: ${res.status}` },
+        { status: res.status }
+      );
     }
 
     const data = await res.json();
-
+    
     return NextResponse.json({
-      lastSale: data.lastSalePrice ?? data.lastSale ?? null,
-      highestBid: data.highestBid ?? data.highestBidPrice ?? null,
-      lowestAsk: data.lowestAsk ?? data.lowestAskPrice ?? null,
-      salesLast72Hours: data.salesLast72Hours ?? data.numberOfAsks ?? null,
+      lowestAsk: data.lowestAsk || data.lowestAskAmount || null,
+      highestBid: data.highestBid || data.highestBidAmount || null,
+      lastSale: data.lastSale || data.lastSaleAmount || null,
+      salesLast72Hours: data.salesLast72Hours || null,
+      volatility: data.volatility || null,
     });
-  } catch {
-    return NextResponse.json({
-      lastSale: null,
-      highestBid: null,
-      lowestAsk: null,
-      salesLast72Hours: null,
-    });
+  } catch (error) {
+    console.error("StockX market data error:", error);
+    return NextResponse.json(
+      { error: "Market data lookup failed" },
+      { status: 500 }
+    );
   }
 }

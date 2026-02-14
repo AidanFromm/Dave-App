@@ -1,44 +1,6 @@
 import { NextResponse } from "next/server";
-import { STOCKX_API_BASE } from "@/lib/constants";
-import { getStockXHeaders } from "@/lib/stockx";
 
-// Convert urlKey to Title-Case for StockX CDN
-function toTitleCase(str: string): string {
-  return str.split("-").map(word => 
-    word.charAt(0).toUpperCase() + word.slice(1)
-  ).join("-");
-}
-
-// StockX CDN image URL construction
-// Pattern: Title-Case slug + variations
-function buildStockXImageUrl(urlKey: string): string {
-  if (!urlKey) return "";
-  const titleCased = toTitleCase(urlKey);
-  return `https://images.stockx.com/images/${titleCased}-Product.jpg?fit=fill&bg=FFFFFF&w=500&h=500&fm=jpg&auto=compress`;
-}
-
-function buildStockXThumbUrl(urlKey: string): string {
-  if (!urlKey) return "";
-  const titleCased = toTitleCase(urlKey);
-  return `https://images.stockx.com/images/${titleCased}-Product.jpg?fit=fill&bg=FFFFFF&w=200&h=200&fm=jpg&auto=compress`;
-}
-
-// Build multiple image URLs for different angles
-function buildStockXImageUrls(urlKey: string): string[] {
-  if (!urlKey) return [];
-  const titleCased = toTitleCase(urlKey);
-  const base = "https://images.stockx.com/images/";
-  const params = "?fit=fill&bg=FFFFFF&w=500&h=500&fm=jpg&auto=compress";
-  
-  // StockX uses multiple image patterns
-  return [
-    `${base}${titleCased}-Product.jpg${params}`,        // Main product shot
-    `${base}${titleCased}.jpg${params}`,                 // Alternate angle
-    `${base}${titleCased}_02.jpg${params}`,              // Side view
-    `${base}${titleCased}_03.jpg${params}`,              // Back view
-    `${base}${titleCased}_04.jpg${params}`,              // Detail shot
-  ];
-}
+const STOCKX_API_KEY = process.env.STOCKX_API_KEY || "qAYBY1lFUv2PVXRldvSf4ya1pkjGhQZ9rxBj4LW7";
 
 export async function GET(
   _request: Request,
@@ -46,111 +8,68 @@ export async function GET(
 ) {
   const { id } = await params;
 
-  if (!id) {
-    return NextResponse.json({ error: "Product ID required" }, { status: 400 });
-  }
-
-  const headers = await getStockXHeaders();
-  if (!headers) {
-    return NextResponse.json(
-      { error: "StockX not connected - no valid tokens found" },
-      { status: 401 }
-    );
-  }
-
   try {
-    const productRes = await fetch(
-      `${STOCKX_API_BASE}/v2/catalog/products/${id}`,
-      { headers }
+    const res = await fetch(
+      `https://api.stockx.com/v2/catalog/products/${id}`,
+      {
+        headers: {
+          "x-api-key": STOCKX_API_KEY,
+          Accept: "application/json",
+        },
+      }
     );
 
-    if (!productRes.ok) {
+    if (!res.ok) {
       return NextResponse.json(
-        { error: "StockX product not found" },
-        { status: productRes.status }
+        { error: `StockX API error: ${res.status}` },
+        { status: res.status }
       );
     }
 
-    const product = await productRes.json();
+    const data = await res.json();
+    const p = data.product || data.Product || data;
 
-    const variantsRes = await fetch(
-      `${STOCKX_API_BASE}/v2/catalog/products/${id}/variants?limit=100`,
-      { headers }
-    );
-
-    let variants: Array<{ id: string; size: string; gtins: string[] }> = [];
-    if (variantsRes.ok) {
-      const variantsData = await variantsRes.json();
-      // Handle both array at root or nested under "variants"
-      const variantsList = Array.isArray(variantsData) ? variantsData : (variantsData.variants ?? []);
-      variants = variantsList.map(
-        (v: Record<string, unknown>) => {
-          // GTINs are objects like {identifier: "123", type: "UPC"} - extract identifiers
-          const gtinsRaw = Array.isArray(v.gtins) ? v.gtins : [];
-          const gtins = gtinsRaw.map((g: unknown) => {
-            if (typeof g === "string") return g;
-            if (g && typeof g === "object" && "identifier" in g) return (g as { identifier: string }).identifier;
-            return "";
-          }).filter(Boolean);
-
-          // Size is in variantValue or sizeChart.defaultConversion.size
-          const sizeChart = v.sizeChart as Record<string, unknown> | undefined;
-          const defaultConversion = sizeChart?.defaultConversion as Record<string, unknown> | undefined;
-          const size = (v.variantValue as string) ?? 
-                       (defaultConversion?.size as string) ?? 
-                       (v.sizeUS as string) ?? 
-                       (v.size as string) ?? 
-                       "";
-
-          return {
-            // Variant ID is "variantId" not "id"
-            id: (v.variantId as string) ?? (v.id as string) ?? (v.productVariantId as string) ?? "",
-            size,
-            gtins,
-          };
+    // Get variants
+    let variants: any[] = [];
+    try {
+      const varRes = await fetch(
+        `https://api.stockx.com/v2/catalog/products/${id}/variants`,
+        {
+          headers: {
+            "x-api-key": STOCKX_API_KEY,
+            Accept: "application/json",
+          },
         }
       );
-    } else {
-      // Variants fetch failed
-    }
-
-    // Product attributes are nested
-    const attrs = product.productAttributes as Record<string, unknown> | undefined;
-    
-    // Try to extract images from API response first
-    const urlKey = product.urlKey ?? product.urlSlug ?? "";
-    const media = product.media as Record<string, unknown> | undefined;
-    const apiImageUrl = (media?.imageUrl as string) ?? (product.imageUrl as string) ?? (product.image as string) ?? "";
-    const apiImages: string[] = [];
-    if (media?.all && Array.isArray(media.all)) {
-      for (const m of media.all) {
-        if (typeof m === "string") apiImages.push(m);
-        else if (m && typeof m === "object" && "imageUrl" in (m as Record<string, unknown>)) apiImages.push((m as Record<string, string>).imageUrl);
+      if (varRes.ok) {
+        const varData = await varRes.json();
+        variants = (varData.variants || varData.Variants || []).map((v: any) => ({
+          id: v.id,
+          size: v.sizeChart?.displayOptions?.[0]?.size || v.size || "",
+          gtins: v.gtins || [],
+        }));
       }
-    }
-    
-    // Use API images if available, otherwise construct from urlKey
-    const imageUrl = apiImageUrl || buildStockXImageUrl(urlKey);
-    const thumbUrl = apiImageUrl || buildStockXThumbUrl(urlKey);
-    const imageUrls = apiImages.length > 0 ? apiImages : buildStockXImageUrls(urlKey);
+    } catch {}
 
     return NextResponse.json({
-      id: product.productId ?? product.id,
-      title: product.title ?? product.name ?? "",
-      brand: product.brand ?? "",
-      colorway: (attrs?.colorway as string) ?? product.colorway ?? "",
-      styleId: product.styleId ?? "",
-      description: product.description ?? "",
-      retailPrice: (attrs?.retailPrice as number) ?? product.retailPrice ?? 0,
-      imageUrl,
-      thumbUrl,
-      imageUrls,
-      urlSlug: urlKey,
+      id: p.id || id,
+      name: p.title || p.name,
+      brand: p.brand,
+      sku: p.styleId || p.sku,
+      colorway: p.colorway,
+      retailPrice: p.retailPrice,
+      imageUrl: p.media?.thumbUrl || p.media?.imageUrl || "",
+      imageUrls: [
+        p.media?.imageUrl,
+        p.media?.thumbUrl,
+        p.media?.smallImageUrl,
+      ].filter(Boolean),
       variants,
     });
-  } catch {
+  } catch (error) {
+    console.error("StockX product error:", error);
     return NextResponse.json(
-      { error: "Failed to fetch product" },
+      { error: "Product lookup failed" },
       { status: 500 }
     );
   }
