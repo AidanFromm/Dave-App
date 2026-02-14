@@ -158,6 +158,7 @@ export default function ScanPage() {
   const [searchModalOpen, setSearchModalOpen] = useState(false);
   const [pendingBarcode, setPendingBarcode] = useState("");
   const [selectedPokemonCard, setSelectedPokemonCard] = useState<PokemonCardSearchResult | null>(null);
+  const [pokemonSubMode, setPokemonSubMode] = useState<"cards" | "sealed">("cards");
   const [showResumeDialog, setShowResumeDialog] = useState(false);
   const [savedSession, setSavedSession] = useState<SavedSession | null>(null);
   const [soundEnabled, setSoundEnabled] = useState(true);
@@ -668,10 +669,6 @@ export default function ScanPage() {
           <TabsTrigger value="pokemon">
             <Sparkles className="mr-1.5 h-4 w-4" />
             Pokemon TCG
-          </TabsTrigger>
-          <TabsTrigger value="sealed">
-            <Package className="mr-1.5 h-4 w-4" />
-            Sealed Product
           </TabsTrigger>
         </TabsList>
 
@@ -1199,28 +1196,50 @@ export default function ScanPage() {
         </TabsContent>
 
         <TabsContent value="pokemon" className="mt-4 space-y-6">
-          {selectedPokemonCard ? (
-            <PokemonScanForm
-              card={selectedPokemonCard}
-              onSubmit={handlePokemonAddToInventory}
-              onBack={() => setSelectedPokemonCard(null)}
-            />
-          ) : (
-            <PokemonCardSearch onSelect={setSelectedPokemonCard} />
-          )}
-          {scanHistory.length > 0 && (
-            <div className="space-y-3">
-              <h2 className="font-semibold">Session History</h2>
-              <ScanHistoryTable entries={scanHistory} />
-            </div>
-          )}
-        </TabsContent>
+          {/* Sub-toggle: Cards vs Sealed */}
+          <div className="flex gap-2">
+            <button
+              onClick={() => setPokemonSubMode("cards")}
+              className={cn(
+                "px-4 py-2 rounded-lg text-sm font-medium transition-colors",
+                pokemonSubMode === "cards"
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-muted text-muted-foreground hover:bg-muted/80"
+              )}
+            >
+              <Sparkles className="inline mr-1.5 h-3.5 w-3.5" />
+              Cards
+            </button>
+            <button
+              onClick={() => setPokemonSubMode("sealed")}
+              className={cn(
+                "px-4 py-2 rounded-lg text-sm font-medium transition-colors",
+                pokemonSubMode === "sealed"
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-muted text-muted-foreground hover:bg-muted/80"
+              )}
+            >
+              <Package className="inline mr-1.5 h-3.5 w-3.5" />
+              Sealed Product
+            </button>
+          </div>
 
-        <TabsContent value="sealed" className="mt-4 space-y-6">
-          <SealedProductForm
-            onSubmit={handlePokemonAddToInventory}
-            onBack={() => {}}
-          />
+          {pokemonSubMode === "cards" ? (
+            selectedPokemonCard ? (
+              <PokemonScanForm
+                card={selectedPokemonCard}
+                onSubmit={handlePokemonAddToInventory}
+                onBack={() => setSelectedPokemonCard(null)}
+              />
+            ) : (
+              <PokemonCardSearch onSelect={setSelectedPokemonCard} />
+            )
+          ) : (
+            <SealedProductForm
+              onSubmit={handlePokemonAddToInventory}
+              onBack={() => {}}
+            />
+          )}
           {scanHistory.length > 0 && (
             <div className="space-y-3">
               <h2 className="font-semibold">Session History</h2>
