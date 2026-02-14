@@ -88,22 +88,22 @@ function ConfirmationContent() {
               <CheckCircle className="h-12 w-12 text-white" />
             </motion.div>
             
-            {/* Floating emojis */}
+            {/* Floating icons */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.5 }}
-              className="absolute -top-2 -right-4 text-3xl"
+              className="absolute -top-2 -right-4"
             >
-              🎉
+              <PartyPopper className="w-8 h-8 text-[#FB4F14]" />
             </motion.div>
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.7 }}
-              className="absolute -bottom-2 -left-4 text-2xl"
+              className="absolute -bottom-2 -left-4"
             >
-              ✨
+              <Sparkles className="w-6 h-6 text-yellow-500" />
             </motion.div>
           </div>
         </motion.div>
@@ -115,7 +115,7 @@ function ConfirmationContent() {
         >
           <h1 className="mt-6 text-3xl font-bold">Order Confirmed!</h1>
           <p className="mt-3 text-lg text-muted-foreground">
-            Thank you for your purchase! 🙏
+            Thank you for your purchase!
           </p>
         </motion.div>
 

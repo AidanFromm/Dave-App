@@ -69,7 +69,7 @@ async function sendOrderConfirmationEmail(params: {
       <p style="margin:4px 0 0;color:rgba(255,255,255,0.8);font-size:13px;">Tampa, FL</p>
     </div>
     <div style="padding:32px 24px;text-align:center;">
-      <div style="display:inline-block;background:#22c55e;border-radius:50%;width:56px;height:56px;line-height:56px;font-size:28px;">✓</div>
+      <div style="display:inline-block;background:#22c55e;border-radius:50%;width:56px;height:56px;line-height:56px;font-size:28px;color:#fff;">&#10003;</div>
       <h2 style="color:#fff;margin:16px 0 4px;font-size:22px;">Order Confirmed!</h2>
       <p style="color:#999;margin:0;font-size:14px;">Order #${orderNumber}</p>
     </div>

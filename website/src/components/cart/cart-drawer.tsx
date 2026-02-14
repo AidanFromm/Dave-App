@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
-import { Minus, Plus, X, ShoppingBag, ArrowRight, Package, MapPin, Trash2, Sparkles } from "lucide-react";
+import { Minus, Plus, X, ShoppingBag, ArrowRight, Package, MapPin, Trash2, Sparkles, Truck, PartyPopper } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -113,7 +113,7 @@ export function CartDrawer() {
                       Add <span className="font-bold text-primary">{formatCurrency(amountToFreeShipping)}</span> more
                     </span>
                     <span className="font-semibold text-green-600 flex items-center gap-1">
-                      🚚 FREE shipping
+                      <Truck className="w-4 h-4" /> FREE shipping
                     </span>
                   </div>
                   <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
@@ -137,7 +137,7 @@ export function CartDrawer() {
                   exit={{ opacity: 0, height: 0 }}
                   className="border-b border-border bg-green-500/10 px-4 py-3 text-center text-sm font-medium text-green-600"
                 >
-                  🎉 You've unlocked FREE shipping!
+                  You've unlocked FREE shipping!
                 </motion.div>
               )}
             </AnimatePresence>

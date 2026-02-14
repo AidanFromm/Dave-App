@@ -244,7 +244,7 @@ export function ProductDetailClient({ product: initialProduct, sizeVariants = []
             </span>
             {stockStatus === "low_stock" && (
               <span className="text-xs font-semibold px-2.5 py-1 rounded bg-amber-500/10 text-amber-500">
-                ⚡ LOW STOCK
+                LOW STOCK
               </span>
             )}
             {stockStatus === "sold_out" && (
@@ -339,7 +339,7 @@ export function ProductDetailClient({ product: initialProduct, sizeVariants = []
             <div className="rounded-xl bg-surface-800/30 border border-border/50 p-3">
               <span className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium">Box</span>
               <p className="mt-0.5 text-sm font-semibold">
-                {product.has_box ? "✓ Included" : "No Box"}
+                {product.has_box ? "Included" : "No Box"}
               </p>
             </div>
             {product.sku && (

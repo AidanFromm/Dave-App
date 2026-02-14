@@ -78,12 +78,12 @@ export function orderConfirmationEmail(data: OrderConfirmationData) {
     </tr>`).join('');
 
   const deliverySection = data.fulfillmentType === 'ship' && data.shippingAddress
-    ? `<h3 style="margin:0 0 8px;color:${BRAND.navy};font-size:14px;">📦 Shipping To</h3>
+    ? `<h3 style="margin:0 0 8px;color:${BRAND.navy};font-size:14px;">Shipping To</h3>
        <p style="margin:0;color:#555;">${data.shippingAddress.firstName} ${data.shippingAddress.lastName}<br>
        ${data.shippingAddress.street}${data.shippingAddress.apartment ? `, ${data.shippingAddress.apartment}` : ''}<br>
        ${data.shippingAddress.city}, ${data.shippingAddress.state} ${data.shippingAddress.zipCode}</p>
        <p style="margin:8px 0 0;color:#888;font-size:13px;">Estimated delivery: 3–5 business days</p>`
-    : `<h3 style="margin:0 0 8px;color:${BRAND.navy};font-size:14px;">📍 Store Pickup</h3>
+    : `<h3 style="margin:0 0 8px;color:${BRAND.navy};font-size:14px;">Store Pickup</h3>
        <p style="margin:0;color:#555;">${BRAND.storeName}<br>${BRAND.storeAddress}</p>
        <p style="margin:8px 0 0;color:#888;font-size:13px;">We'll notify you when your order is ready for pickup.</p>`;
 
@@ -91,7 +91,7 @@ export function orderConfirmationEmail(data: OrderConfirmationData) {
     subject: `Order Confirmed — #${data.orderNumber} | ${BRAND.storeName}`,
     html: layout(`
       <div style="padding:32px 24px;text-align:center;">
-        <div style="display:inline-block;background:#22c55e;border-radius:50%;width:56px;height:56px;line-height:56px;font-size:28px;color:#fff;">✓</div>
+        <div style="display:inline-block;background:#22c55e;border-radius:50%;width:56px;height:56px;line-height:56px;font-size:28px;color:#fff;">&#10003;</div>
         <h2 style="color:${BRAND.navy};margin:16px 0 4px;font-size:22px;">Order Confirmed!</h2>
         <p style="color:#888;margin:0;font-size:14px;">Order #${data.orderNumber}</p>
       </div>
@@ -150,7 +150,7 @@ export function orderShippedEmail(data: OrderShippedData) {
     subject: `Your Order Has Shipped — #${data.orderNumber} | ${BRAND.storeName}`,
     html: layout(`
       <div style="padding:32px 24px;text-align:center;">
-        <div style="font-size:48px;">📦</div>
+        <div style="font-size:28px;color:#FB4F14;font-weight:bold;">SHIPPED</div>
         <h2 style="color:${BRAND.navy};margin:16px 0 4px;font-size:22px;">Your Order Is On The Way!</h2>
         <p style="color:#888;margin:0;font-size:14px;">Order #${data.orderNumber}</p>
       </div>
@@ -187,7 +187,7 @@ export function orderPickupEmail(data: OrderPickupData) {
     subject: `Your Order Is Ready for Pickup — #${data.orderNumber} | ${BRAND.storeName}`,
     html: layout(`
       <div style="padding:32px 24px;text-align:center;">
-        <div style="font-size:48px;">🏪</div>
+        <div style="font-size:28px;color:#FB4F14;font-weight:bold;">PICKUP</div>
         <h2 style="color:${BRAND.navy};margin:16px 0 4px;font-size:22px;">Ready for Pickup!</h2>
         <p style="color:#888;margin:0;font-size:14px;">Order #${data.orderNumber}</p>
       </div>
@@ -225,7 +225,7 @@ export function paymentReminderEmail(data: PaymentReminderData) {
     subject: `Payment Reminder — Order #${data.orderNumber} | ${BRAND.storeName}`,
     html: layout(`
       <div style="padding:32px 24px;text-align:center;">
-        <div style="font-size:48px;">💳</div>
+        <div style="font-size:28px;color:#FB4F14;font-weight:bold;">PAYMENT</div>
         <h2 style="color:${BRAND.navy};margin:16px 0 4px;font-size:22px;">Payment Reminder</h2>
         <p style="color:#888;margin:0;font-size:14px;">Order #${data.orderNumber}</p>
       </div>
@@ -266,7 +266,7 @@ export function refundEmail(data: RefundEmailData) {
     subject: `Refund Processed — #${data.orderNumber} | ${BRAND.storeName}`,
     html: layout(`
       <div style="padding:32px 24px;text-align:center;">
-        <div style="font-size:48px;">💸</div>
+        <div style="font-size:28px;color:#22c55e;font-weight:bold;">REFUND</div>
         <h2 style="color:${BRAND.navy};margin:16px 0 4px;font-size:22px;">
           ${data.isFullRefund ? 'Full Refund Processed' : 'Partial Refund Processed'}
         </h2>
@@ -422,10 +422,10 @@ export function dropNotificationEmail(data: DropNotificationEmailData) {
 
 export function welcomeEmail(data: WelcomeEmailData) {
   return {
-    subject: `Welcome to ${BRAND.storeName}! 🔥`,
+    subject: `Welcome to ${BRAND.storeName}!`,
     html: layout(`
       <div style="padding:32px 24px;text-align:center;">
-        <div style="font-size:48px;">🔥</div>
+        <div style="font-size:28px;color:#FB4F14;font-weight:bold;">SECURED</div>
         <h2 style="color:${BRAND.navy};margin:16px 0 4px;font-size:22px;">Welcome to Secured!</h2>
       </div>
       <div style="padding:0 24px 32px;text-align:center;">

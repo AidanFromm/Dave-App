@@ -12,7 +12,7 @@ import { Separator } from "@/components/ui/separator";
 import { useCartStore } from "@/stores/cart-store";
 import { shippingFormSchema, type ShippingFormValues } from "@/lib/validators";
 import { formatCurrency } from "@/lib/utils";
-import { ArrowRight, Loader2, ShoppingBag, Truck, MapPin, Package, Lock, CreditCard, Phone } from "lucide-react";
+import { ArrowRight, Loader2, ShoppingBag, Truck, MapPin, Package, Lock, CreditCard, Phone, Check } from "lucide-react";
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
@@ -199,7 +199,7 @@ export default function CheckoutPage() {
                     layoutId="fulfillment-check"
                     className="absolute -right-2 -top-2 flex h-6 w-6 items-center justify-center rounded-full bg-primary text-white"
                   >
-                    ✓
+                    <Check className="w-3 h-3" />
                   </motion.div>
                 )}
                 <Truck className={cn("h-8 w-8", watchFulfillment === "ship" ? "text-primary" : "text-muted-foreground")} />
@@ -226,7 +226,7 @@ export default function CheckoutPage() {
                     layoutId="fulfillment-check"
                     className="absolute -right-2 -top-2 flex h-6 w-6 items-center justify-center rounded-full bg-primary text-white"
                   >
-                    ✓
+                    <Check className="w-3 h-3" />
                   </motion.div>
                 )}
                 <MapPin className={cn("h-8 w-8", watchFulfillment === "pickup" ? "text-primary" : "text-muted-foreground")} />

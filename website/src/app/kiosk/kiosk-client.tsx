@@ -384,7 +384,7 @@ export function KioskClient({ initialProducts, initialCategories }: KioskClientP
               onClick={handleStaffHelp}
             >
               <Bell className="h-7 w-7" />
-              {staffNotified ? "✓ Staff Has Been Notified!" : "Ask Staff for Help"}
+              {staffNotified ? "Staff Has Been Notified!" : "Ask Staff for Help"}
             </button>
           </div>
         </div>
@@ -539,7 +539,7 @@ export function KioskClient({ initialProducts, initialCategories }: KioskClientP
           onClick={handleStaffHelp}
         >
           <Bell className="h-7 w-7" />
-          {staffNotified ? "✓ Staff Has Been Notified!" : "Need Help? Tap Here!"}
+          {staffNotified ? "Staff Has Been Notified!" : "Need Help? Tap Here!"}
         </button>
       </div>
     </div>

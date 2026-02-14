@@ -17,7 +17,7 @@ import { Separator } from "@/components/ui/separator";
 import { useCartStore } from "@/stores/cart-store";
 import { formatCurrency } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
-import { Loader2, CreditCard, ArrowLeft, Lock, Package, MapPin, Truck, Shield, Tag, X } from "lucide-react";
+import { Loader2, CreditCard, ArrowLeft, Lock, Package, MapPin, Truck, Shield, Tag, X, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { CheckoutProgress } from "@/components/checkout/checkout-progress";
 
@@ -75,7 +75,7 @@ function PaymentForm() {
             exit={{ opacity: 0, scale: 0.95 }}
             className="rounded-xl bg-destructive/10 p-4 text-sm text-destructive flex items-center gap-2"
           >
-            <span className="text-lg">⚠️</span>
+            <AlertTriangle className="w-5 h-5 text-yellow-500" />
             {error}
           </motion.div>
         )}

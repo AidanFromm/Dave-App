@@ -272,9 +272,9 @@ export default function SignUpPage() {
             rotate: [0, -5, 0],
           }}
           transition={{ duration: 5, repeat: Infinity, ease: "easeInOut", delay: 1 }}
-          className="absolute bottom-32 right-20 text-7xl"
+          className="absolute bottom-32 right-20"
         >
-          ⭐
+          <Star className="w-16 h-16 text-yellow-500/30" />
         </motion.div>
         <motion.div
           animate={{ scale: [1, 1.1, 1] }}
@@ -282,7 +282,7 @@ export default function SignUpPage() {
           className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
         >
           <div className="text-center">
-            <p className="text-6xl">🎁</p>
+            <Gift className="w-16 h-16 text-muted-foreground/30 mx-auto" />
             <p className="mt-4 text-2xl font-bold text-muted-foreground/50">
               Member Benefits
             </p>

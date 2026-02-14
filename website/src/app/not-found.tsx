@@ -10,7 +10,7 @@ export default function NotFound() {
           404
         </span>
         <div className="absolute inset-0 flex items-center justify-center">
-          <span className="text-6xl sm:text-8xl">👟</span>
+          <ShoppingBag className="w-16 h-16 sm:w-24 sm:h-24 text-muted-foreground" />
         </div>
       </div>
 

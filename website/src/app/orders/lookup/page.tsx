@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Search, ChevronRight, Package, Truck, CheckCircle, Clock, ShoppingBag } from "lucide-react";
+import { Loader2, Search, ChevronRight, Package, Truck, CheckCircle, Clock, ShoppingBag, AlertTriangle } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import type { Order } from "@/types/order";
 import { ORDER_STATUS_LABELS } from "@/types/order";
@@ -116,7 +116,7 @@ export default function OrderLookupPage() {
                   exit={{ opacity: 0, scale: 0.95 }}
                   className="rounded-xl bg-destructive/10 p-4 text-sm text-destructive flex items-center gap-2"
                 >
-                  <span className="text-lg">⚠️</span>
+                  <AlertTriangle className="w-5 h-5" />
                   {error}
                 </motion.div>
               )}
