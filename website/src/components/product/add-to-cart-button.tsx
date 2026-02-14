@@ -46,7 +46,7 @@ export function AddToCartButton({ product, disabled, variant }: AddToCartButtonP
   return (
     <Button
       size="lg"
-      className="w-full h-13 text-sm font-semibold uppercase tracking-wider"
+      className="w-full h-11 sm:h-13 text-xs sm:text-sm font-semibold uppercase tracking-wider"
       disabled={disabled}
       onClick={handleAdd}
     >

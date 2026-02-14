@@ -188,7 +188,7 @@ export default function CheckoutPage() {
                 whileTap={{ scale: 0.98 }}
                 onClick={() => setValue("fulfillmentType", "ship")}
                 className={cn(
-                  "relative flex flex-col items-center gap-3 rounded-xl border-2 p-6 transition-all",
+                  "relative flex flex-col items-center gap-2 sm:gap-3 rounded-xl border-2 p-4 sm:p-6 transition-all",
                   watchFulfillment === "ship"
                     ? "border-primary bg-primary/5"
                     : "border-border hover:border-muted-foreground/50"
@@ -215,7 +215,7 @@ export default function CheckoutPage() {
                 whileTap={{ scale: 0.98 }}
                 onClick={() => setValue("fulfillmentType", "pickup")}
                 className={cn(
-                  "relative flex flex-col items-center gap-3 rounded-xl border-2 p-6 transition-all",
+                  "relative flex flex-col items-center gap-2 sm:gap-3 rounded-xl border-2 p-4 sm:p-6 transition-all",
                   watchFulfillment === "pickup"
                     ? "border-primary bg-primary/5"
                     : "border-border hover:border-muted-foreground/50"
@@ -280,8 +280,8 @@ export default function CheckoutPage() {
                   <Label className="text-sm font-medium">Apartment / Suite (optional)</Label>
                   <Input className="h-12" placeholder="Apt 4B" {...register("address.apartment")} />
                 </div>
-                <div className="grid grid-cols-6 gap-4">
-                  <div className="col-span-3 space-y-2">
+                <div className="grid grid-cols-2 sm:grid-cols-6 gap-4">
+                  <div className="col-span-2 sm:col-span-3 space-y-2">
                     <Label className="text-sm font-medium">City</Label>
                     <Input className="h-12" placeholder="Tampa" {...register("address.city")} />
                     {errors.address?.city && (
@@ -295,7 +295,7 @@ export default function CheckoutPage() {
                       <p className="text-xs text-destructive">{errors.address.state.message}</p>
                     )}
                   </div>
-                  <div className="col-span-2 space-y-2">
+                  <div className="col-span-1 sm:col-span-2 space-y-2">
                     <Label className="text-sm font-medium">ZIP Code</Label>
                     <Input className="h-12" placeholder="33602" {...register("address.zipCode")} />
                     {errors.address?.zipCode && (
@@ -340,12 +340,14 @@ export default function CheckoutPage() {
         {/* Right - Order Summary */}
         <motion.div variants={fadeIn} className="lg:sticky lg:top-24 lg:self-start">
           <div className="rounded-2xl border bg-card overflow-hidden">
-            <div className="bg-muted/50 p-4 border-b">
-              <h2 className="font-bold flex items-center gap-2">
-                <Package className="h-5 w-5" />
-                Order Summary
-              </h2>
-            </div>
+            <details className="group" open>
+              <summary className="bg-muted/50 p-4 border-b cursor-pointer list-none flex items-center justify-between">
+                <h2 className="font-bold flex items-center gap-2">
+                  <Package className="h-5 w-5" />
+                  Order Summary
+                </h2>
+                <span className="text-sm font-semibold lg:hidden">{formatCurrency(getTotal())}</span>
+              </summary>
 
             {/* Items */}
             <div className="max-h-64 overflow-y-auto divide-y">
@@ -427,6 +429,7 @@ export default function CheckoutPage() {
                 <span>Encrypted</span>
               </div>
             </div>
+            </details>
           </div>
         </motion.div>
       </div>

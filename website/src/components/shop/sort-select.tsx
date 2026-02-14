@@ -23,7 +23,7 @@ interface SortSelectProps {
 export function SortSelect({ value, onChange }: SortSelectProps) {
   return (
     <Select value={value} onValueChange={(v) => onChange(v as SortOption)}>
-      <SelectTrigger className="w-[160px] rounded-full">
+      <SelectTrigger className="w-full sm:w-[160px] rounded-full h-9 text-xs sm:text-sm">
         <SelectValue placeholder="Sort by" />
       </SelectTrigger>
       <SelectContent>

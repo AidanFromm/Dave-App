@@ -441,7 +441,7 @@ export function ShopPage({ initialProducts, categories }: ShopPageProps) {
   );
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+    <div className="mx-auto max-w-7xl px-3 py-4 sm:px-6 sm:py-6 lg:px-8">
       {/* Page title */}
       <div className="mb-6">
         <h1 className="font-display text-3xl md:text-4xl font-bold uppercase tracking-tight">
@@ -452,28 +452,71 @@ export function ShopPage({ initialProducts, categories }: ShopPageProps) {
         </p>
       </div>
 
-      {/* Mobile Filter toggle */}
-      <div className="flex items-center gap-2 lg:hidden pb-4 border-b border-border/50">
-          {/* Mobile filter button */}
+      {/* Mobile: Search + Sort + Filter tabs */}
+      <div className="lg:hidden space-y-3 pb-4 border-b border-border/50">
+        {/* Search bar */}
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            type="text"
+            placeholder="Search products..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="h-10 rounded-full bg-muted/50 pl-9 pr-9 text-sm"
+          />
+          {search && (
+            <button
+              type="button"
+              className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-0.5 text-muted-foreground hover:text-foreground"
+              onClick={() => setSearch("")}
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          )}
+        </div>
+
+        {/* Filter tabs (horizontal scroll) */}
+        <div className="flex gap-2 overflow-x-auto scrollbar-hide -mx-4 px-4">
+          {FILTERS.map((f) => (
+            <button
+              key={f.key}
+              onClick={() => setFilter(f.key)}
+              className={cn(
+                "whitespace-nowrap rounded-full px-3.5 py-1.5 text-xs font-semibold uppercase tracking-wider transition-colors shrink-0",
+                filter === f.key
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-surface-800/50 text-muted-foreground hover:text-foreground"
+              )}
+            >
+              {f.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Sort + Filter button row */}
+        <div className="flex items-center gap-2">
+          <SortSelect value={sort} onChange={setSort} />
           <Sheet open={mobileFiltersOpen} onOpenChange={setMobileFiltersOpen}>
             <SheetTrigger asChild>
-              <Button variant="outline" size="icon" className="lg:hidden h-9 w-9 relative">
-                <SlidersHorizontal className="h-4 w-4" />
+              <Button variant="outline" size="sm" className="h-9 gap-1.5 relative shrink-0">
+                <SlidersHorizontal className="h-3.5 w-3.5" />
+                Filters
                 {hasActiveFilters && (
                   <span className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-primary" />
                 )}
               </Button>
             </SheetTrigger>
-            <SheetContent side="left" className="w-80 bg-surface-900 border-surface-800">
+            <SheetContent side="left" className="w-[85vw] max-w-sm bg-surface-900 border-surface-800">
               <SheetHeader>
                 <SheetTitle>Filters</SheetTitle>
               </SheetHeader>
-              <div className="mt-6">
+              <div className="mt-6 overflow-y-auto max-h-[calc(100vh-8rem)]">
                 <FilterContent />
               </div>
             </SheetContent>
           </Sheet>
         </div>
+      </div>
 
       {/* Main layout: sidebar + grid */}
       <div className="flex gap-8 pt-4">

@@ -161,7 +161,7 @@ export function ProductCard({ product, availableSizes }: ProductCardProps) {
       {/* Product Info */}
       <Link
         href={`/product/${product.id}`}
-        className="flex flex-1 flex-col p-3"
+        className="flex flex-1 flex-col p-2 sm:p-3"
       >
         {/* Brand */}
         {product.brand && (
@@ -171,7 +171,7 @@ export function ProductCard({ product, availableSizes }: ProductCardProps) {
         )}
         
         {/* Product Name */}
-        <h3 className="mt-0.5 line-clamp-2 text-sm font-semibold leading-snug text-foreground group-hover:text-primary transition-colors">
+        <h3 className="mt-0.5 line-clamp-2 text-xs sm:text-sm font-semibold leading-snug text-foreground group-hover:text-primary transition-colors">
           {product.name}
         </h3>
 
@@ -192,8 +192,8 @@ export function ProductCard({ product, availableSizes }: ProductCardProps) {
         )}
         
         {/* Price */}
-        <div className="mt-auto pt-2 flex items-baseline gap-2">
-          <span className="text-base font-mono font-bold text-primary">
+        <div className="mt-auto pt-1.5 sm:pt-2 flex items-baseline gap-1.5 sm:gap-2">
+          <span className="text-sm sm:text-base font-mono font-bold text-primary">
             {formatCurrency(isDrop ? dropDisplayPrice : product.price)}
           </span>
           {isDrop && product.drop_price != null && product.drop_price !== product.price ? (

@@ -39,12 +39,17 @@ export function CheckoutProgress({ currentStep }: CheckoutProgressProps) {
               </div>
               <span
                 className={cn(
-                  "text-sm font-medium",
+                  "text-xs sm:text-sm font-medium hidden sm:inline",
                   isCurrent ? "text-foreground" : "text-muted-foreground"
                 )}
               >
                 {step.label}
               </span>
+              {isCurrent && (
+                <span className="text-xs font-medium text-foreground sm:hidden">
+                  {step.label}
+                </span>
+              )}
             </div>
             {i < STEPS.length - 1 && (
               <div

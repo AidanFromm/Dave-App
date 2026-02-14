@@ -51,7 +51,7 @@ function Countdown({ targetDate }: { targetDate: Date }) {
   }, [targetDate]);
 
   return (
-    <div className="flex gap-3">
+    <div className="flex gap-2 sm:gap-3">
       {[
         { value: timeLeft.days, label: "Days" },
         { value: timeLeft.hours, label: "Hours" },
@@ -59,10 +59,10 @@ function Countdown({ targetDate }: { targetDate: Date }) {
         { value: timeLeft.seconds, label: "Sec" },
       ].map((item, i) => (
         <div key={i} className="text-center">
-          <div className="flex h-14 w-14 items-center justify-center rounded-lg bg-[#002244] font-mono text-2xl font-bold text-white border border-[#FB4F14]/20">
+          <div className="flex h-11 w-11 sm:h-14 sm:w-14 items-center justify-center rounded-lg bg-[#002244] font-mono text-lg sm:text-2xl font-bold text-white border border-[#FB4F14]/20">
             {String(item.value).padStart(2, "0")}
           </div>
-          <span className="mt-1 text-xs text-muted-foreground">{item.label}</span>
+          <span className="mt-1 text-[10px] sm:text-xs text-muted-foreground">{item.label}</span>
         </div>
       ))}
     </div>
@@ -131,7 +131,7 @@ export default function DropsPage() {
           />
         </div>
 
-        <div className="relative mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8 lg:py-24">
+        <div className="relative mx-auto max-w-7xl px-4 py-10 sm:py-16 sm:px-6 lg:px-8 lg:py-24">
           <motion.div initial="hidden" animate="visible" variants={staggerContainer} className="text-center">
             <motion.div variants={fadeInUp} className="inline-flex items-center gap-2 rounded-full bg-[#FB4F14]/10 px-4 py-2 text-sm font-medium text-[#FB4F14] mb-6">
               <Flame className="h-4 w-4" />

@@ -30,7 +30,7 @@ function Countdown({ targetDate }: { targetDate: Date }) {
   if (isLive) return <Badge className="bg-green-500 text-white text-sm px-3 py-1">LIVE NOW</Badge>;
 
   return (
-    <div className="flex gap-2">
+    <div className="flex gap-1.5 sm:gap-2">
       {[
         { value: timeLeft.days, label: "Days" },
         { value: timeLeft.hours, label: "Hrs" },
@@ -38,7 +38,7 @@ function Countdown({ targetDate }: { targetDate: Date }) {
         { value: timeLeft.seconds, label: "Sec" },
       ].map((item, i) => (
         <div key={i} className="text-center">
-          <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-[#002244] font-mono text-xl font-bold text-white border border-[#FB4F14]/20">
+          <div className="flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-lg bg-[#002244] font-mono text-base sm:text-xl font-bold text-white border border-[#FB4F14]/20">
             {String(item.value).padStart(2, "0")}
           </div>
           <span className="mt-1 text-[10px] text-muted-foreground uppercase">{item.label}</span>
@@ -117,7 +117,7 @@ export default function ShopDropsPage() {
                   const remaining = getDropRemainingQuantity(product);
                   return (
                     <div key={product.id} className="rounded-2xl border border-[#FB4F14]/20 bg-card p-6">
-                      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
                         <div>
                           <Badge className="bg-blue-500/15 text-blue-400 mb-2">Upcoming</Badge>
                           <h3 className="text-lg font-bold">{product.name}</h3>

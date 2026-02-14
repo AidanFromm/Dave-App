@@ -19,7 +19,7 @@ export default function ShippingPage() {
       </div>
 
       {/* Quick Stats */}
-      <div className="mt-12 grid grid-cols-2 gap-4 sm:grid-cols-4">
+      <div className="mt-12 grid grid-cols-2 gap-2 sm:gap-4 sm:grid-cols-4">
         <div className="rounded-2xl border bg-card p-5 text-center">
           <Truck className="mx-auto h-6 w-6 text-primary" />
           <p className="mt-3 text-2xl font-bold">$200+</p>

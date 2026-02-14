@@ -18,7 +18,7 @@ export default function ReturnsPage() {
       </div>
 
       {/* Quick Stats */}
-      <div className="mt-12 grid grid-cols-3 gap-4">
+      <div className="mt-12 grid grid-cols-3 gap-2 sm:gap-4">
         <div className="rounded-2xl border bg-card p-5 text-center">
           <Clock className="mx-auto h-6 w-6 text-primary" />
           <p className="mt-3 text-2xl font-bold">7</p>
@@ -117,7 +117,7 @@ export default function ReturnsPage() {
       {/* How It Works */}
       <div className="mt-16">
         <h2 className="text-2xl font-semibold">How to Return an Item</h2>
-        <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="mt-6 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
           {[
             { step: "1", title: "Contact Us", desc: "Email with your order number and reason" },
             { step: "2", title: "Get Approval", desc: "We'll review and send return instructions" },

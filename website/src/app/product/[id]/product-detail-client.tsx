@@ -173,10 +173,10 @@ export function ProductDetailClient({ product: initialProduct, sizeVariants = []
       initial="hidden"
       animate="visible"
       variants={staggerContainer}
-      className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-10"
+      className="mx-auto max-w-7xl px-4 py-4 sm:py-8 sm:px-6 lg:px-10"
     >
       {/* Breadcrumb */}
-      <motion.nav variants={fadeIn} className="mb-8 flex items-center gap-2 text-sm text-muted-foreground">
+      <motion.nav variants={fadeIn} className="mb-4 sm:mb-8 flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-muted-foreground flex-wrap">
         <Link href="/" className="hover:text-foreground transition-colors">Home</Link>
         <ChevronRight className="h-3.5 w-3.5" />
         {category ? (
@@ -195,7 +195,7 @@ export function ProductDetailClient({ product: initialProduct, sizeVariants = []
         <span className="text-foreground truncate max-w-[200px]">{product.name}</span>
       </motion.nav>
 
-      <div className="grid gap-10 lg:grid-cols-2 lg:gap-16">
+      <div className="grid gap-6 sm:gap-10 lg:grid-cols-2 lg:gap-16">
         {/* Gallery */}
         <motion.div variants={fadeIn}>
           <ProductGallery images={product.images ?? []} name={product.name} condition={product.condition} />
@@ -219,7 +219,7 @@ export function ProductDetailClient({ product: initialProduct, sizeVariants = []
           {/* Name */}
           <motion.h1 
             variants={fadeIn}
-            className="mt-2 font-display text-2xl font-bold uppercase sm:text-3xl lg:text-4xl leading-tight tracking-tight"
+            className="mt-2 font-display text-xl font-bold uppercase sm:text-3xl lg:text-4xl leading-tight tracking-tight"
           >
             {product.name}
           </motion.h1>
@@ -555,9 +555,30 @@ export function ProductDetailClient({ product: initialProduct, sizeVariants = []
       )}
 
       {/* Reviews Section */}
-      <div className="mt-16 border-t border-border/50 pt-8">
+      <div className="mt-16 border-t border-border/50 pt-8 pb-20 lg:pb-0">
         <ReviewList productId={product.id} />
         <ReviewForm productId={product.id} />
+      </div>
+
+      {/* Sticky Add to Cart - Mobile Only */}
+      <div className="fixed bottom-0 left-0 right-0 z-40 border-t border-border bg-background/95 backdrop-blur-lg p-3 lg:hidden safe-area-bottom">
+        <div className="flex items-center gap-3 max-w-lg mx-auto">
+          <div className="flex-1 min-w-0">
+            <p className="text-xs text-muted-foreground truncate">{product.name}</p>
+            <p className="text-base font-mono font-bold text-primary">{formatCurrency(product.price)}</p>
+          </div>
+          <div className="shrink-0 w-40">
+            <AddToCartButton
+              product={product}
+              variant={selectedVariant ? {
+                id: selectedVariant.id,
+                size: selectedVariant.size,
+                condition: selectedVariant.condition,
+                price: selectedVariant.price,
+              } : undefined}
+            />
+          </div>
+        </div>
       </div>
 
       {/* Size Guide Modal */}

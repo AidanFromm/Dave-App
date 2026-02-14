@@ -102,27 +102,27 @@ export default function WishlistPage() {
       className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8"
     >
       {/* Header */}
-      <motion.div variants={fadeInUp} className="flex items-center justify-between mb-8">
+      <motion.div variants={fadeInUp} className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <div className="flex items-center gap-3">
-          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-red-500/10">
-            <Heart className="h-6 w-6 text-red-500 fill-red-500" />
+          <div className="flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-full bg-red-500/10 shrink-0">
+            <Heart className="h-5 w-5 sm:h-6 sm:w-6 text-red-500 fill-red-500" />
           </div>
           <div>
-            <h1 className="text-3xl font-bold">Wishlist</h1>
-            <p className="text-muted-foreground">
+            <h1 className="text-2xl sm:text-3xl font-bold">Wishlist</h1>
+            <p className="text-sm text-muted-foreground">
               {productIds.length} {productIds.length === 1 ? "item" : "items"} saved
             </p>
           </div>
         </div>
         
-        <div className="flex gap-3">
-          <Button variant="outline" onClick={clearWishlist}>
+        <div className="flex gap-2 sm:gap-3">
+          <Button variant="outline" size="sm" onClick={clearWishlist} className="flex-1 sm:flex-initial">
             Clear All
           </Button>
-          <Button asChild>
+          <Button size="sm" asChild className="flex-1 sm:flex-initial">
             <Link href="/">
               <ShoppingBag className="mr-2 h-4 w-4" />
-              Continue Shopping
+              Shop
             </Link>
           </Button>
         </div>
