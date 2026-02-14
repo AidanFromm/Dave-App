@@ -16,6 +16,49 @@ import {
   ClipboardList,
 } from "lucide-react";
 
+function StockXStatus() {
+  const [connected, setConnected] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    fetch("/api/stockx/search?q=test")
+      .then((r) => setConnected(r.ok))
+      .catch(() => setConnected(false));
+  }, []);
+
+  if (connected === null) return null;
+
+  return (
+    <div className="rounded-xl border border-surface-800 bg-surface-900 p-4">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className={`rounded-lg p-2 ${connected ? "bg-green-900/30" : "bg-yellow-900/30"}`}>
+            <Package className={`h-5 w-5 ${connected ? "text-green-400" : "text-yellow-400"}`} />
+          </div>
+          <div>
+            <h3 className="font-medium text-sm">StockX Product Database</h3>
+            <p className="text-xs text-muted-foreground">
+              {connected ? "Connected — scan to auto-fill products" : "Not connected — connect to enable product lookups"}
+            </p>
+          </div>
+        </div>
+        {!connected && (
+          <a
+            href="/api/stockx/auth"
+            className="rounded-lg bg-primary hover:bg-brand-orange-600 text-white px-4 py-2 text-sm font-medium transition-colors"
+          >
+            Connect StockX
+          </a>
+        )}
+        {connected && (
+          <span className="text-xs font-medium text-green-400 bg-green-900/20 px-3 py-1 rounded-full">
+            Connected
+          </span>
+        )}
+      </div>
+    </div>
+  );
+}
+
 interface ClockEntry {
   id: string;
   clock_in: string;
@@ -193,6 +236,9 @@ export default function StaffPortal() {
           </button>
         )}
       </div>
+
+      {/* StockX Connection */}
+      <StockXStatus />
 
       {/* Quick Scan */}
       <div className="rounded-xl border border-surface-800 bg-surface-900 p-6">
