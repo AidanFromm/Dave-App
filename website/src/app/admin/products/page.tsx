@@ -1,22 +1,59 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { getGroupedProducts, type GroupedProduct } from "@/actions/inventory";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { getGroupedProducts, type GroupedProduct, createProduct } from "@/actions/inventory";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { formatCurrency, cn } from "@/lib/utils";
-import { Search, Package, ArrowUpDown, ArrowUp, ArrowDown, Plus } from "lucide-react";
+import {
+  Search,
+  Package,
+  ArrowUpDown,
+  ArrowUp,
+  ArrowDown,
+  Plus,
+  ScanBarcode,
+  Upload,
+  Loader2,
+  Footprints,
+  Sparkles,
+} from "lucide-react";
 import { Pagination } from "@/components/ui/pagination";
 import { toast } from "sonner";
 
 const ITEMS_PER_PAGE = 20;
 
+type InventoryMode = "sneakers" | "pokemon";
+type SneakerFilter = "all" | "new" | "used";
+type PokemonFilter = "all" | "raw" | "graded" | "sealed";
 type SortField = "name" | "totalQuantity" | "averageCost" | "sellPrice" | "variantCount";
 type SortDir = "asc" | "desc";
+
+function getPokemonSubType(product: GroupedProduct & { tags?: string[] }): "raw" | "graded" | "sealed" {
+  // We don't have tags on GroupedProduct, so we'll use name-based heuristics
+  const name = product.name.toLowerCase();
+  if (name.includes("graded") || name.includes("psa") || name.includes("bgs") || name.includes("cgc")) return "graded";
+  if (name.includes("sealed") || name.includes("booster") || name.includes("etb") || name.includes("box")) return "sealed";
+  return "raw";
+}
+
+function getSneakerCondition(product: GroupedProduct): "new" | "used" {
+  // GroupedProduct doesn't carry condition — we infer from name or default
+  const name = product.name.toLowerCase();
+  if (name.includes("used") || name.includes("pre-owned") || name.includes("preowned")) return "used";
+  return "new";
+}
 
 export default function AdminProductsPage() {
   const [products, setProducts] = useState<GroupedProduct[]>([]);
@@ -24,8 +61,26 @@ export default function AdminProductsPage() {
   const [search, setSearch] = useState("");
   const [sortField, setSortField] = useState<SortField>("name");
   const [sortDir, setSortDir] = useState<SortDir>("asc");
-  const [category, setCategory] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
+
+  // Toggle state with localStorage persistence
+  const [mode, setMode] = useState<InventoryMode>(() => {
+    if (typeof window !== "undefined") {
+      return (localStorage.getItem("inventory-mode") as InventoryMode) || "sneakers";
+    }
+    return "sneakers";
+  });
+
+  const [sneakerFilter, setSneakerFilter] = useState<SneakerFilter>("all");
+  const [pokemonFilter, setPokemonFilter] = useState<PokemonFilter>("all");
+
+  // Modal state
+  const [addSneakerOpen, setAddSneakerOpen] = useState(false);
+  const [addPokemonOpen, setAddPokemonOpen] = useState(false);
+
+  useEffect(() => {
+    localStorage.setItem("inventory-mode", mode);
+  }, [mode]);
 
   useEffect(() => {
     async function load() {
@@ -33,7 +88,7 @@ export default function AdminProductsPage() {
       try {
         const data = await getGroupedProducts();
         setProducts(data);
-      } catch (err) {
+      } catch {
         toast.error("Failed to load products");
       } finally {
         setLoading(false);
@@ -42,17 +97,25 @@ export default function AdminProductsPage() {
     load();
   }, []);
 
+  const sneakerProducts = useMemo(() => products.filter((p) => p.category === "sneaker"), [products]);
+  const pokemonProducts = useMemo(() => products.filter((p) => p.category === "pokemon"), [products]);
+
   const filtered = useMemo(() => {
-    let list = products;
-    if (category === "lowstock") {
-      list = list.filter((p) => p.totalQuantity <= 3);
-    } else if (category !== "all") {
-      list = list.filter((p) => p.category === category);
+    let list = mode === "sneakers" ? sneakerProducts : pokemonProducts;
+
+    // Sub-filters
+    if (mode === "sneakers" && sneakerFilter !== "all") {
+      list = list.filter((p) => getSneakerCondition(p) === sneakerFilter);
     }
+    if (mode === "pokemon" && pokemonFilter !== "all") {
+      list = list.filter((p) => getPokemonSubType(p) === pokemonFilter);
+    }
+
     if (search.trim()) {
       const q = search.toLowerCase();
       list = list.filter((p) => p.name.toLowerCase().includes(q));
     }
+
     const sorted = [...list].sort((a, b) => {
       let cmp = 0;
       switch (sortField) {
@@ -65,16 +128,14 @@ export default function AdminProductsPage() {
       return sortDir === "asc" ? cmp : -cmp;
     });
     return sorted;
-  }, [products, category, search, sortField, sortDir]);
+  }, [mode, sneakerProducts, pokemonProducts, sneakerFilter, pokemonFilter, search, sortField, sortDir]);
 
-  // Reset to page 1 when filters change
   const totalPages = Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE));
   const safePage = Math.min(currentPage, totalPages);
   const paginatedProducts = filtered.slice((safePage - 1) * ITEMS_PER_PAGE, safePage * ITEMS_PER_PAGE);
 
-  // Reset page when search/category changes
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  useMemo(() => { setCurrentPage(1); }, [search, category]);
+  // Reset page on filter changes
+  useEffect(() => { setCurrentPage(1); }, [search, mode, sneakerFilter, pokemonFilter]);
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {
@@ -90,14 +151,20 @@ export default function AdminProductsPage() {
     return sortDir === "asc" ? <ArrowUp className="ml-1 h-3 w-3" /> : <ArrowDown className="ml-1 h-3 w-3" />;
   };
 
-  const sneakerCount = products.filter((p) => p.category === "sneaker").length;
-  const pokemonCount = products.filter((p) => p.category === "pokemon").length;
+  const refreshProducts = useCallback(async () => {
+    try {
+      const data = await getGroupedProducts();
+      setProducts(data);
+    } catch {
+      // silent
+    }
+  }, []);
 
   if (loading) {
     return (
       <div className="space-y-6">
         <Skeleton className="h-8 w-48" />
-        <Skeleton className="h-10 w-80" />
+        <Skeleton className="h-14 w-80" />
         <div className="space-y-3">
           {Array.from({ length: 8 }).map((_, i) => (
             <Skeleton key={i} className="h-16 w-full" />
@@ -109,162 +176,863 @@ export default function AdminProductsPage() {
 
   return (
     <div className="space-y-6">
+      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Inventory</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            View and manage all your products, stock levels, and variants.
+            Manage all your sneakers and Pokemon products
           </p>
         </div>
-        <Link
-          href="/admin/products/new"
+        <button
+          onClick={() => mode === "sneakers" ? setAddSneakerOpen(true) : setAddPokemonOpen(true)}
           className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors self-start"
         >
           <Plus className="h-4 w-4" />
-          Add Product
-        </Link>
+          {mode === "sneakers" ? "Add Sneaker" : "Add Pokemon"}
+        </button>
       </div>
 
-      <Tabs value={category} onValueChange={setCategory}>
-        <TabsList>
-          <TabsTrigger value="all">All Products ({products.length})</TabsTrigger>
-          <TabsTrigger value="sneaker">Sneakers ({sneakerCount})</TabsTrigger>
-          <TabsTrigger value="pokemon">Pokemon ({pokemonCount})</TabsTrigger>
-          <TabsTrigger value="lowstock">Low Stock</TabsTrigger>
-        </TabsList>
+      {/* Toggle */}
+      <div className="flex gap-2">
+        <button
+          onClick={() => setMode("sneakers")}
+          className={cn(
+            "flex-1 sm:flex-none flex items-center justify-center gap-2 rounded-lg px-6 py-3 text-sm font-semibold transition-all border-2",
+            mode === "sneakers"
+              ? "bg-primary/10 border-primary text-primary"
+              : "bg-muted/30 border-transparent text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+          )}
+        >
+          <Footprints className="h-5 w-5" />
+          Sneakers
+          <Badge variant="secondary" className="ml-1 text-xs">{sneakerProducts.length}</Badge>
+        </button>
+        <button
+          onClick={() => setMode("pokemon")}
+          className={cn(
+            "flex-1 sm:flex-none flex items-center justify-center gap-2 rounded-lg px-6 py-3 text-sm font-semibold transition-all border-2",
+            mode === "pokemon"
+              ? "bg-primary/10 border-primary text-primary"
+              : "bg-muted/30 border-transparent text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+          )}
+        >
+          <Sparkles className="h-5 w-5" />
+          Pokemon
+          <Badge variant="secondary" className="ml-1 text-xs">{pokemonProducts.length}</Badge>
+        </button>
+      </div>
 
-        <TabsContent value={category} className="mt-4 space-y-4">
-          {/* Search */}
-          <div className="relative max-w-sm">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search products..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="pl-9"
-            />
-          </div>
+      {/* Sub-filter pills */}
+      <div className="flex flex-wrap items-center gap-2">
+        {mode === "sneakers" ? (
+          <>
+            {(["all", "new", "used"] as SneakerFilter[]).map((f) => (
+              <button
+                key={f}
+                onClick={() => setSneakerFilter(f)}
+                className={cn(
+                  "rounded-full px-4 py-1.5 text-xs font-medium transition-colors border",
+                  sneakerFilter === f
+                    ? "bg-primary/15 border-primary/50 text-primary"
+                    : "bg-muted/30 border-transparent text-muted-foreground hover:bg-muted/50"
+                )}
+              >
+                {f === "all" ? "All" : f === "new" ? "New" : "Used"}
+              </button>
+            ))}
+          </>
+        ) : (
+          <>
+            {(["all", "raw", "graded", "sealed"] as PokemonFilter[]).map((f) => (
+              <button
+                key={f}
+                onClick={() => setPokemonFilter(f)}
+                className={cn(
+                  "rounded-full px-4 py-1.5 text-xs font-medium transition-colors border",
+                  pokemonFilter === f
+                    ? "bg-primary/15 border-primary/50 text-primary"
+                    : "bg-muted/30 border-transparent text-muted-foreground hover:bg-muted/50"
+                )}
+              >
+                {f.charAt(0).toUpperCase() + f.slice(1)}
+              </button>
+            ))}
+          </>
+        )}
 
-          {/* Table */}
-          <div className="rounded-lg border overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b bg-muted/50">
-                    <th className="px-4 py-3 text-left font-medium text-muted-foreground w-[80px]"></th>
-                    <th className="px-4 py-3 text-left font-medium text-muted-foreground">
-                      <button onClick={() => handleSort("name")} className="flex items-center hover:text-foreground transition-colors">
-                        Product <SortIcon field="name" />
-                      </button>
-                    </th>
-                    <th className="px-4 py-3 text-left font-medium text-muted-foreground">Category</th>
+        {/* Search */}
+        <div className="relative ml-auto w-full sm:w-auto sm:min-w-[240px]">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder={`Search ${mode}...`}
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="pl-9"
+          />
+        </div>
+      </div>
+
+      {/* Desktop Table */}
+      <div className="hidden md:block rounded-lg border overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b bg-muted/50">
+                <th className="px-4 py-3 text-left font-medium text-muted-foreground w-[80px]"></th>
+                <th className="px-4 py-3 text-left font-medium text-muted-foreground">
+                  <button onClick={() => handleSort("name")} className="flex items-center hover:text-foreground transition-colors">
+                    Name <SortIcon field="name" />
+                  </button>
+                </th>
+                {mode === "sneakers" ? (
+                  <>
                     <th className="px-4 py-3 text-left font-medium text-muted-foreground">
                       <button onClick={() => handleSort("variantCount")} className="flex items-center hover:text-foreground transition-colors">
-                        Variants <SortIcon field="variantCount" />
+                        Sizes <SortIcon field="variantCount" />
                       </button>
                     </th>
-                    <th className="px-4 py-3 text-left font-medium text-muted-foreground">
-                      <button onClick={() => handleSort("totalQuantity")} className="flex items-center hover:text-foreground transition-colors">
-                        Total Qty <SortIcon field="totalQuantity" />
-                      </button>
-                    </th>
-                    <th className="px-4 py-3 text-left font-medium text-muted-foreground">
-                      <button onClick={() => handleSort("averageCost")} className="flex items-center hover:text-foreground transition-colors">
-                        Avg Cost <SortIcon field="averageCost" />
-                      </button>
-                    </th>
-                    <th className="px-4 py-3 text-left font-medium text-muted-foreground">
-                      <button onClick={() => handleSort("sellPrice")} className="flex items-center hover:text-foreground transition-colors">
-                        Price <SortIcon field="sellPrice" />
-                      </button>
-                    </th>
-                    <th className="px-4 py-3 text-left font-medium text-muted-foreground">Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filtered.length === 0 ? (
-                    <tr>
-                      <td colSpan={8} className="px-4 py-16 text-center">
-                        <div className="flex flex-col items-center">
-                          <div className="flex h-14 w-14 items-center justify-center rounded-full bg-primary/10 mb-4">
-                            <Package className="h-7 w-7 text-primary" />
+                    <th className="px-4 py-3 text-left font-medium text-muted-foreground">Condition</th>
+                  </>
+                ) : (
+                  <th className="px-4 py-3 text-left font-medium text-muted-foreground">Type</th>
+                )}
+                <th className="px-4 py-3 text-left font-medium text-muted-foreground">
+                  <button onClick={() => handleSort("totalQuantity")} className="flex items-center hover:text-foreground transition-colors">
+                    Qty <SortIcon field="totalQuantity" />
+                  </button>
+                </th>
+                <th className="px-4 py-3 text-left font-medium text-muted-foreground">
+                  <button onClick={() => handleSort("averageCost")} className="flex items-center hover:text-foreground transition-colors">
+                    Cost <SortIcon field="averageCost" />
+                  </button>
+                </th>
+                <th className="px-4 py-3 text-left font-medium text-muted-foreground">
+                  <button onClick={() => handleSort("sellPrice")} className="flex items-center hover:text-foreground transition-colors">
+                    Price <SortIcon field="sellPrice" />
+                  </button>
+                </th>
+                <th className="px-4 py-3 text-left font-medium text-muted-foreground">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.length === 0 ? (
+                <tr>
+                  <td colSpan={8} className="px-4 py-16 text-center">
+                    <div className="flex flex-col items-center">
+                      <div className="flex h-14 w-14 items-center justify-center rounded-full bg-primary/10 mb-4">
+                        <Package className="h-7 w-7 text-primary" />
+                      </div>
+                      <p className="text-sm font-medium">
+                        {search ? `No ${mode} match your search` : `No ${mode} in inventory yet`}
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {search ? "Try a different search term." : `Add your first ${mode === "sneakers" ? "sneaker" : "Pokemon product"} to get started.`}
+                      </p>
+                      {!search && (
+                        <button
+                          onClick={() => mode === "sneakers" ? setAddSneakerOpen(true) : setAddPokemonOpen(true)}
+                          className="mt-4 inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
+                        >
+                          <Plus className="h-4 w-4" />
+                          Add {mode === "sneakers" ? "Sneaker" : "Pokemon"}
+                        </button>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              ) : (
+                paginatedProducts.map((product) => (
+                  <Link
+                    key={product.name}
+                    href={`/admin/products/detail?name=${encodeURIComponent(product.name)}`}
+                    className="contents"
+                  >
+                    <tr className="border-b last:border-b-0 hover:bg-muted/30 transition-colors cursor-pointer">
+                      <td className="px-4 py-3">
+                        {product.image ? (
+                          <Image
+                            src={product.image}
+                            alt={product.name}
+                            width={64}
+                            height={64}
+                            className="rounded-lg object-contain w-16 h-16 bg-white p-1"
+                          />
+                        ) : (
+                          <div className="w-16 h-16 rounded-lg bg-muted flex items-center justify-center">
+                            <Package className="h-6 w-6 text-muted-foreground" />
                           </div>
-                          <p className="text-sm font-medium">{search ? "No products match your search" : "No products yet"}</p>
-                          <p className="text-xs text-muted-foreground mt-1 max-w-sm">
-                            {search ? "Try a different search term." : "Add your first product to get started selling."}
-                          </p>
-                          {!search && (
-                            <Link href="/admin/products/new" className="mt-4 inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors">
-                              <Plus className="h-4 w-4" />
-                              Add Your First Product
-                            </Link>
-                          )}
-                        </div>
+                        )}
                       </td>
-                    </tr>
-                  ) : (
-                    paginatedProducts.map((product) => (
-                      <Link
-                        key={product.name}
-                        href={`/admin/products/detail?name=${encodeURIComponent(product.name)}`}
-                        className="contents"
-                      >
-                        <tr className="border-b last:border-b-0 hover:bg-muted/30 transition-colors cursor-pointer">
-                          <td className="px-4 py-3">
-                            {product.image ? (
-                              <Image
-                                src={product.image}
-                                alt={product.name}
-                                width={64}
-                                height={64}
-                                className="rounded-lg object-contain w-16 h-16 bg-white p-1"
-                              />
-                            ) : (
-                              <div className="w-16 h-16 rounded-lg bg-muted flex items-center justify-center">
-                                <Package className="h-6 w-6 text-muted-foreground" />
-                              </div>
-                            )}
-                          </td>
-                          <td className="px-4 py-3 font-medium">{product.name}</td>
-                          <td className="px-4 py-3">
-                            <Badge variant="secondary" className="text-xs capitalize">
-                              {product.category === "pokemon" ? "Pokemon" : "Sneaker"}
-                            </Badge>
-                          </td>
+                      <td className="px-4 py-3 font-medium">{product.name}</td>
+                      {mode === "sneakers" ? (
+                        <>
                           <td className="px-4 py-3 text-muted-foreground">
                             {product.variantCount} size{product.variantCount !== 1 ? "s" : ""}
                           </td>
                           <td className="px-4 py-3">
-                            <span className={product.totalQuantity === 0 ? "text-destructive font-bold" : ""}>
-                              {product.totalQuantity}
-                            </span>
-                          </td>
-                          <td className="px-4 py-3 text-muted-foreground">
-                            {product.averageCost > 0 ? formatCurrency(product.averageCost) : "--"}
-                          </td>
-                          <td className="px-4 py-3 font-medium">
-                            {formatCurrency(product.sellPrice)}
-                          </td>
-                          <td className="px-4 py-3">
-                            <Badge variant="secondary" className={cn("text-xs", product.totalQuantity === 0 ? "bg-red-900/30 text-red-400" : product.totalQuantity <= 3 ? "bg-yellow-900/30 text-yellow-400" : "bg-green-900/30 text-green-400")}>
-                              {product.totalQuantity === 0 ? "Out of Stock" : product.totalQuantity <= 3 ? "Low Stock" : "In Stock"}
+                            <Badge
+                              variant="secondary"
+                              className={cn(
+                                "text-xs",
+                                getSneakerCondition(product) === "new"
+                                  ? "bg-green-900/30 text-green-400"
+                                  : "bg-yellow-900/30 text-yellow-400"
+                              )}
+                            >
+                              {getSneakerCondition(product) === "new" ? "New" : "Used"}
                             </Badge>
                           </td>
-                        </tr>
-                      </Link>
-                    ))
-                  )}
-                </tbody>
-              </table>
+                        </>
+                      ) : (
+                        <td className="px-4 py-3">
+                          <Badge
+                            variant="secondary"
+                            className={cn(
+                              "text-xs capitalize",
+                              getPokemonSubType(product) === "graded"
+                                ? "bg-purple-900/30 text-purple-400"
+                                : getPokemonSubType(product) === "sealed"
+                                ? "bg-blue-900/30 text-blue-400"
+                                : "bg-muted text-muted-foreground"
+                            )}
+                          >
+                            {getPokemonSubType(product)}
+                          </Badge>
+                        </td>
+                      )}
+                      <td className="px-4 py-3">
+                        <span className={product.totalQuantity === 0 ? "text-destructive font-bold" : ""}>
+                          {product.totalQuantity}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-muted-foreground">
+                        {product.averageCost > 0 ? formatCurrency(product.averageCost) : "--"}
+                      </td>
+                      <td className="px-4 py-3 font-medium">
+                        {formatCurrency(product.sellPrice)}
+                      </td>
+                      <td className="px-4 py-3">
+                        <Badge
+                          variant="secondary"
+                          className={cn(
+                            "text-xs",
+                            product.totalQuantity === 0
+                              ? "bg-red-900/30 text-red-400"
+                              : product.totalQuantity <= 3
+                              ? "bg-yellow-900/30 text-yellow-400"
+                              : "bg-green-900/30 text-green-400"
+                          )}
+                        >
+                          {product.totalQuantity === 0 ? "Out of Stock" : product.totalQuantity <= 3 ? "Low Stock" : "In Stock"}
+                        </Badge>
+                      </td>
+                    </tr>
+                  </Link>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Mobile Cards */}
+      <div className="md:hidden space-y-3">
+        {filtered.length === 0 ? (
+          <div className="flex flex-col items-center py-16">
+            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-primary/10 mb-4">
+              <Package className="h-7 w-7 text-primary" />
             </div>
+            <p className="text-sm font-medium">
+              {search ? `No ${mode} match your search` : `No ${mode} yet`}
+            </p>
+            {!search && (
+              <button
+                onClick={() => mode === "sneakers" ? setAddSneakerOpen(true) : setAddPokemonOpen(true)}
+                className="mt-4 inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
+              >
+                <Plus className="h-4 w-4" />
+                Add {mode === "sneakers" ? "Sneaker" : "Pokemon"}
+              </button>
+            )}
           </div>
-          {/* Pagination */}
+        ) : (
+          paginatedProducts.map((product) => (
+            <Link
+              key={product.name}
+              href={`/admin/products/detail?name=${encodeURIComponent(product.name)}`}
+              className="flex items-center gap-3 rounded-lg border p-3 hover:bg-muted/30 transition-colors"
+            >
+              {product.image ? (
+                <Image
+                  src={product.image}
+                  alt={product.name}
+                  width={56}
+                  height={56}
+                  className="rounded-lg object-contain w-14 h-14 bg-white p-0.5 flex-shrink-0"
+                />
+              ) : (
+                <div className="w-14 h-14 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
+                  <Package className="h-5 w-5 text-muted-foreground" />
+                </div>
+              )}
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium truncate">{product.name}</p>
+                <div className="flex items-center gap-2 mt-1">
+                  {mode === "sneakers" ? (
+                    <>
+                      <span className="text-xs text-muted-foreground">{product.variantCount} size{product.variantCount !== 1 ? "s" : ""}</span>
+                      <Badge variant="secondary" className={cn("text-[10px]", getSneakerCondition(product) === "new" ? "bg-green-900/30 text-green-400" : "bg-yellow-900/30 text-yellow-400")}>
+                        {getSneakerCondition(product) === "new" ? "New" : "Used"}
+                      </Badge>
+                    </>
+                  ) : (
+                    <Badge variant="secondary" className={cn("text-[10px] capitalize", getPokemonSubType(product) === "graded" ? "bg-purple-900/30 text-purple-400" : getPokemonSubType(product) === "sealed" ? "bg-blue-900/30 text-blue-400" : "bg-muted text-muted-foreground")}>
+                      {getPokemonSubType(product)}
+                    </Badge>
+                  )}
+                </div>
+              </div>
+              <div className="text-right flex-shrink-0">
+                <p className="text-sm font-medium">{formatCurrency(product.sellPrice)}</p>
+                <p className={cn("text-xs", product.totalQuantity === 0 ? "text-destructive" : "text-muted-foreground")}>
+                  Qty: {product.totalQuantity}
+                </p>
+              </div>
+            </Link>
+          ))
+        )}
+      </div>
+
+      {/* Pagination */}
+      {filtered.length > 0 && (
+        <>
           <div className="flex items-center justify-between text-sm text-muted-foreground">
-            <span>Showing {((safePage - 1) * ITEMS_PER_PAGE) + 1}–{Math.min(safePage * ITEMS_PER_PAGE, filtered.length)} of {filtered.length}</span>
+            <span>
+              Showing {((safePage - 1) * ITEMS_PER_PAGE) + 1}--{Math.min(safePage * ITEMS_PER_PAGE, filtered.length)} of {filtered.length}
+            </span>
           </div>
           <Pagination currentPage={safePage} totalPages={totalPages} onPageChange={setCurrentPage} />
-        </TabsContent>
-      </Tabs>
+        </>
+      )}
+
+      {/* Add Sneaker Modal */}
+      <AddSneakerModal
+        open={addSneakerOpen}
+        onOpenChange={setAddSneakerOpen}
+        onSuccess={refreshProducts}
+      />
+
+      {/* Add Pokemon Modal */}
+      <AddPokemonModal
+        open={addPokemonOpen}
+        onOpenChange={setAddPokemonOpen}
+        onSuccess={refreshProducts}
+      />
     </div>
+  );
+}
+
+// ─── Add Sneaker Modal ───
+
+function AddSneakerModal({
+  open,
+  onOpenChange,
+  onSuccess,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onSuccess: () => void;
+}) {
+  const [saving, setSaving] = useState(false);
+  const [barcode, setBarcode] = useState("");
+  const [form, setForm] = useState({
+    name: "",
+    brand: "",
+    sku: "",
+    size: "",
+    condition: "new" as "new" | "used_like_new" | "used_good" | "used_fair",
+    cost: "",
+    price: "",
+    quantity: "1",
+    sellerName: "",
+    paymentMethod: "",
+  });
+
+  const resetForm = () => {
+    setBarcode("");
+    setForm({ name: "", brand: "", sku: "", size: "", condition: "new", cost: "", price: "", quantity: "1", sellerName: "", paymentMethod: "" });
+  };
+
+  const handleSave = async () => {
+    if (!form.name.trim()) {
+      toast.error("Name is required");
+      return;
+    }
+    if (!form.price) {
+      toast.error("Price is required");
+      return;
+    }
+    setSaving(true);
+    try {
+      const result = await createProduct({
+        name: form.name.trim(),
+        brand: form.brand || null,
+        sku: form.sku || null,
+        size: form.size || null,
+        condition: form.condition,
+        cost: form.cost ? parseFloat(form.cost) : null,
+        price: parseFloat(form.price),
+        quantity: parseInt(form.quantity) || 1,
+        tags: ["sneaker"],
+        images: [],
+        is_active: true,
+      });
+      if (result.error) {
+        toast.error(result.error);
+      } else {
+        toast.success("Sneaker added to inventory");
+        resetForm();
+        onOpenChange(false);
+        onSuccess();
+      }
+    } catch {
+      toast.error("Failed to add sneaker");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Footprints className="h-5 w-5 text-primary" />
+            Add Sneaker
+          </DialogTitle>
+        </DialogHeader>
+
+        <div className="space-y-4 pt-2">
+          {/* Barcode scan */}
+          <div>
+            <Label>Barcode Scan</Label>
+            <div className="relative mt-1">
+              <ScanBarcode className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Scan barcode or enter UPC..."
+                value={barcode}
+                onChange={(e) => setBarcode(e.target.value)}
+                className="pl-9"
+                autoFocus
+              />
+            </div>
+            <p className="text-[11px] text-muted-foreground mt-1">Scan a barcode to auto-fill, or enter details manually below</p>
+          </div>
+
+          <div className="h-px bg-border" />
+
+          {/* Manual entry */}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="col-span-2">
+              <Label>Name *</Label>
+              <Input
+                className="mt-1"
+                placeholder="Nike Air Jordan 1 Retro High OG"
+                value={form.name}
+                onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+              />
+            </div>
+            <div>
+              <Label>Brand</Label>
+              <Input
+                className="mt-1"
+                placeholder="Nike"
+                value={form.brand}
+                onChange={(e) => setForm((f) => ({ ...f, brand: e.target.value }))}
+              />
+            </div>
+            <div>
+              <Label>SKU</Label>
+              <Input
+                className="mt-1"
+                placeholder="DZ5485-612"
+                value={form.sku}
+                onChange={(e) => setForm((f) => ({ ...f, sku: e.target.value }))}
+              />
+            </div>
+            <div>
+              <Label>Size</Label>
+              <Input
+                className="mt-1"
+                placeholder="10.5"
+                value={form.size}
+                onChange={(e) => setForm((f) => ({ ...f, size: e.target.value }))}
+              />
+            </div>
+            <div>
+              <Label>Condition</Label>
+              <Select value={form.condition} onValueChange={(v) => setForm((f) => ({ ...f, condition: v as typeof f.condition }))}>
+                <SelectTrigger className="mt-1">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="new">New</SelectItem>
+                  <SelectItem value="used_like_new">Used - Like New</SelectItem>
+                  <SelectItem value="used_good">Used - Good</SelectItem>
+                  <SelectItem value="used_fair">Used - Fair</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Cost</Label>
+              <Input
+                className="mt-1"
+                type="number"
+                placeholder="120.00"
+                value={form.cost}
+                onChange={(e) => setForm((f) => ({ ...f, cost: e.target.value }))}
+              />
+            </div>
+            <div>
+              <Label>Price *</Label>
+              <Input
+                className="mt-1"
+                type="number"
+                placeholder="180.00"
+                value={form.price}
+                onChange={(e) => setForm((f) => ({ ...f, price: e.target.value }))}
+              />
+            </div>
+            <div>
+              <Label>Quantity</Label>
+              <Input
+                className="mt-1"
+                type="number"
+                min="1"
+                value={form.quantity}
+                onChange={(e) => setForm((f) => ({ ...f, quantity: e.target.value }))}
+              />
+            </div>
+          </div>
+
+          {/* Used sneaker: photo upload note */}
+          {form.condition !== "new" && (
+            <div>
+              <Label>Photos</Label>
+              <div className="mt-1 flex items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/25 p-6 cursor-pointer hover:border-primary/50 transition-colors">
+                <div className="text-center">
+                  <Upload className="h-6 w-6 text-muted-foreground mx-auto mb-1" />
+                  <p className="text-xs text-muted-foreground">Upload photos of used sneaker</p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div className="h-px bg-border" />
+
+          {/* Walk-in buy fields */}
+          <details className="group">
+            <summary className="text-xs font-medium text-muted-foreground cursor-pointer hover:text-foreground transition-colors">
+              Walk-in purchase details (optional)
+            </summary>
+            <div className="grid grid-cols-2 gap-3 mt-3">
+              <div>
+                <Label>Seller Name</Label>
+                <Input
+                  className="mt-1"
+                  placeholder="Customer name"
+                  value={form.sellerName}
+                  onChange={(e) => setForm((f) => ({ ...f, sellerName: e.target.value }))}
+                />
+              </div>
+              <div>
+                <Label>Payment Method</Label>
+                <Select value={form.paymentMethod} onValueChange={(v) => setForm((f) => ({ ...f, paymentMethod: v }))}>
+                  <SelectTrigger className="mt-1">
+                    <SelectValue placeholder="Select..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="cash">Cash</SelectItem>
+                    <SelectItem value="zelle">Zelle</SelectItem>
+                    <SelectItem value="store_credit">Store Credit</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </details>
+
+          <button
+            onClick={handleSave}
+            disabled={saving}
+            className="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50"
+          >
+            {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+            {saving ? "Saving..." : "Add to Inventory"}
+          </button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// ─── Add Pokemon Modal ───
+
+function AddPokemonModal({
+  open,
+  onOpenChange,
+  onSuccess,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onSuccess: () => void;
+}) {
+  const [saving, setSaving] = useState(false);
+  const [cardSearch, setCardSearch] = useState("");
+  const [form, setForm] = useState({
+    name: "",
+    description: "",
+    type: "raw" as "raw" | "graded" | "sealed",
+    grade: "",
+    gradingCompany: "",
+    certNumber: "",
+    cost: "",
+    price: "",
+    quantity: "1",
+    sellerName: "",
+    paymentMethod: "",
+  });
+
+  const resetForm = () => {
+    setCardSearch("");
+    setForm({ name: "", description: "", type: "raw", grade: "", gradingCompany: "", certNumber: "", cost: "", price: "", quantity: "1", sellerName: "", paymentMethod: "" });
+  };
+
+  const handleSave = async () => {
+    if (!form.name.trim()) {
+      toast.error("Name is required");
+      return;
+    }
+    if (!form.price) {
+      toast.error("Price is required");
+      return;
+    }
+    setSaving(true);
+    try {
+      const tags = ["pokemon", form.type];
+      const result = await createProduct({
+        name: form.name.trim(),
+        brand: "Pokemon TCG",
+        description: form.description || null,
+        cost: form.cost ? parseFloat(form.cost) : null,
+        price: parseFloat(form.price),
+        quantity: parseInt(form.quantity) || 1,
+        tags,
+        images: [],
+        is_active: true,
+        condition: "new",
+      });
+      if (result.error) {
+        toast.error(result.error);
+      } else {
+        toast.success("Pokemon product added to inventory");
+        resetForm();
+        onOpenChange(false);
+        onSuccess();
+      }
+    } catch {
+      toast.error("Failed to add Pokemon product");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Sparkles className="h-5 w-5 text-primary" />
+            Add Pokemon Product
+          </DialogTitle>
+        </DialogHeader>
+
+        <div className="space-y-4 pt-2">
+          {/* Card search */}
+          <div>
+            <Label>Search Pokemon TCG</Label>
+            <div className="relative mt-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Type a card name to search..."
+                value={cardSearch}
+                onChange={(e) => setCardSearch(e.target.value)}
+                className="pl-9"
+                autoFocus
+              />
+            </div>
+            <p className="text-[11px] text-muted-foreground mt-1">Search for a card, or enter details manually below</p>
+          </div>
+
+          <div className="h-px bg-border" />
+
+          {/* Manual entry */}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="col-span-2">
+              <Label>Name *</Label>
+              <Input
+                className="mt-1"
+                placeholder="Charizard VMAX Secret Rare"
+                value={form.name}
+                onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+              />
+            </div>
+            <div className="col-span-2">
+              <Label>Description</Label>
+              <Input
+                className="mt-1"
+                placeholder="Set, card number, details..."
+                value={form.description}
+                onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
+              />
+            </div>
+            <div>
+              <Label>Type</Label>
+              <Select value={form.type} onValueChange={(v) => setForm((f) => ({ ...f, type: v as typeof f.type }))}>
+                <SelectTrigger className="mt-1">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="raw">Raw Card</SelectItem>
+                  <SelectItem value="graded">Graded Card</SelectItem>
+                  <SelectItem value="sealed">Sealed Product</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Quantity</Label>
+              <Input
+                className="mt-1"
+                type="number"
+                min="1"
+                value={form.quantity}
+                onChange={(e) => setForm((f) => ({ ...f, quantity: e.target.value }))}
+              />
+            </div>
+
+            {/* Graded fields */}
+            {form.type === "graded" && (
+              <>
+                <div>
+                  <Label>Grading Company</Label>
+                  <Select value={form.gradingCompany} onValueChange={(v) => setForm((f) => ({ ...f, gradingCompany: v }))}>
+                    <SelectTrigger className="mt-1">
+                      <SelectValue placeholder="Select..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="PSA">PSA</SelectItem>
+                      <SelectItem value="BGS">BGS</SelectItem>
+                      <SelectItem value="CGC">CGC</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>Grade</Label>
+                  <Input
+                    className="mt-1"
+                    placeholder="10"
+                    value={form.grade}
+                    onChange={(e) => setForm((f) => ({ ...f, grade: e.target.value }))}
+                  />
+                </div>
+                <div className="col-span-2">
+                  <Label>Cert Number</Label>
+                  <Input
+                    className="mt-1"
+                    placeholder="Certification number"
+                    value={form.certNumber}
+                    onChange={(e) => setForm((f) => ({ ...f, certNumber: e.target.value }))}
+                  />
+                </div>
+              </>
+            )}
+
+            <div>
+              <Label>Cost</Label>
+              <Input
+                className="mt-1"
+                type="number"
+                placeholder="50.00"
+                value={form.cost}
+                onChange={(e) => setForm((f) => ({ ...f, cost: e.target.value }))}
+              />
+            </div>
+            <div>
+              <Label>Price *</Label>
+              <Input
+                className="mt-1"
+                type="number"
+                placeholder="89.99"
+                value={form.price}
+                onChange={(e) => setForm((f) => ({ ...f, price: e.target.value }))}
+              />
+            </div>
+          </div>
+
+          {/* Photo upload */}
+          <div>
+            <Label>Photo</Label>
+            <div className="mt-1 flex items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/25 p-6 cursor-pointer hover:border-primary/50 transition-colors">
+              <div className="text-center">
+                <Upload className="h-6 w-6 text-muted-foreground mx-auto mb-1" />
+                <p className="text-xs text-muted-foreground">Upload product photo</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="h-px bg-border" />
+
+          {/* Walk-in buy fields */}
+          <details className="group">
+            <summary className="text-xs font-medium text-muted-foreground cursor-pointer hover:text-foreground transition-colors">
+              Walk-in purchase details (optional)
+            </summary>
+            <div className="grid grid-cols-2 gap-3 mt-3">
+              <div>
+                <Label>Seller Name</Label>
+                <Input
+                  className="mt-1"
+                  placeholder="Customer name"
+                  value={form.sellerName}
+                  onChange={(e) => setForm((f) => ({ ...f, sellerName: e.target.value }))}
+                />
+              </div>
+              <div>
+                <Label>Payment Method</Label>
+                <Select value={form.paymentMethod} onValueChange={(v) => setForm((f) => ({ ...f, paymentMethod: v }))}>
+                  <SelectTrigger className="mt-1">
+                    <SelectValue placeholder="Select..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="cash">Cash</SelectItem>
+                    <SelectItem value="zelle">Zelle</SelectItem>
+                    <SelectItem value="store_credit">Store Credit</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </details>
+
+          <button
+            onClick={handleSave}
+            disabled={saving}
+            className="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50"
+          >
+            {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+            {saving ? "Saving..." : "Add to Inventory"}
+          </button>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }

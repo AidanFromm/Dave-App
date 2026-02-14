@@ -54,6 +54,7 @@ import type { ProductCondition } from "@/types/product";
 // ─── Types ───────────────────────────────────────────────────
 
 type ScanPhase = "scanning" | "pricing";
+type PaymentMethod = "none" | "cash" | "zelle" | "store_credit";
 
 interface ScannedItem {
   id: string;
@@ -76,6 +77,8 @@ interface SavedSession {
   items: ScannedItem[];
   phase: ScanPhase;
   timestamp: string;
+  sellerName?: string;
+  paymentMethod?: PaymentMethod;
 }
 
 const SESSION_KEY = "dave-scan-session";
@@ -160,6 +163,8 @@ export default function ScanPage() {
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [submitProgress, setSubmitProgress] = useState({ current: 0, total: 0 });
+  const [sellerName, setSellerName] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("none");
 
   const { playTone, setEnabled: setSoundEnabledHook } = useScanSound();
 
@@ -188,17 +193,21 @@ export default function ScanPage() {
         items,
         phase,
         timestamp: new Date().toISOString(),
+        sellerName,
+        paymentMethod,
       };
       localStorage.setItem(SESSION_KEY, JSON.stringify(session));
     } else {
       localStorage.removeItem(SESSION_KEY);
     }
-  }, [items, phase]);
+  }, [items, phase, sellerName, paymentMethod]);
 
   const handleResumeSession = () => {
     if (savedSession) {
       setItems(savedSession.items);
       setPhase(savedSession.phase);
+      if (savedSession.sellerName) setSellerName(savedSession.sellerName);
+      if (savedSession.paymentMethod) setPaymentMethod(savedSession.paymentMethod);
     }
     setShowResumeDialog(false);
     setSavedSession(null);
@@ -569,6 +578,8 @@ export default function ScanPage() {
       toast.success(`All ${successCount} item(s) added to inventory!`);
       setItems([]);
       setPhase("scanning");
+      setSellerName("");
+      setPaymentMethod("none");
       localStorage.removeItem(SESSION_KEY);
     } else {
       toast.warning(`${successCount} added, ${failCount} failed`);
@@ -1103,6 +1114,52 @@ export default function ScanPage() {
                     </div>
                   );
                 })}
+              </div>
+
+              {/* Purchase Info (optional — for walk-in buys) */}
+              <div className="rounded-xl border border-border bg-card p-5 space-y-4">
+                <div>
+                  <h3 className="text-sm font-semibold">Buying from someone?</h3>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    If you are buying these from a walk-in customer, fill in the details below. Leave blank for regular restocks.
+                  </p>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <Label>Seller Name</Label>
+                    <Input
+                      value={sellerName}
+                      onChange={(e) => setSellerName(e.target.value)}
+                      placeholder="Who are you buying from?"
+                      className="h-11"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>Payment Method</Label>
+                    <div className="flex gap-2">
+                      {([
+                        { value: "none" as PaymentMethod, label: "N/A" },
+                        { value: "cash" as PaymentMethod, label: "Cash" },
+                        { value: "zelle" as PaymentMethod, label: "Zelle" },
+                        { value: "store_credit" as PaymentMethod, label: "Store Credit" },
+                      ]).map((opt) => (
+                        <button
+                          key={opt.value}
+                          type="button"
+                          onClick={() => setPaymentMethod(opt.value)}
+                          className={cn(
+                            "flex-1 rounded-lg border-2 px-2 py-2.5 text-xs font-medium transition-all",
+                            paymentMethod === opt.value
+                              ? "border-primary bg-primary/10 text-primary"
+                              : "border-border text-muted-foreground hover:border-muted-foreground"
+                          )}
+                        >
+                          {opt.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
               </div>
 
               {/* Submit All Button */}

@@ -12,14 +12,11 @@ import {
   Package,
   ScanBarcode,
   Flame,
-  Sparkles,
   Menu,
   X,
   Tag,
-  HandCoins,
   ExternalLink,
   Truck,
-  DollarSign,
   HelpCircle,
   CreditCard,
   Gift,
@@ -40,15 +37,8 @@ const NAV_SECTIONS = [
     label: "Store",
     items: [
       { href: "/admin/scan", label: "Scan In", icon: ScanBarcode },
-      { href: "/admin/buy", label: "Buy from Customer", icon: HandCoins },
       { href: "/admin/drops", label: "Drops", icon: Flame },
       { href: "/admin/shipping", label: "Shipping", icon: Truck },
-    ],
-  },
-  {
-    label: "Pokemon",
-    items: [
-      { href: "/admin/pokemon", label: "Pokemon Cards", icon: Sparkles },
     ],
   },
   {

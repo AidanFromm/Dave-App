@@ -15,7 +15,7 @@ import { formatCurrency } from "@/lib/utils";
 import { formatDateShort } from "@/lib/utils";
 import type { TimePeriod } from "@/types/admin";
 import { toast } from "sonner";
-import { Package, DollarSign, Layers, TrendingUp, Plus, ScanBarcode, ShoppingCart, HandCoins, ClipboardList, AlertTriangle } from "lucide-react";
+import { Package, DollarSign, Layers, TrendingUp, Plus, ScanBarcode, ShoppingCart, ClipboardList, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { getAdminOrders } from "@/actions/admin";
@@ -164,9 +164,9 @@ export default function AdminDashboardPage() {
             </Link>
           </Button>
           <Button asChild variant="outline" size="lg" className="gap-2 h-14 text-base border-border/50">
-            <Link href="/admin/buy">
-              <HandCoins className="h-5 w-5" />
-              Buy from Customer
+            <Link href="/admin/products">
+              <Package className="h-5 w-5" />
+              View Inventory
             </Link>
           </Button>
         </div>
