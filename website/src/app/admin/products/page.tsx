@@ -356,7 +356,12 @@ export default function AdminProductsPage() {
                             alt={product.name}
                             width={64}
                             height={64}
-                            className="rounded-lg object-contain w-16 h-16 bg-white p-1"
+                            className={cn(
+                              "rounded-lg w-16 h-16",
+                              getSneakerCondition(product) !== "new" && mode === "sneakers"
+                                ? "object-cover"
+                                : "object-contain bg-white p-1"
+                            )}
                           />
                         ) : (
                           <div className="w-16 h-16 rounded-lg bg-muted flex items-center justify-center">
@@ -469,7 +474,12 @@ export default function AdminProductsPage() {
                   alt={product.name}
                   width={56}
                   height={56}
-                  className="rounded-lg object-contain w-14 h-14 bg-white p-0.5 flex-shrink-0"
+                  className={cn(
+                    "rounded-lg w-14 h-14 flex-shrink-0",
+                    getSneakerCondition(product) !== "new" && mode === "sneakers"
+                      ? "object-cover"
+                      : "object-contain bg-white p-0.5"
+                  )}
                 />
               ) : (
                 <div className="w-14 h-14 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
