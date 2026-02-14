@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { signInSchema, type SignInFormValues } from "@/lib/validators";
-import { signIn } from "@/actions/auth";
+import { createClient } from "@/lib/supabase/client";
 import { Loader2, Shield, Eye, EyeOff, AlertCircle } from "lucide-react";
 
 export default function AdminLoginPage() {
@@ -37,14 +37,18 @@ export default function AdminLoginPage() {
   const onSubmit = async (data: SignInFormValues) => {
     setLoading(true);
     setServerError("");
-    const result = await signIn(data.email, data.password);
-    if (result.error) {
-      setServerError(result.error);
+    const supabase = createClient();
+    const { error } = await supabase.auth.signInWithPassword({
+      email: data.email,
+      password: data.password,
+    });
+    if (error) {
+      setServerError(error.message);
       setLoading(false);
-    } else {
-      // Hard navigation to ensure cookies are picked up
-      window.location.href = "/admin";
+      return;
     }
+    // Hard navigation to ensure cookies are picked up
+    window.location.href = "/admin";
   };
 
   return (

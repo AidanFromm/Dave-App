@@ -10,10 +10,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { signInSchema, type SignInFormValues } from "@/lib/validators";
-import { signIn } from "@/actions/auth";
+import { createClient } from "@/lib/supabase/client";
 import {
   Loader2, Eye, EyeOff, ShoppingBag, ArrowRight,
-  Shield, Package, Truck, Star, Lock, AlertCircle,
+  Shield, Package, Truck, Star, Lock, AlertCircle, Settings, Users,
 } from "lucide-react";
 
 const fadeIn = {
@@ -37,15 +37,36 @@ function SignInForm() {
     resolver: zodResolver(signInSchema),
   });
 
+  const [userRole, setUserRole] = useState<string | null>(null);
+  const [signedIn, setSignedIn] = useState(false);
+
   const onSubmit = async (data: SignInFormValues) => {
     setLoading(true);
     setServerError("");
-    const result = await signIn(data.email, data.password);
-    if (result.error) {
-      setServerError(result.error);
+    const supabase = createClient();
+    const { error } = await supabase.auth.signInWithPassword({
+      email: data.email,
+      password: data.password,
+    });
+    if (error) {
+      setServerError(error.message);
       setLoading(false);
-    } else {
-      // Hard navigation to ensure cookies are picked up
+      return;
+    }
+    // Check role
+    try {
+      const res = await fetch("/api/auth/role");
+      const roleData = await res.json();
+      const role = roleData.role;
+      if (role === "owner" || role === "manager" || role === "staff") {
+        setUserRole(role);
+        setSignedIn(true);
+        setLoading(false);
+      } else {
+        // Regular customer — redirect
+        window.location.href = redirect;
+      }
+    } catch {
       window.location.href = redirect;
     }
   };
@@ -80,6 +101,46 @@ function SignInForm() {
             variants={fadeIn}
             className="rounded-2xl border bg-card p-6 sm:p-8 shadow-lg"
           >
+            {signedIn && userRole ? (
+              <div className="space-y-4">
+                <div className="text-center mb-6">
+                  <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-green-500/10 mb-3">
+                    <Shield className="h-6 w-6 text-green-500" />
+                  </div>
+                  <h2 className="text-lg font-bold">Signed In</h2>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Welcome back! Where would you like to go?
+                  </p>
+                </div>
+                <Button
+                  onClick={() => window.location.href = "/"}
+                  variant="outline"
+                  className="w-full h-12 text-base justify-start gap-3"
+                >
+                  <ShoppingBag className="h-5 w-5" />
+                  Continue Shopping
+                </Button>
+                {(userRole === "owner" || userRole === "manager") && (
+                  <Button
+                    onClick={() => window.location.href = "/admin"}
+                    className="w-full h-12 text-base justify-start gap-3"
+                  >
+                    <Settings className="h-5 w-5" />
+                    Admin Dashboard
+                  </Button>
+                )}
+                {userRole === "staff" && (
+                  <Button
+                    onClick={() => window.location.href = "/staff"}
+                    className="w-full h-12 text-base justify-start gap-3"
+                  >
+                    <Users className="h-5 w-5" />
+                    Staff Portal
+                  </Button>
+                )}
+              </div>
+            ) : (
+            <>
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
               {serverError && (
                 <motion.div
@@ -156,7 +217,6 @@ function SignInForm() {
                 </Button>
               </motion.div>
             </form>
-
             <div className="mt-6 text-center">
               <p className="text-sm text-muted-foreground">
                 Don&apos;t have an account?{" "}
@@ -165,6 +225,8 @@ function SignInForm() {
                 </Link>
               </p>
             </div>
+            </>
+            )}
           </motion.div>
 
           <motion.div variants={fadeIn} className="mt-6 text-center">
