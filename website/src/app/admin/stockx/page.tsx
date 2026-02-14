@@ -114,7 +114,7 @@ export default function StockXPage() {
                 <img
                   src={product.thumbnailUrl}
                   alt={product.name}
-                  className="h-16 w-16 rounded-md object-cover"
+                  className="h-16 w-16 rounded-md object-contain bg-white p-1"
                 />
               )}
               <div className="flex-1">

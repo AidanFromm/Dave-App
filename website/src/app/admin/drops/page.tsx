@@ -184,7 +184,7 @@ function CreateDropModal({ onCreated, editProduct, onClose }: CreateDropModalPro
               {selectedProduct ? (
                 <div className="flex items-center gap-3 rounded-lg border border-[#FB4F14]/30 bg-[#FB4F14]/5 p-3">
                   {selectedProduct.images?.[0] && (
-                    <Image src={selectedProduct.images[0]} alt="" width={40} height={40} className="rounded object-cover" />
+                    <Image src={selectedProduct.images[0]} alt="" width={40} height={40} className="rounded object-contain bg-white p-0.5" />
                   )}
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium truncate text-white">{selectedProduct.name}</p>
@@ -215,7 +215,7 @@ function CreateDropModal({ onCreated, editProduct, onClose }: CreateDropModalPro
                           className="flex w-full items-center gap-3 p-2 text-sm hover:bg-[#FB4F14]/10 text-white"
                         >
                           {p.images?.[0] && (
-                            <Image src={p.images[0]} alt="" width={32} height={32} className="rounded object-cover" />
+                            <Image src={p.images[0]} alt="" width={32} height={32} className="rounded object-contain bg-white p-0.5" />
                           )}
                           <div className="flex-1 text-left min-w-0">
                             <span className="truncate block">{p.name}</span>
@@ -236,7 +236,7 @@ function CreateDropModal({ onCreated, editProduct, onClose }: CreateDropModalPro
           {editProduct && (
             <div className="flex items-center gap-3 rounded-lg border border-gray-700 p-3">
               {editProduct.images?.[0] && (
-                <Image src={editProduct.images[0]} alt="" width={40} height={40} className="rounded object-cover" />
+                <Image src={editProduct.images[0]} alt="" width={40} height={40} className="rounded object-contain bg-white p-0.5" />
               )}
               <div>
                 <p className="text-sm font-medium text-white">{editProduct.name}</p>
@@ -467,7 +467,7 @@ export default function AdminDropsPage() {
                 <div className="flex items-center gap-4 flex-1 min-w-0">
                   <div className="relative h-16 w-16 overflow-hidden rounded-lg bg-muted flex-shrink-0">
                     {product.images?.[0] ? (
-                      <Image src={product.images[0]} alt={product.name} fill className="object-cover" />
+                      <Image src={product.images[0]} alt={product.name} fill className="object-contain p-2" />
                     ) : (
                       <div className="flex h-full items-center justify-center">
                         <Package className="h-6 w-6 text-muted-foreground" />

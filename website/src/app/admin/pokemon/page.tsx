@@ -266,7 +266,7 @@ export default function AdminPokemonPage() {
                                 alt={product.name}
                                 width={56}
                                 height={56}
-                                className="rounded-lg object-cover w-14 h-14"
+                                className="rounded-lg object-contain w-14 h-14 bg-white p-0.5"
                               />
                             ) : (
                               <div className="w-14 h-14 rounded-lg bg-muted flex items-center justify-center">

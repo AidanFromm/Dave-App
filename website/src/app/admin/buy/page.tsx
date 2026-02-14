@@ -41,9 +41,9 @@ const CATEGORY_OPTIONS: { value: Category; label: string }[] = [
 
 const CONDITION_OPTIONS = ["new", "like_new", "good", "fair"];
 const PAYMENT_OPTIONS: { value: PaymentMethod; label: string }[] = [
-  { value: "cash", label: "💵 Cash" },
-  { value: "zelle", label: "⚡ Zelle" },
-  { value: "store_credit", label: "🏷️ Store Credit" },
+  { value: "cash", label: "Cash" },
+  { value: "zelle", label: "Zelle" },
+  { value: "store_credit", label: "Store Credit" },
 ];
 const GRADING_COMPANIES = ["PSA", "BGS", "CGC", "SGC", "AGS", "Other"];
 

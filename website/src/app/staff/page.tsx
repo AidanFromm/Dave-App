@@ -228,7 +228,7 @@ export default function StaffPortal() {
             ) : (
               <div className="flex items-center gap-4">
                 {scanResult.images?.[0] && (
-                  <img src={scanResult.images[0]} alt="" className="h-16 w-16 rounded-lg object-cover" />
+                  <img src={scanResult.images[0]} alt="" className="h-16 w-16 rounded-lg object-contain bg-white p-1" />
                 )}
                 <div className="flex-1 min-w-0">
                   <p className="font-medium truncate">{scanResult.name}</p>

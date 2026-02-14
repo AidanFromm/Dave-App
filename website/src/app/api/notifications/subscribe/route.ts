@@ -64,7 +64,7 @@ export async function POST(request: Request) {
         await resend.emails.send({
           from: "Secured Tampa <drops@securedtampa.com>",
           to: email,
-          subject: `You're on the list! 🔥 ${productName || "Upcoming Drop"}`,
+          subject: `You're on the list! ${productName || "Upcoming Drop"}`,
           html: `
             <!DOCTYPE html>
             <html>
@@ -77,7 +77,7 @@ export async function POST(request: Request) {
                 <table cellpadding="0" cellspacing="0" border="0" width="100%" style="max-width: 600px; margin: 0 auto; background-color: #161616;">
                   <tr>
                     <td style="padding: 40px 30px; text-align: center;">
-                      <h1 style="color: #FF6B3D; font-size: 28px; margin: 0 0 10px;">🔥 You're on the list!</h1>
+                      <h1 style="color: #FF6B3D; font-size: 28px; margin: 0 0 10px;">You're on the list!</h1>
                       <p style="color: #FFFFFF; font-size: 18px; margin: 0;">
                         ${productName || "Upcoming Drop"}
                       </p>

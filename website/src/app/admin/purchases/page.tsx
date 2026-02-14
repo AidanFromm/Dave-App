@@ -42,9 +42,9 @@ const CATEGORY_OPTIONS: { value: Category; label: string }[] = [
 const CONDITION_OPTIONS = ["new", "like_new", "good", "fair"];
 
 const PAYMENT_OPTIONS: { value: PaymentMethod; label: string }[] = [
-  { value: "cash", label: "💵 Cash" },
-  { value: "zelle", label: "⚡ Zelle" },
-  { value: "store_credit", label: "🏷️ Store Credit" },
+  { value: "cash", label: "Cash" },
+  { value: "zelle", label: "Zelle" },
+  { value: "store_credit", label: "Store Credit" },
 ];
 
 const GRADING_COMPANIES = ["PSA", "BGS", "CGC", "SGC", "AGS", "Other"];
@@ -760,7 +760,7 @@ export default function PurchasesPage() {
 
                       {purchase.notes && (
                         <p className="text-xs text-muted-foreground italic">
-                          📝 {purchase.notes}
+                          {purchase.notes}
                         </p>
                       )}
 
@@ -771,7 +771,7 @@ export default function PurchasesPage() {
                               key={i}
                               src={url}
                               alt={`Purchase photo ${i + 1}`}
-                              className="h-16 w-16 rounded-lg object-cover border border-border"
+                              className="h-16 w-16 rounded-lg object-contain bg-white border border-border p-1"
                             />
                           ))}
                         </div>

@@ -204,7 +204,7 @@ export default function AdminProductsPage() {
                                 alt={product.name}
                                 width={64}
                                 height={64}
-                                className="rounded-lg object-cover w-16 h-16"
+                                className="rounded-lg object-contain w-16 h-16 bg-white p-1"
                               />
                             ) : (
                               <div className="w-16 h-16 rounded-lg bg-muted flex items-center justify-center">

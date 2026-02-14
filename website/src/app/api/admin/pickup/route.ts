@@ -45,7 +45,7 @@ export async function POST(request: Request) {
         null;
 
       if (phone) {
-        const msg = `Hey! Your order #${order.order_number} from Secured Tampa is ready for pickup! 🏪 Bring a valid photo ID. See you soon!`;
+        const msg = `Hey! Your order #${order.order_number} from Secured Tampa is ready for pickup! Bring a valid photo ID. See you soon!`;
         const result = await sendSMS(phone, msg);
         if (!result.success) {
           console.error("SMS failed for pickup notification:", result.error);

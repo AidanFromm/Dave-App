@@ -113,7 +113,7 @@ export function ReviewList({ productId }: { productId: string }) {
                       key={i}
                       src={photo}
                       alt={`Review photo ${i + 1}`}
-                      className="h-16 w-16 rounded-lg object-cover border border-border/50"
+                      className="h-16 w-16 rounded-lg object-contain bg-white border border-border/50 p-1"
                     />
                   ))}
                 </div>

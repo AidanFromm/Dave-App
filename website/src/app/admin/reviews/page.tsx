@@ -195,7 +195,7 @@ export default function AdminReviewsPage() {
                   <img
                     src={review.products.images[0]}
                     alt=""
-                    className="h-14 w-14 rounded-lg object-cover border border-border/50 shrink-0"
+                    className="h-14 w-14 rounded-lg object-contain bg-white border border-border/50 shrink-0 p-1"
                   />
                 )}
 

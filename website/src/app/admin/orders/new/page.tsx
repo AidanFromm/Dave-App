@@ -335,7 +335,7 @@ export default function NewManualOrderPage() {
                         <img
                           src={p.images[0]}
                           alt=""
-                          className="h-10 w-10 rounded-lg object-cover border border-border"
+                          className="h-10 w-10 rounded-lg object-contain bg-white border border-border p-0.5"
                         />
                       )}
                       <div className="flex-1 min-w-0">
@@ -367,7 +367,7 @@ export default function NewManualOrderPage() {
                       <img
                         src={item.image}
                         alt=""
-                        className="h-12 w-12 rounded-lg object-cover border border-border"
+                        className="h-12 w-12 rounded-lg object-contain bg-white border border-border p-0.5"
                       />
                     )}
                     <div className="flex-1 min-w-0">

@@ -489,7 +489,7 @@ function AddSealedForm({ onSaved }: { onSaved: () => void }) {
           <div className="flex gap-2 items-center">
             {imageUrl ? (
               <div className="relative w-10 h-10 rounded border">
-                <Image src={imageUrl} alt="Sealed" fill className="object-cover rounded" />
+                <Image src={imageUrl} alt="Sealed" fill className="object-contain rounded p-1" />
               </div>
             ) : null}
             <label className="cursor-pointer flex items-center gap-1 text-xs text-[#FB4F14] hover:underline">
@@ -845,7 +845,7 @@ export default function PokemonInventoryPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight" style={{ color: "#FB4F14" }}>
-            🃏 Pokemon Card Inventory
+            Pokemon Card Inventory
           </h1>
           <p className="text-sm text-muted-foreground">
             {items.length} total items · {counts.raw} raw · {counts.graded} graded · {counts.sealed} sealed

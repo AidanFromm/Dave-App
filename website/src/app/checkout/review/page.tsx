@@ -348,7 +348,7 @@ export default function ReviewPage() {
                         alt={item.product.name}
                         fill
                         sizes="56px"
-                        className="object-cover"
+                        className="object-contain p-1"
                       />
                     ) : (
                       <div className="flex h-full items-center justify-center">

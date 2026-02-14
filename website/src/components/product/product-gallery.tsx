@@ -118,7 +118,7 @@ export function ProductGallery({ images, name }: ProductGalleryProps) {
                   alt={`${name} - Thumbnail ${i + 1}`}
                   fill
                   sizes="80px"
-                  className="object-cover"
+                  className="object-contain p-1"
                 />
               </motion.button>
             ))}
@@ -232,7 +232,7 @@ function Lightbox({
                   alt={`${name} - Thumbnail ${i + 1}`}
                   fill
                   sizes="64px"
-                  className="object-cover"
+                  className="object-contain p-1"
                 />
               </motion.button>
             ))}

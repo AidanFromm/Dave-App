@@ -169,7 +169,7 @@ export function CartDrawer() {
                             alt={item.product.name}
                             fill
                             sizes="96px"
-                            className="object-cover transition-transform group-hover:scale-105"
+                            className="object-contain p-2 transition-transform group-hover:scale-105"
                           />
                         ) : (
                           <div className="flex h-full w-full items-center justify-center">

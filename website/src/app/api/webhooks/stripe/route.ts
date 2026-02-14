@@ -95,7 +95,7 @@ async function sendOrderConfirmationEmail(params: {
     </div>
     <div style="padding:20px 24px;margin:0 24px;border-top:1px solid #2a2a2a;">
       <h3 style="margin:0 0 8px;color:#FB4F14;font-size:14px;text-transform:uppercase;letter-spacing:1px;">
-        ${fulfillmentType === "ship" ? "📦 Shipping To" : "📍 Pickup"}
+        ${fulfillmentType === "ship" ? "Shipping To" : "Pickup"}
       </h3>
       ${deliveryInfo}
     </div>

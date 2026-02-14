@@ -226,7 +226,7 @@ export default function POSPage() {
                 className="flex items-center gap-4 rounded-xl border border-surface-800 bg-surface-900 p-4"
               >
                 {item.image ? (
-                  <img src={item.image} alt="" className="h-14 w-14 rounded-lg object-cover" />
+                  <img src={item.image} alt="" className="h-14 w-14 rounded-lg object-contain bg-white p-1" />
                 ) : (
                   <div className="h-14 w-14 rounded-lg bg-surface-800 flex items-center justify-center">
                     <ShoppingBag className="h-6 w-6 text-muted-foreground" />
