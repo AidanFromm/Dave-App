@@ -12,7 +12,7 @@ const PERIODS: { key: TimePeriod; label: string }[] = [
   { key: "today", label: "Today" },
   { key: "7d", label: "7 Days" },
   { key: "30d", label: "30 Days" },
-  { key: "90d", label: "90 Days" },
+  { key: "all", label: "All Time" },
 ];
 
 export function TimeSelector({ selected, onChange }: TimeSelectorProps) {
