@@ -399,6 +399,8 @@ export default function ScanPage() {
     } else {
       setScanState("not_found");
       playTone("unknown");
+      // Auto-open StockX search modal
+      setSearchModalOpen(true);
     }
   }, [items, performLookup, playTone]);
 
@@ -713,20 +715,17 @@ export default function ScanPage() {
             <>
               <BarcodeScannerInput onScan={handleScan} loading={scanState === "looking_up"} />
 
-              {/* Not found state */}
+              {/* Not found state — auto-open StockX search */}
               {scanState === "not_found" && (
                 <div className="rounded-lg border border-dashed border-yellow-500/50 bg-yellow-500/5 p-4">
                   <p className="font-medium">Barcode not found: {pendingBarcode}</p>
                   <p className="mt-1 text-sm text-muted-foreground">
-                    Try searching StockX manually or enter product details.
+                    Search StockX by name or style code to find this product.
                   </p>
-                  <div className="mt-3 flex gap-2">
+                  <div className="mt-3">
                     <Button variant="default" size="sm" onClick={() => setSearchModalOpen(true)}>
                       <Search className="mr-2 h-4 w-4" />
                       Search StockX
-                    </Button>
-                    <Button variant="outline" size="sm" onClick={handleManualEntry}>
-                      Manual Entry
                     </Button>
                   </div>
                 </div>
