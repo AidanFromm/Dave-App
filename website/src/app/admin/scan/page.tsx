@@ -459,22 +459,7 @@ export default function ScanPage() {
     setScanState("idle");
   };
 
-  const handleManualEntry = () => {
-    setSearchModalOpen(false);
-    const result: ScanResult = {
-      source: "manual", barcode: pendingBarcode, productName: "",
-      brand: null, colorway: null, styleId: null, size: null, retailPrice: null,
-      imageUrl: null, imageUrls: [], stockxProductId: null, stockxVariantId: null,
-      variants: [], marketData: null,
-    };
-    setItems((prev) => [...prev, {
-      id: crypto.randomUUID(), barcode: pendingBarcode, result, quantity: 1,
-      condition: "new", hasBox: true, cost: "", price: "",
-      images: [], selectedVariant: null, selectedSize: "",
-      marketData: null, expanded: true,
-    }]);
-    setScanState("idle");
-  };
+  // Manual entry removed — barcode must resolve via DB or StockX search
 
   // ─── Item CRUD ───────────────────────────────────────────
 

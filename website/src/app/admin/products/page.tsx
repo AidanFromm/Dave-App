@@ -377,10 +377,10 @@ export default function AdminProductsPage() {
                             <Badge
                               variant="secondary"
                               className={cn(
-                                "text-xs",
+                                "text-xs font-medium",
                                 getSneakerCondition(product) === "new"
-                                  ? "bg-green-900/30 text-green-400"
-                                  : "bg-yellow-900/30 text-yellow-400"
+                                  ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
+                                  : "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400"
                               )}
                             >
                               {getSneakerCondition(product) === "new" ? "New" : "Used"}
@@ -392,12 +392,12 @@ export default function AdminProductsPage() {
                           <Badge
                             variant="secondary"
                             className={cn(
-                              "text-xs capitalize",
+                              "text-xs capitalize font-medium",
                               getPokemonSubType(product) === "graded"
-                                ? "bg-purple-900/30 text-purple-400"
+                                ? "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400"
                                 : getPokemonSubType(product) === "sealed"
-                                ? "bg-blue-900/30 text-blue-400"
-                                : "bg-muted text-muted-foreground"
+                                ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"
+                                : "bg-gray-100 text-gray-700 dark:bg-muted dark:text-muted-foreground"
                             )}
                           >
                             {getPokemonSubType(product)}
@@ -419,12 +419,12 @@ export default function AdminProductsPage() {
                         <Badge
                           variant="secondary"
                           className={cn(
-                            "text-xs",
+                            "text-xs font-medium",
                             product.totalQuantity === 0
-                              ? "bg-red-900/30 text-red-400"
+                              ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
                               : product.totalQuantity <= 3
-                              ? "bg-yellow-900/30 text-yellow-400"
-                              : "bg-green-900/30 text-green-400"
+                              ? "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400"
+                              : "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
                           )}
                         >
                           {product.totalQuantity === 0 ? "Out of Stock" : product.totalQuantity <= 3 ? "Low Stock" : "In Stock"}
@@ -490,12 +490,12 @@ export default function AdminProductsPage() {
                   {mode === "sneakers" ? (
                     <>
                       <span className="text-xs text-muted-foreground">{product.variantCount} size{product.variantCount !== 1 ? "s" : ""}</span>
-                      <Badge variant="secondary" className={cn("text-[10px]", getSneakerCondition(product) === "new" ? "bg-green-900/30 text-green-400" : "bg-yellow-900/30 text-yellow-400")}>
+                      <Badge variant="secondary" className={cn("text-[10px] font-medium", getSneakerCondition(product) === "new" ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400" : "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400")}>
                         {getSneakerCondition(product) === "new" ? "New" : "Used"}
                       </Badge>
                     </>
                   ) : (
-                    <Badge variant="secondary" className={cn("text-[10px] capitalize", getPokemonSubType(product) === "graded" ? "bg-purple-900/30 text-purple-400" : getPokemonSubType(product) === "sealed" ? "bg-blue-900/30 text-blue-400" : "bg-muted text-muted-foreground")}>
+                    <Badge variant="secondary" className={cn("text-[10px] capitalize font-medium", getPokemonSubType(product) === "graded" ? "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400" : getPokemonSubType(product) === "sealed" ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400" : "bg-gray-100 text-gray-700 dark:bg-muted dark:text-muted-foreground")}>
                       {getPokemonSubType(product)}
                     </Badge>
                   )}
