@@ -20,40 +20,54 @@ export async function GET(
     }
 
     const data = await res.json();
+    // v2 API returns flat object (no wrapper)
     const p = data.product || data.Product || data;
 
-    // Get variants
+    const productName = p.title || p.name || "";
+    const attrs = p.productAttributes || {};
+    const urlKey = p.urlKey || "";
+
+    // StockX v2 doesn't include media URLs in product response
+    // Construct image URL from urlKey (StockX CDN pattern)
+    const imageUrl = urlKey
+      ? `https://images.stockx.com/images/${urlKey}_v2.jpg?fit=fill&bg=FFFFFF&w=700&h=500&fm=webp&auto=compress&trim=color&q=90`
+      : "";
+    const thumbUrl = urlKey
+      ? `https://images.stockx.com/images/${urlKey}_v2.jpg?fit=fill&bg=FFFFFF&w=300&h=214&fm=webp&auto=compress&trim=color&q=80`
+      : "";
+
+    // Get variants with proper v2 field mapping
     let variants: any[] = [];
     try {
       const varRes = await stockxFetch(
-        `https://api.stockx.com/v2/catalog/products/${id}/variants`
+        `https://api.stockx.com/v2/catalog/products/${id}/variants?pageSize=100`
       );
       if (varRes.ok) {
         const varData = await varRes.json();
-        variants = (varData.variants || varData.Variants || []).map((v: any) => ({
-          id: v.id,
-          size: v.sizeChart?.displayOptions?.[0]?.size || v.size || "",
-          gtins: v.gtins || [],
+        // v2 returns array directly (not wrapped in {variants:[]})
+        const rawVariants = Array.isArray(varData) ? varData : (varData.variants || varData.Variants || []);
+        variants = rawVariants.map((v: any) => ({
+          id: v.variantId || v.id,
+          size: v.sizeChart?.defaultConversion?.size || v.variantValue || v.size || "",
+          // v2 gtins are objects {identifier, type} — extract identifier strings
+          gtins: (v.gtins || []).map((g: any) => typeof g === "string" ? g : g.identifier).filter(Boolean),
         }));
       }
-    } catch {}
+    } catch (e) {
+      console.error("StockX variants error:", e);
+    }
 
-    const productName = p.title || p.name || "";
     return NextResponse.json({
-      id: p.id || id,
+      id: p.productId || p.id || id,
       title: productName,
       name: productName,
       brand: p.brand,
-      sku: p.styleId || p.sku,
-      styleId: p.styleId || p.sku,
-      colorway: p.colorway,
-      retailPrice: p.retailPrice,
-      imageUrl: p.media?.thumbUrl || p.media?.imageUrl || "",
-      imageUrls: [
-        p.media?.imageUrl,
-        p.media?.thumbUrl,
-        p.media?.smallImageUrl,
-      ].filter(Boolean),
+      sku: p.styleId || attrs.sku,
+      styleId: p.styleId || attrs.sku,
+      colorway: attrs.colorway || p.colorway,
+      retailPrice: attrs.retailPrice || p.retailPrice,
+      imageUrl,
+      imageUrls: [imageUrl, thumbUrl].filter(Boolean),
       variants,
     });
   } catch (error) {
