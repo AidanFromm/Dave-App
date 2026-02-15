@@ -24,6 +24,7 @@ const PERIOD_DAYS: Record<Exclude<TimePeriod, "custom">, number> = {
   today: 1,
   "7d": 7,
   "30d": 30,
+  "90d": 90,
   "all": 99999,
 };
 

@@ -12,6 +12,8 @@ export interface GroupedProduct {
   sellPrice: number;
   category: "sneaker" | "pokemon" | "other";
   categoryId: string | null;
+  condition: string | null;
+  tags: string[] | null;
 }
 
 export interface ProductVariant {
@@ -164,6 +166,8 @@ export async function getGroupedProducts(category?: "sneaker" | "pokemon"): Prom
       sellPrice: first.price,
       category: cat,
       categoryId: first.category_id,
+      condition: first.condition ?? null,
+      tags: Array.isArray(first.tags) ? first.tags : null,
     });
   });
 

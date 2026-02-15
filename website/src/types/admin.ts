@@ -70,7 +70,7 @@ export interface DailyAnalytics {
   created_at: string;
 }
 
-export type TimePeriod = "today" | "7d" | "30d" | "all" | "custom";
+export type TimePeriod = "today" | "7d" | "30d" | "90d" | "all" | "custom";
 
 export interface DashboardStats {
   totalRevenue: number;

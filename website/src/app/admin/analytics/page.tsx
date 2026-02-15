@@ -30,6 +30,7 @@ const PERIOD_DAYS: Record<Exclude<TimePeriod, "custom">, number> = {
   "7d": 7,
   "30d": 30,
   "90d": 90,
+  "all": 365,
 };
 
 const COLORS = {

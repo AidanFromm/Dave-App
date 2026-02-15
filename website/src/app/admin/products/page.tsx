@@ -40,7 +40,7 @@ type PokemonFilter = "all" | "raw" | "graded" | "sealed";
 type SortField = "name" | "totalQuantity" | "averageCost" | "sellPrice" | "variantCount";
 type SortDir = "asc" | "desc";
 
-function getPokemonSubType(product: GroupedProduct & { tags?: string[] }): "raw" | "graded" | "sealed" {
+function getPokemonSubType(product: GroupedProduct): "raw" | "graded" | "sealed" {
   // We don't have tags on GroupedProduct, so we'll use name-based heuristics
   const name = product.name.toLowerCase();
   if (name.includes("graded") || name.includes("psa") || name.includes("bgs") || name.includes("cgc")) return "graded";
