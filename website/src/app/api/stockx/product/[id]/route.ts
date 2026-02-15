@@ -28,13 +28,33 @@ export async function GET(
     const urlKey = p.urlKey || "";
 
     // StockX v2 doesn't include media URLs in product response
-    // Construct image URL from urlKey (StockX CDN pattern)
-    const imageUrl = urlKey
-      ? `https://images.stockx.com/images/${urlKey}_v2.jpg?fit=fill&bg=FFFFFF&w=700&h=500&fm=webp&auto=compress&trim=color&q=90`
-      : "";
-    const thumbUrl = urlKey
-      ? `https://images.stockx.com/images/${urlKey}_v2.jpg?fit=fill&bg=FFFFFF&w=300&h=214&fm=webp&auto=compress&trim=color&q=80`
-      : "";
+    // Try multiple CDN patterns to find a working image
+    let imageUrl = "";
+    let thumbUrl = "";
+    if (urlKey) {
+      // Convert urlKey to Title-Case (StockX CDN pattern)
+      const titleKey = urlKey.split("-").map((w: string) => w.charAt(0).toUpperCase() + w.slice(1)).join("-");
+      // Also try product title as hyphenated
+      const titleHyphen = productName.split(/\s+/).join("-");
+
+      const candidates = [
+        `https://images.stockx.com/images/${titleKey}.jpg`,
+        `https://images.stockx.com/images/${titleHyphen}.jpg`,
+        `https://images.stockx.com/images/${titleKey}.png`,
+      ];
+
+      // Try each candidate with a HEAD request
+      for (const candidate of candidates) {
+        try {
+          const imgRes = await fetch(candidate, { method: "HEAD", signal: AbortSignal.timeout(3000) });
+          if (imgRes.ok) {
+            imageUrl = candidate + "?fit=fill&bg=FFFFFF&w=700&h=500&fm=webp&auto=compress&q=90&trim=color";
+            thumbUrl = candidate + "?fit=fill&bg=FFFFFF&w=300&h=214&fm=webp&auto=compress&q=80&trim=color";
+            break;
+          }
+        } catch {}
+      }
+    }
 
     // Get variants with proper v2 field mapping
     let variants: any[] = [];
