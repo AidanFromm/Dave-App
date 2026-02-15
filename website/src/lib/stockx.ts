@@ -169,18 +169,22 @@ export async function getStockXToken(): Promise<string | null> {
 }
 
 export async function stockxFetch(url: string): Promise<Response> {
-  const token = await getStockXToken();
   const headers: Record<string, string> = {
     Accept: "application/json",
   };
 
+  // API key is required for all requests
+  if (STOCKX_API_KEY) {
+    headers["x-api-key"] = STOCKX_API_KEY;
+  }
+
+  // Try to get OAuth token (optional - needed for write operations)
+  const token = await getStockXToken();
   if (token) {
     headers["Authorization"] = `Bearer ${token}`;
   }
 
-  if (STOCKX_API_KEY) {
-    headers["x-api-key"] = STOCKX_API_KEY;
-  }
+  console.log("StockX fetch headers:", { hasApiKey: !!STOCKX_API_KEY, hasToken: !!token, url });
 
   return fetch(url, { headers });
 }
