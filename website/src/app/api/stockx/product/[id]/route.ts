@@ -38,11 +38,14 @@ export async function GET(
       }
     } catch {}
 
+    const productName = p.title || p.name || "";
     return NextResponse.json({
       id: p.id || id,
-      name: p.title || p.name,
+      title: productName,
+      name: productName,
       brand: p.brand,
       sku: p.styleId || p.sku,
+      styleId: p.styleId || p.sku,
       colorway: p.colorway,
       retailPrice: p.retailPrice,
       imageUrl: p.media?.thumbUrl || p.media?.imageUrl || "",

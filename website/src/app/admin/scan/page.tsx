@@ -298,14 +298,14 @@ export default function ScanPage() {
           return {
             source: "stockx",
             barcode,
-            productName: productData.title,
-            brand: productData.brand,
-            colorway: productData.colorway,
-            styleId: productData.styleId,
+            productName: productData.title || productData.name || match.name || "Unknown Product",
+            brand: productData.brand || match.brand,
+            colorway: productData.colorway || match.colorway,
+            styleId: productData.styleId || productData.sku || match.sku,
             size: matchedVariant?.size ?? null,
-            retailPrice: productData.retailPrice,
-            imageUrl: productData.imageUrl,
-            imageUrls: productData.imageUrls ?? [],
+            retailPrice: productData.retailPrice ?? match.retailPrice,
+            imageUrl: productData.imageUrl || match.imageUrl,
+            imageUrls: productData.imageUrls?.length > 0 ? productData.imageUrls : (match.imageUrl ? [match.imageUrl] : []),
             stockxProductId: match.id,
             stockxVariantId: matchedVariant?.id ?? null,
             variants: productData.variants ?? [],
@@ -748,7 +748,7 @@ export default function ScanPage() {
                         {/* Info */}
                         <div className="min-w-0 flex-1">
                           <p className="truncate text-base font-semibold">
-                            {item.result.productName || "Manual Entry"}
+                            {item.result.productName || "Unknown Product"}
                           </p>
                           <div className="flex items-center gap-2 text-sm text-muted-foreground">
                             {item.result.size && (
@@ -861,7 +861,7 @@ export default function ScanPage() {
 
                         <div className="min-w-0 flex-1">
                           <p className="truncate text-lg font-bold">
-                            {item.result.productName || "Manual Entry"}
+                            {item.result.productName || "Unknown Product"}
                           </p>
                           <div className="flex items-center gap-3 text-sm text-muted-foreground">
                             {(item.selectedSize || item.result.size) && (
