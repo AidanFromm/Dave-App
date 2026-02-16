@@ -31,28 +31,48 @@ export async function GET(
     // Try multiple CDN patterns to find a working image
     let imageUrl = "";
     let thumbUrl = "";
-    if (urlKey) {
-      // Convert urlKey to Title-Case (StockX CDN pattern)
-      const titleKey = urlKey.split("-").map((w: string) => w.charAt(0).toUpperCase() + w.slice(1)).join("-");
-      // Also try product title as hyphenated
+    if (urlKey || productName) {
+      // Convert urlKey to Title-Case
+      const titleKey = urlKey ? urlKey.split("-").map((w: string) => w.charAt(0).toUpperCase() + w.slice(1)).join("-") : "";
+      // Product title as hyphenated
       const titleHyphen = productName.split(/\s+/).join("-");
+      // For Jordans: StockX CDN often prefixes "Air-" 
+      const airPrefix = productName.startsWith("Jordan") ? "Air-" + titleHyphen : "";
+      // Try urlKey without common colorway suffixes (white, black, etc.)
+      const simplifiedKey = titleKey
+        .replace(/-White(?=-|$)/g, "")
+        .replace(/-Black(?=-|$)/g, "")
+        .replace(/-Grey(?=-|$)/g, "")
+        .replace(/-Gray(?=-|$)/g, "");
 
-      const candidates = [
-        `https://images.stockx.com/images/${titleKey}.jpg`,
+      const candidates = new Set([
+        // Most likely: Air-prefixed title
+        ...(airPrefix ? [`https://images.stockx.com/images/${airPrefix}.jpg`] : []),
+        // Title-cased urlKey
+        ...(titleKey ? [`https://images.stockx.com/images/${titleKey}.jpg`] : []),
+        // Simplified urlKey (without colorway words)
+        ...(simplifiedKey !== titleKey ? [`https://images.stockx.com/images/${simplifiedKey}.jpg`] : []),
+        // Plain title
         `https://images.stockx.com/images/${titleHyphen}.jpg`,
-        `https://images.stockx.com/images/${titleKey}.png`,
-      ];
+        // PNG variants
+        ...(titleKey ? [`https://images.stockx.com/images/${titleKey}.png`] : []),
+      ]);
 
-      // Try each candidate with a HEAD request
-      for (const candidate of candidates) {
-        try {
-          const imgRes = await fetch(candidate, { method: "HEAD", signal: AbortSignal.timeout(3000) });
-          if (imgRes.ok) {
-            imageUrl = candidate + "?fit=fill&bg=FFFFFF&w=700&h=500&fm=webp&auto=compress&q=90&trim=color";
-            thumbUrl = candidate + "?fit=fill&bg=FFFFFF&w=300&h=214&fm=webp&auto=compress&q=80&trim=color";
-            break;
-          }
-        } catch {}
+      // Try each candidate with a HEAD request (parallel for speed)
+      const results = await Promise.allSettled(
+        Array.from(candidates).map(async (candidate) => {
+          const imgRes = await fetch(candidate, { method: "HEAD", signal: AbortSignal.timeout(2000) });
+          return imgRes.ok ? candidate : null;
+        })
+      );
+
+      for (const result of results) {
+        if (result.status === "fulfilled" && result.value) {
+          const base = result.value;
+          imageUrl = base + "?fit=fill&bg=FFFFFF&w=700&h=500&fm=webp&auto=compress&q=90&trim=color";
+          thumbUrl = base + "?fit=fill&bg=FFFFFF&w=300&h=214&fm=webp&auto=compress&q=80&trim=color";
+          break;
+        }
       }
     }
 
