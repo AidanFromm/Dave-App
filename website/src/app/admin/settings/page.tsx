@@ -208,33 +208,33 @@ export default function SettingsPage() {
       </div>
 
       {/* Store Settings */}
-      <div className="rounded-xl shadow-card bg-card p-6">
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-2">
-            <Store className="h-5 w-5 text-primary" />
-            <div>
+      <div className="rounded-xl shadow-card bg-card p-4 sm:p-6">
+        <div className="flex items-center justify-between mb-6 gap-3">
+          <div className="flex items-center gap-2 min-w-0">
+            <Store className="h-5 w-5 text-primary flex-shrink-0" />
+            <div className="min-w-0">
               <h3 className="text-lg font-semibold">Store Settings</h3>
               <p className="text-xs text-muted-foreground">Your store name and contact info shown on receipts and emails.</p>
             </div>
           </div>
           {!storeEditing ? (
             <button
-              className="flex items-center gap-1.5 text-sm text-primary hover:text-primary/80 transition-colors"
+              className="flex items-center gap-1.5 text-sm text-primary hover:text-primary/80 transition-colors min-h-[44px] min-w-[44px] justify-center flex-shrink-0"
               onClick={() => setStoreEditing(true)}
             >
               <Pencil className="h-4 w-4" />
-              Edit
+              <span className="hidden sm:inline">Edit</span>
             </button>
           ) : (
-            <div className="flex gap-2">
+            <div className="flex gap-2 flex-shrink-0">
               <button
-                className="rounded-lg border border-border px-3 py-1.5 text-sm font-medium hover:bg-muted transition-colors"
+                className="rounded-lg border border-border px-3 py-2 text-sm font-medium hover:bg-muted transition-colors min-h-[44px]"
                 onClick={() => setStoreEditing(false)}
               >
                 Cancel
               </button>
               <button
-                className="rounded-lg bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
+                className="rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors min-h-[44px]"
                 onClick={() => {
                   const settings = { storeName, storeAddress, storePhone, storeEmail };
                   localStorage.setItem("secured_store_settings", JSON.stringify(settings));
@@ -356,7 +356,7 @@ export default function SettingsPage() {
         </div>
         <div className="mt-4 flex justify-end">
           <button
-            className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
+            className="rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors min-h-[44px] w-full sm:w-auto"
             onClick={() => {
               localStorage.setItem("secured_tax_shipping", JSON.stringify({ taxRate, shippingFlat, freeShippingMin }));
               toast.success("Tax & shipping rates saved!");
@@ -368,15 +368,15 @@ export default function SettingsPage() {
       </div>
 
       {/* Staff Management */}
-      <div className="rounded-xl shadow-card bg-card p-6">
-        <div className="flex items-center justify-between mb-4">
+      <div className="rounded-xl shadow-card bg-card p-4 sm:p-6">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4">
           <div className="flex items-center gap-2">
             <Users className="h-5 w-5 text-primary" />
             <h3 className="text-lg font-semibold">Staff Management</h3>
           </div>
           <Link
             href="/admin/staff"
-            className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
+            className="rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors min-h-[44px] flex items-center w-full sm:w-auto justify-center"
           >
             Manage Staff
           </Link>
@@ -387,7 +387,7 @@ export default function SettingsPage() {
       </div>
 
       {/* Clover Integration */}
-      <div className="rounded-xl shadow-card bg-card p-6">
+      <div className="rounded-xl shadow-card bg-card p-4 sm:p-6">
         <div className="flex items-center gap-2 mb-6">
           <Link2 className="h-5 w-5 text-primary" />
           <h3 className="text-lg font-semibold">Clover Integration</h3>
@@ -395,7 +395,7 @@ export default function SettingsPage() {
 
         <div className="space-y-6">
           {/* Connection Status */}
-          <div className="flex items-center justify-between p-4 rounded-lg bg-muted/50">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 rounded-lg bg-muted/50">
             <div className="flex items-center gap-3">
               {cloverStatus.isConnected ? (
                 <CheckCircle className="h-5 w-5 text-green-500" />
@@ -417,14 +417,14 @@ export default function SettingsPage() {
             {!cloverStatus.isConnected ? (
               <button
                 onClick={handleCloverConnect}
-                className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
+                className="rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors min-h-[44px] w-full sm:w-auto"
               >
                 Connect Clover
               </button>
             ) : (
               <button
                 onClick={handleCloverConnect}
-                className="rounded-lg border border-border px-4 py-2 text-sm font-medium hover:bg-muted transition-colors"
+                className="rounded-lg border border-border px-4 py-2.5 text-sm font-medium hover:bg-muted transition-colors min-h-[44px] w-full sm:w-auto"
               >
                 Reconnect
               </button>
@@ -433,7 +433,7 @@ export default function SettingsPage() {
 
           {/* Sync Status */}
           {cloverStatus.isConnected && (
-            <div className="flex items-center justify-between p-4 rounded-lg bg-muted/50">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 rounded-lg bg-muted/50">
               <div className="flex items-center gap-3">
                 <Clock className="h-5 w-5 text-muted-foreground" />
                 <div>
@@ -446,7 +446,7 @@ export default function SettingsPage() {
               <button
                 onClick={handleSync}
                 disabled={syncing}
-                className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px] w-full sm:w-auto justify-center"
               >
                 <RefreshCw
                   className={`h-4 w-4 ${syncing ? "animate-spin" : ""}`}
@@ -459,14 +459,14 @@ export default function SettingsPage() {
       </div>
 
       {/* StockX Integration */}
-      <div className="rounded-xl shadow-card bg-card p-6">
+      <div className="rounded-xl shadow-card bg-card p-4 sm:p-6">
         <div className="flex items-center gap-2 mb-6">
           <ExternalLink className="h-5 w-5 text-primary" />
           <h3 className="text-lg font-semibold">StockX Integration</h3>
         </div>
 
         <div className="space-y-3">
-          <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-3 rounded-lg bg-muted/50">
             <div className="flex items-center gap-3">
               {stockxConnected ? (
                 <CheckCircle className="h-5 w-5 text-green-500" />
@@ -488,7 +488,7 @@ export default function SettingsPage() {
                 )}
               </div>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 w-full sm:w-auto">
               {stockxConnected && (
                 <button
                   onClick={async () => {
@@ -500,7 +500,7 @@ export default function SettingsPage() {
                       toast.error("Failed to disconnect StockX");
                     }
                   }}
-                  className="rounded-lg border border-border px-4 py-2 text-sm font-medium hover:bg-muted transition-colors"
+                  className="rounded-lg border border-border px-4 py-2.5 text-sm font-medium hover:bg-muted transition-colors min-h-[44px] flex-1 sm:flex-none"
                 >
                   Disconnect
                 </button>
@@ -509,7 +509,7 @@ export default function SettingsPage() {
                 onClick={() => {
                   window.location.href = "/api/stockx/auth";
                 }}
-                className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
+                className="rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors min-h-[44px] flex-1 sm:flex-none"
               >
                 {stockxConnected ? "Reconnect" : "Connect StockX"}
               </button>
@@ -552,17 +552,17 @@ export default function SettingsPage() {
       </div>
 
       {/* Notifications */}
-      <div className="rounded-xl shadow-card bg-card p-6">
+      <div className="rounded-xl shadow-card bg-card p-4 sm:p-6">
         <div className="flex items-center gap-2 mb-6">
           <Bell className="h-5 w-5 text-primary" />
           <h3 className="text-lg font-semibold">Notifications</h3>
         </div>
 
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="font-medium">Email Notifications</p>
-              <p className="text-sm text-muted-foreground">
+        <div className="space-y-5">
+          <div className="flex items-center justify-between gap-4">
+            <div className="min-w-0">
+              <p className="font-medium text-sm sm:text-base">Email Notifications</p>
+              <p className="text-xs sm:text-sm text-muted-foreground">
                 Receive email notifications for important updates
               </p>
             </div>
@@ -574,16 +574,16 @@ export default function SettingsPage() {
                 localStorage.setItem("secured_notification_prefs", JSON.stringify(prefs));
                 toast.success(next ? "Email notifications enabled" : "Email notifications disabled");
               }}
-              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${emailNotifications ? "bg-primary" : "bg-muted-foreground/30"}`}
+              className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors flex-shrink-0 ${emailNotifications ? "bg-primary" : "bg-muted-foreground/30"}`}
             >
-              <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${emailNotifications ? "translate-x-6" : "translate-x-1"}`} />
+              <span className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform ${emailNotifications ? "translate-x-6" : "translate-x-1"}`} />
             </button>
           </div>
 
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="font-medium">Order Alerts</p>
-              <p className="text-sm text-muted-foreground">
+          <div className="flex items-center justify-between gap-4">
+            <div className="min-w-0">
+              <p className="font-medium text-sm sm:text-base">Order Alerts</p>
+              <p className="text-xs sm:text-sm text-muted-foreground">
                 Get notified when new orders come in
               </p>
             </div>
@@ -595,20 +595,20 @@ export default function SettingsPage() {
                 localStorage.setItem("secured_notification_prefs", JSON.stringify(prefs));
                 toast.success(next ? "Order alerts enabled" : "Order alerts disabled");
               }}
-              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${orderAlerts ? "bg-primary" : "bg-muted-foreground/30"}`}
+              className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors flex-shrink-0 ${orderAlerts ? "bg-primary" : "bg-muted-foreground/30"}`}
             >
-              <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${orderAlerts ? "translate-x-6" : "translate-x-1"}`} />
+              <span className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform ${orderAlerts ? "translate-x-6" : "translate-x-1"}`} />
             </button>
           </div>
 
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="font-medium">Low Stock Alert Threshold</p>
-              <p className="text-sm text-muted-foreground">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="min-w-0">
+              <p className="font-medium text-sm sm:text-base">Low Stock Alert Threshold</p>
+              <p className="text-xs sm:text-sm text-muted-foreground">
                 Get notified when product stock falls below this number
               </p>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-shrink-0">
               <input
                 type="number"
                 min={1}
@@ -617,7 +617,7 @@ export default function SettingsPage() {
                 onChange={(e) =>
                   setLowStockThreshold(parseInt(e.target.value, 10) || 1)
                 }
-                className="w-20 rounded-lg border border-border bg-background px-3 py-1.5 text-sm text-center focus:outline-none focus:ring-2 focus:ring-primary/50"
+                className="w-20 rounded-lg border border-border bg-background px-3 py-2 text-sm text-center focus:outline-none focus:ring-2 focus:ring-primary/50 min-h-[44px]"
               />
               <button
                 onClick={() => {
@@ -625,7 +625,7 @@ export default function SettingsPage() {
                   localStorage.setItem("secured_notification_prefs", JSON.stringify(prefs));
                   toast.success("Threshold saved!");
                 }}
-                className="rounded-lg border border-border px-3 py-1.5 text-sm font-medium hover:bg-muted transition-colors"
+                className="rounded-lg border border-border px-4 py-2 text-sm font-medium hover:bg-muted transition-colors min-h-[44px]"
               >
                 Save
               </button>

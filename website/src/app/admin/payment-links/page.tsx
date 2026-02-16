@@ -66,7 +66,7 @@ export default function PaymentLinksPage() {
   };
 
   return (
-    <div className="p-6 max-w-3xl">
+    <div className="p-4 sm:p-6 max-w-3xl">
       <div className="mb-8">
         <h1 className="font-display text-2xl font-bold uppercase tracking-tight">
           Payment Links

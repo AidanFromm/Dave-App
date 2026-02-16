@@ -160,7 +160,9 @@ export default function AdminPriceSyncPage() {
           ))}
         </div>
       ) : (
-        <div className="rounded-xl bg-card border border-border/50 overflow-hidden">
+        <>
+        {/* Desktop Table */}
+        <div className="hidden md:block rounded-xl bg-card border border-border/50 overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
@@ -207,6 +209,45 @@ export default function AdminPriceSyncPage() {
             </table>
           </div>
         </div>
+
+        {/* Mobile Cards */}
+        <div className="md:hidden space-y-2">
+          {products.length === 0 ? (
+            <div className="py-12 text-center text-muted-foreground">
+              <DollarSign className="mx-auto h-8 w-8 mb-2 opacity-50" />
+              No market data yet. Run a sync to get started.
+            </div>
+          ) : (
+            products.map((p) => (
+              <div key={p.id} className="rounded-xl border border-border/50 bg-card p-4">
+                <p className="text-sm font-medium line-clamp-1">{p.name}</p>
+                <p className="text-xs font-mono text-muted-foreground mt-0.5">{p.sku ?? "--"}</p>
+                <div className="flex items-center justify-between mt-2">
+                  <div>
+                    <p className="text-xs text-muted-foreground">Your Price</p>
+                    <p className="text-sm font-mono font-medium">{formatCurrency(p.sell_price)}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-xs text-muted-foreground">Market</p>
+                    <p className="text-sm font-mono">{p.market_price ? formatCurrency(p.market_price) : "--"}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-xs text-muted-foreground">Margin</p>
+                    <p className={`text-sm font-mono font-medium ${getMarginClass(p.sell_price, p.market_price)}`}>
+                      {getMarginText(p.sell_price, p.market_price)}
+                    </p>
+                  </div>
+                </div>
+                {p.last_price_sync && (
+                  <p className="text-[10px] text-muted-foreground mt-2">
+                    Synced: {new Date(p.last_price_sync).toLocaleDateString()}
+                  </p>
+                )}
+              </div>
+            ))
+          )}
+        </div>
+        </>
       )}
     </div>
   );

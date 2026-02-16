@@ -213,8 +213,8 @@ export default function ReconciliationPage() {
             />
           </div>
 
-          {/* Product count table */}
-          <div className="rounded-lg border border-border bg-card overflow-hidden">
+          {/* Desktop Table */}
+          <div className="hidden md:block rounded-lg border border-border bg-card overflow-hidden">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-border bg-surface-800/30">
@@ -270,6 +270,46 @@ export default function ReconciliationPage() {
                 ))}
               </tbody>
             </table>
+          </div>
+
+          {/* Mobile Cards */}
+          <div className="md:hidden space-y-2">
+            {filteredProducts.map((product) => (
+              <div key={product.id} className="rounded-lg border border-border bg-card p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <Package className="h-4 w-4 text-muted-foreground shrink-0" />
+                  <span className="font-medium text-sm line-clamp-1">{product.name}</span>
+                </div>
+                <div className="flex items-center justify-between text-xs text-muted-foreground mb-3">
+                  <span className="font-mono">{product.sku ?? "--"}</span>
+                  <span>Expected: <strong className="text-foreground font-mono">{product.quantity}</strong></span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="number"
+                    min={0}
+                    placeholder="Actual count"
+                    value={counts[product.id] ?? ""}
+                    onChange={(e) =>
+                      setCounts((prev) => ({ ...prev, [product.id]: e.target.value }))
+                    }
+                    className="flex-1 text-center bg-surface-800/50 border-surface-700/50 min-h-[44px]"
+                  />
+                  <Button
+                    variant="outline"
+                    onClick={() => handleSubmitCount(product)}
+                    disabled={submitting === product.id}
+                    className="min-h-[44px] min-w-[80px]"
+                  >
+                    {submitting === product.id ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      "Submit"
+                    )}
+                  </Button>
+                </div>
+              </div>
+            ))}
           </div>
         </>
       )}

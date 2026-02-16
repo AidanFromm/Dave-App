@@ -375,8 +375,8 @@ export default function InventoryPage() {
             )}
           </div>
 
-          {/* Table */}
-          <div className="rounded-lg border overflow-hidden bg-card">
+          {/* Desktop Table */}
+          <div className="hidden md:block rounded-lg border overflow-hidden bg-card">
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
@@ -492,6 +492,57 @@ export default function InventoryPage() {
                 </tbody>
               </table>
             </div>
+          </div>
+
+          {/* Mobile Cards */}
+          <div className="md:hidden space-y-2">
+            {filtered.length === 0 ? (
+              <div className="flex flex-col items-center py-16">
+                <Package className="h-8 w-8 mb-3 opacity-40" />
+                <p className="text-sm text-muted-foreground">No products found</p>
+              </div>
+            ) : (
+              filtered.map((row) => (
+                <Link
+                  key={row.name}
+                  href={`/admin/products/detail?name=${encodeURIComponent(row.name)}`}
+                  className="flex items-center gap-3 rounded-xl border border-border/50 bg-card p-3 hover:bg-muted/20 transition-colors"
+                >
+                  {row.image ? (
+                    <div className="w-14 h-14 rounded-lg bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 flex items-center justify-center p-1 border border-gray-100 dark:border-gray-700 flex-shrink-0">
+                      <Image
+                        src={row.image}
+                        alt={row.name}
+                        width={56}
+                        height={56}
+                        className="rounded object-contain w-full h-full mix-blend-multiply dark:mix-blend-normal"
+                      />
+                    </div>
+                  ) : (
+                    <div className="w-14 h-14 rounded-lg bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 flex items-center justify-center border border-gray-100 dark:border-gray-700 flex-shrink-0">
+                      <Package className="h-5 w-5 text-muted-foreground/50" />
+                    </div>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium line-clamp-1">{row.name}</p>
+                    <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
+                      <span>{row.variantCount} variant{row.variantCount !== 1 ? "s" : ""}</span>
+                      <span className={row.totalQuantity === 0 ? "text-destructive font-semibold" : ""}>
+                        Qty: {row.totalQuantity}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between mt-1">
+                      <span className="text-xs text-muted-foreground">
+                        {row.averageCost > 0 ? `Cost: ${formatCurrency(row.averageCost)}` : ""}
+                        {row.averageCost > 0 ? " / " : ""}
+                        Sell: {formatCurrency(row.sellPrice)}
+                      </span>
+                      <span className="text-sm font-medium">{formatCurrency(row.totalValue)}</span>
+                    </div>
+                  </div>
+                </Link>
+              ))
+            )}
           </div>
 
           {/* Footer count */}

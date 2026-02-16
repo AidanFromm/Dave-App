@@ -524,13 +524,13 @@ export default function BuyPage() {
       </div>
 
       {/* Total & Submit */}
-      <div className="flex items-center justify-between rounded-xl bg-[#002244] p-5 border border-[#FB4F14]/20">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 rounded-xl bg-[#002244] p-5 border border-[#FB4F14]/20">
         <div>
           <p className="text-sm text-gray-400">Total to Pay</p>
-          <p className="text-4xl font-bold text-[#FB4F14]">{formatCurrency(totalCalculated)}</p>
+          <p className="text-3xl sm:text-4xl font-bold text-[#FB4F14]">{formatCurrency(totalCalculated)}</p>
           <p className="text-xs text-gray-500 mt-1">{items.length} item{items.length !== 1 ? "s" : ""}</p>
         </div>
-        <Button onClick={handleSubmit} disabled={submitting} size="lg" className="bg-[#FB4F14] hover:bg-[#FB4F14]/90 text-white px-10 h-14 text-lg">
+        <Button onClick={handleSubmit} disabled={submitting} size="lg" className="bg-[#FB4F14] hover:bg-[#FB4F14]/90 text-white px-10 h-14 text-lg w-full sm:w-auto min-h-[56px]">
           {submitting ? <RefreshCw className="mr-2 h-5 w-5 animate-spin" /> : <ShoppingBag className="mr-2 h-5 w-5" />}
           {submitting ? "Recording..." : "Record Purchase"}
         </Button>
