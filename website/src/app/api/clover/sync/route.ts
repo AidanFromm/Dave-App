@@ -7,8 +7,13 @@ import {
 } from "@/lib/clover-sync";
 import { getCloverClient } from "@/lib/clover";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { requireAdmin } from "@/lib/admin-auth";
 
 export async function GET(request: NextRequest) {
+  // Require admin for sync operations
+  const auth = await requireAdmin();
+  if (auth.error) return auth.error;
+
   const action = request.nextUrl.searchParams.get("action");
 
   if (action === "test") {
@@ -48,6 +53,10 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  // Require admin for sync operations
+  const auth = await requireAdmin();
+  if (auth.error) return auth.error;
+
   try {
     const body = await request.json();
     const direction = body.direction as string;
