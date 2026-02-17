@@ -6,7 +6,7 @@ import { Resend } from "resend";
 import { refundEmail } from "@/lib/email-templates";
 
 const resend = new Resend(
-  process.env.RESEND_API_KEY ?? "re_cYnijget_FyAroQA3mF9U9qD4jX4Z75wf"
+  process.env.RESEND_API_KEY!
 );
 const FROM = "Secured Tampa <orders@securedtampa.com>";
 

@@ -1,9 +1,10 @@
 import { NextResponse } from "next/server";
 import { Resend } from "resend";
 import { orderConfirmationEmail, type OrderConfirmationData } from "@/lib/email-templates";
+import { requireAdmin } from "@/lib/admin-auth";
 
 function getResend() {
-  return new Resend(process.env.RESEND_API_KEY ?? "re_cYnijget_FyAroQA3mF9U9qD4jX4Z75wf");
+  return new Resend(process.env.RESEND_API_KEY!);
 }
 const FROM = "Secured Tampa <orders@securedtampa.com>";
 
@@ -25,11 +26,20 @@ interface ConfirmationRequest {
     state: string;
     zipCode: string;
   };
+  // Internal secret for webhook calls
+  internalSecret?: string;
 }
 
 export async function POST(request: Request) {
   try {
     const body: ConfirmationRequest = await request.json();
+
+    // Allow internal calls (from webhook) with secret, otherwise require admin
+    const isInternalCall = body.internalSecret === process.env.INTERNAL_API_SECRET;
+    if (!isInternalCall) {
+      const auth = await requireAdmin();
+      if (auth.error) return auth.error;
+    }
 
     if (!body.email || !body.orderNumber) {
       return NextResponse.json({ error: "Missing email or order number" }, { status: 400 });
@@ -56,7 +66,7 @@ export async function POST(request: Request) {
     });
 
     return NextResponse.json({ success: true, id: result.data?.id });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Failed to send confirmation email:", error);
     return NextResponse.json(
       { error: "Failed to send email" },

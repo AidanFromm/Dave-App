@@ -1,11 +1,16 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { requireAdmin } from "@/lib/admin-auth";
 
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"];
 const MAX_SIZE = 5 * 1024 * 1024; // 5MB
 
 export async function POST(request: Request) {
   try {
+    // Require admin authentication for uploads
+    const auth = await requireAdmin();
+    if (auth.error) return auth.error;
+
     const formData = await request.formData();
     const files = formData.getAll("images") as File[];
 

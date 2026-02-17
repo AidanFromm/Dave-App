@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { Resend } from 'resend';
 import { createClient } from '@/lib/supabase/server';
+import { requireAdmin } from '@/lib/admin-auth';
 import {
   orderShippedEmail,
   orderPickupEmail,
@@ -15,7 +16,7 @@ import {
 } from '@/lib/email-templates';
 
 function getResend() {
-  return new Resend(process.env.RESEND_API_KEY ?? 're_cYnijget_FyAroQA3mF9U9qD4jX4Z75wf');
+  return new Resend(process.env.RESEND_API_KEY!);
 }
 const FROM = 'Secured Tampa <orders@securedtampa.com>';
 
@@ -30,6 +31,10 @@ interface SendRequest {
 
 export async function POST(request: Request) {
   try {
+    // Require admin authentication for sending notifications
+    const auth = await requireAdmin();
+    if (auth.error) return auth.error;
+
     const body: SendRequest = await request.json();
     const { type, orderId, customData } = body;
 

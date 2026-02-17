@@ -178,6 +178,18 @@ export async function POST(request: Request) {
     const supabase = createAdminClient();
     const now = new Date().toISOString();
 
+    // IDEMPOTENCY CHECK: Prevent duplicate order creation on webhook retry
+    const { data: existingOrder } = await supabase
+      .from("orders")
+      .select("id, order_number")
+      .eq("stripe_payment_id", paymentIntent.id)
+      .single();
+
+    if (existingOrder) {
+      console.log(`Webhook already processed for payment ${paymentIntent.id} (order ${existingOrder.order_number})`);
+      return NextResponse.json({ received: true, duplicate: true });
+    }
+
     // Parse items from metadata
     let orderItems: OrderItem[] = [];
     try {
