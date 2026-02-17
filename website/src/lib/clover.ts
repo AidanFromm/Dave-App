@@ -172,6 +172,15 @@ export class CloverClient {
     });
   }
 
+  async deleteItem(itemId: string): Promise<boolean> {
+    try {
+      await this.request(`/items/${itemId}`, { method: "DELETE" });
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
   async updateStock(itemId: string, quantity: number): Promise<boolean> {
     try {
       await this.request(`/item_stocks/${itemId}`, {

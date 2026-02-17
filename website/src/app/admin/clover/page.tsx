@@ -2,100 +2,105 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { toast } from "sonner";
+import {
+  RefreshCw,
+  ArrowUpFromLine,
+  ArrowDownToLine,
+  Loader2,
+  CheckCircle2,
+  XCircle,
+  Store,
+  Wifi,
+  WifiOff,
+  Clock,
+  Package,
+  AlertTriangle,
+  Zap,
+} from "lucide-react";
 
-interface CloverStatus {
-  isConnected: boolean;
-  merchantId: string | null;
+interface StatusData {
+  connected: boolean;
+  merchant: { id: string; environment: string } | null;
+  cloverItemCount: number;
+  websiteItemCount: number;
   lastSyncAt: string | null;
-}
-
-interface SyncResult {
-  success: boolean;
-  summary?: {
-    total: number;
-    matched: number;
-    updated: number;
-    created: number;
-    skipped: number;
-    errors: string[];
-  };
   error?: string;
 }
 
-interface Mismatch {
-  productId: string;
-  productName: string;
-  websiteStock: number;
-  cloverStock: number;
-  cloverItemId: string | null;
+interface SyncReport {
+  total: number;
+  matched: number;
+  created: number;
+  updated: number;
+  skipped: number;
+  errors: string[];
+}
+
+interface SyncLog {
+  direction: string;
+  report: SyncReport;
+  timestamp: string;
+  success: boolean;
 }
 
 export default function CloverAdminPage() {
-  const [status, setStatus] = useState<CloverStatus | null>(null);
+  const [status, setStatus] = useState<StatusData | null>(null);
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState<string | null>(null);
-  const [syncResult, setSyncResult] = useState<SyncResult | null>(null);
-  const [mismatches, setMismatches] = useState<Mismatch[]>([]);
-  const [testResult, setTestResult] = useState<{
-    ok: boolean;
-    error?: string;
-  } | null>(null);
+  const [syncLogs, setSyncLogs] = useState<SyncLog[]>([]);
 
   const fetchStatus = useCallback(async () => {
     try {
-      const res = await fetch("/api/admin/settings/clover");
+      const res = await fetch("/api/admin/clover/status");
+      if (!res.ok) throw new Error("Failed to fetch status");
       const data = await res.json();
       setStatus(data);
     } catch {
-      setStatus({ isConnected: false, merchantId: null, lastSyncAt: null });
+      setStatus({
+        connected: false,
+        merchant: null,
+        cloverItemCount: 0,
+        websiteItemCount: 0,
+        lastSyncAt: null,
+        error: "Failed to check connection",
+      });
     } finally {
       setLoading(false);
     }
   }, []);
 
-  const fetchMismatches = useCallback(async () => {
-    try {
-      const res = await fetch("/api/clover/sync?action=status");
-      if (res.ok) {
-        const data = await res.json();
-        setMismatches(data.mismatches ?? []);
-      }
-    } catch {
-      toast.error("Failed to load sync status");
-    }
-  }, []);
-
   useEffect(() => {
     fetchStatus();
-    fetchMismatches();
-  }, [fetchStatus, fetchMismatches]);
+  }, [fetchStatus]);
 
-  async function handleTestConnection() {
-    setTestResult(null);
-    try {
-      const res = await fetch("/api/clover/sync?action=test");
-      const data = await res.json();
-      setTestResult(data);
-    } catch {
-      setTestResult({ ok: false, error: "Request failed" });
-    }
-  }
-
-  async function handleSync(direction: "from" | "to" | "full") {
+  async function handleSync(direction: "push" | "pull" | "full") {
     setSyncing(direction);
-    setSyncResult(null);
     try {
-      const res = await fetch("/api/clover/sync", {
+      const res = await fetch("/api/admin/clover/sync", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ direction }),
       });
       const data = await res.json();
-      setSyncResult(data);
+
+      const log: SyncLog = {
+        direction: data.direction ?? direction,
+        report: data.report ?? { total: 0, matched: 0, created: 0, updated: 0, skipped: 0, errors: [] },
+        timestamp: data.timestamp ?? new Date().toISOString(),
+        success: data.success ?? false,
+      };
+
+      setSyncLogs((prev) => [log, ...prev].slice(0, 20));
+
+      if (data.success) {
+        toast.success(`Sync complete: ${log.report.updated} updated, ${log.report.created} created`);
+      } else {
+        toast.error(data.error ?? "Sync encountered errors");
+      }
+
       fetchStatus();
-      fetchMismatches();
     } catch {
-      setSyncResult({ success: false, error: "Request failed" });
+      toast.error("Sync request failed");
     } finally {
       setSyncing(null);
     }
@@ -103,215 +108,195 @@ export default function CloverAdminPage() {
 
   if (loading) {
     return (
-      <div className="p-6">
-        <h1 className="text-2xl font-bold mb-4">Clover POS</h1>
-        <p className="text-muted-foreground">Loading...</p>
+      <div className="p-6 space-y-6">
+        <div className="flex items-center gap-3">
+          <Store className="h-6 w-6 text-[#FB4F14]" />
+          <h1 className="text-2xl font-bold">Clover POS</h1>
+        </div>
+        <div className="flex items-center gap-2 text-muted-foreground">
+          <Loader2 className="h-4 w-4 animate-spin" />
+          <span>Checking connection...</span>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="p-6 max-w-4xl space-y-8">
-      <div>
-        <h1 className="text-2xl font-bold">Clover POS Integration</h1>
-        <p className="text-muted-foreground mt-1">
-          Sync inventory between your website and Clover POS system.
-        </p>
+    <div className="p-6 max-w-5xl space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <Store className="h-6 w-6 text-[#FB4F14]" />
+          <div>
+            <h1 className="text-2xl font-bold">Clover POS Integration</h1>
+            <p className="text-sm text-muted-foreground mt-0.5">
+              Sync inventory between SecuredTampa and your Clover POS
+            </p>
+          </div>
+        </div>
+        <button
+          onClick={fetchStatus}
+          className="flex items-center gap-2 rounded-lg border border-surface-800 px-3 py-2 text-sm text-muted-foreground hover:bg-surface-800/50 transition-colors"
+        >
+          <RefreshCw className="h-4 w-4" />
+          Refresh
+        </button>
       </div>
 
-      {/* Connection Status */}
-      <section className="rounded-lg border border-border bg-card p-6 space-y-4">
-        <h2 className="text-lg font-semibold">Connection Status</h2>
-        <div className="flex items-center gap-3">
-          <span
-            className={`inline-block h-3 w-3 rounded-full ${
-              status?.isConnected ? "bg-green-500" : "bg-red-500"
-            }`}
-          />
-          <span className="font-medium">
-            {status?.isConnected ? "Connected" : "Not Connected"}
-          </span>
-          {status?.merchantId && (
-            <span className="text-sm text-muted-foreground">
-              Merchant: {status.merchantId}
-            </span>
-          )}
-        </div>
-        {status?.lastSyncAt && (
-          <p className="text-sm text-muted-foreground">
-            Last sync: {new Date(status.lastSyncAt).toLocaleString()}
-          </p>
-        )}
-        <div className="flex gap-3">
-          <button
-            onClick={handleTestConnection}
-            className="rounded-md bg-secondary px-4 py-2 text-sm font-medium hover:bg-secondary/80 transition-colors"
-          >
-            Test Connection
-          </button>
-        </div>
-        {testResult && (
-          <div
-            className={`rounded-md p-3 text-sm ${
-              testResult.ok
-                ? "bg-green-500/10 text-green-700 dark:text-green-400"
-                : "bg-red-500/10 text-red-700 dark:text-red-400"
-            }`}
-          >
-            {testResult.ok
-              ? "Connection successful."
-              : `Connection failed: ${testResult.error}`}
-          </div>
-        )}
-      </section>
-
-      {/* Sync Controls */}
-      <section className="rounded-lg border border-border bg-card p-6 space-y-4">
-        <h2 className="text-lg font-semibold">Sync Controls</h2>
-        {!status?.isConnected ? (
-          <p className="text-sm text-muted-foreground">
-            Not connected -- add your Clover API keys to enable sync.
-          </p>
-        ) : (
-          <>
-            <div className="flex flex-wrap gap-3">
-              <button
-                onClick={() => handleSync("from")}
-                disabled={!!syncing}
-                className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50 transition-colors"
-              >
-                {syncing === "from" ? "Syncing..." : "Sync From Clover"}
-              </button>
-              <button
-                onClick={() => handleSync("to")}
-                disabled={!!syncing}
-                className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50 transition-colors"
-              >
-                {syncing === "to" ? "Syncing..." : "Sync To Clover"}
-              </button>
-              <button
-                onClick={() => handleSync("full")}
-                disabled={!!syncing}
-                className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50 transition-colors"
-              >
-                {syncing === "full" ? "Syncing..." : "Full Sync"}
-              </button>
-            </div>
-            {syncResult && (
-              <div
-                className={`rounded-md p-4 text-sm space-y-2 ${
-                  syncResult.success
-                    ? "bg-green-500/10 text-green-700 dark:text-green-400"
-                    : "bg-red-500/10 text-red-700 dark:text-red-400"
-                }`}
-              >
-                {syncResult.error && <p>{syncResult.error}</p>}
-                {syncResult.summary && (
-                  <div className="space-y-1">
-                    <p>Total items: {syncResult.summary.total}</p>
-                    <p>Matched: {syncResult.summary.matched}</p>
-                    <p>Updated: {syncResult.summary.updated}</p>
-                    <p>Created: {syncResult.summary.created}</p>
-                    <p>Skipped: {syncResult.summary.skipped}</p>
-                    {syncResult.summary.errors.length > 0 && (
-                      <div className="mt-2">
-                        <p className="font-medium">Errors:</p>
-                        <ul className="list-disc pl-5">
-                          {syncResult.summary.errors.map((e, i) => (
-                            <li key={i}>{e}</li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-                  </div>
-                )}
+      {/* Connection Status Card */}
+      <div className="rounded-xl border border-surface-800 bg-surface-900 p-6">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            {status?.connected ? (
+              <div className="flex items-center justify-center h-10 w-10 rounded-lg bg-green-500/10">
+                <Wifi className="h-5 w-5 text-green-500" />
+              </div>
+            ) : (
+              <div className="flex items-center justify-center h-10 w-10 rounded-lg bg-red-500/10">
+                <WifiOff className="h-5 w-5 text-red-500" />
               </div>
             )}
-          </>
-        )}
-      </section>
-
-      {/* Inventory Mismatches */}
-      {mismatches.length > 0 && (
-        <section className="rounded-lg border border-border bg-card p-6 space-y-4">
-          <h2 className="text-lg font-semibold">
-            Inventory Mismatches ({mismatches.length})
-          </h2>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-border text-left">
-                  <th className="pb-2 font-medium">Product</th>
-                  <th className="pb-2 font-medium">Website Stock</th>
-                  <th className="pb-2 font-medium">Clover Stock</th>
-                  <th className="pb-2 font-medium">Difference</th>
-                </tr>
-              </thead>
-              <tbody>
-                {mismatches.map((m) => (
-                  <tr key={m.productId} className="border-b border-border/50">
-                    <td className="py-2">{m.productName}</td>
-                    <td className="py-2">{m.websiteStock}</td>
-                    <td className="py-2">{m.cloverStock}</td>
-                    <td className="py-2 font-medium">
-                      {m.cloverStock - m.websiteStock > 0 ? "+" : ""}
-                      {m.cloverStock - m.websiteStock}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            <div>
+              <p className="font-semibold">
+                {status?.connected ? "Connected" : "Not Connected"}
+              </p>
+              {status?.merchant && (
+                <p className="text-xs text-muted-foreground">
+                  Merchant: {status.merchant.id} -- {status.merchant.environment}
+                </p>
+              )}
+              {status?.error && !status.connected && (
+                <p className="text-xs text-red-400 mt-1">{status.error}</p>
+              )}
+            </div>
           </div>
-        </section>
+          {status?.lastSyncAt && (
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <Clock className="h-3.5 w-3.5" />
+              Last sync: {new Date(status.lastSyncAt).toLocaleString()}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Item Count Comparison */}
+      {status?.connected && (
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="rounded-xl border border-surface-800 bg-surface-900 p-5">
+            <div className="flex items-center gap-2 text-muted-foreground mb-2">
+              <Package className="h-4 w-4" />
+              <span className="text-xs font-medium uppercase tracking-wider">Website Items</span>
+            </div>
+            <p className="text-3xl font-bold">{status.websiteItemCount}</p>
+          </div>
+          <div className="rounded-xl border border-surface-800 bg-surface-900 p-5">
+            <div className="flex items-center gap-2 text-muted-foreground mb-2">
+              <Store className="h-4 w-4" />
+              <span className="text-xs font-medium uppercase tracking-wider">Clover Items</span>
+            </div>
+            <p className="text-3xl font-bold">{status.cloverItemCount}</p>
+          </div>
+          <div className="rounded-xl border border-surface-800 bg-surface-900 p-5">
+            <div className="flex items-center gap-2 text-muted-foreground mb-2">
+              <AlertTriangle className="h-4 w-4" />
+              <span className="text-xs font-medium uppercase tracking-wider">Difference</span>
+            </div>
+            <p className="text-3xl font-bold">
+              {Math.abs(status.websiteItemCount - status.cloverItemCount)}
+            </p>
+          </div>
+        </div>
       )}
 
-      {/* Setup Instructions */}
-      <section className="rounded-lg border border-border bg-card p-6 space-y-4">
-        <h2 className="text-lg font-semibold">Setup Instructions</h2>
-        <ol className="list-decimal pl-5 space-y-2 text-sm text-muted-foreground">
-          <li>
-            Log in to your Clover Dashboard at{" "}
-            <a
-              href="https://www.clover.com/dashboard"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-primary underline"
+      {/* Sync Controls */}
+      {status?.connected && (
+        <div className="rounded-xl border border-surface-800 bg-surface-900 p-6 space-y-4">
+          <h2 className="text-lg font-semibold flex items-center gap-2">
+            <Zap className="h-5 w-5 text-[#FB4F14]" />
+            Sync Controls
+          </h2>
+          <div className="flex flex-wrap gap-3">
+            <button
+              onClick={() => handleSync("push")}
+              disabled={!!syncing}
+              className="flex items-center gap-2 rounded-lg bg-[#FB4F14] px-4 py-2.5 text-sm font-medium text-white hover:bg-[#FB4F14]/90 disabled:opacity-50 transition-colors"
             >
-              clover.com/dashboard
-            </a>
-          </li>
-          <li>
-            Navigate to <strong>Account &amp; Setup</strong> {">"}{" "}
-            <strong>API Tokens</strong>
-          </li>
-          <li>
-            Create a new API token with <strong>Inventory</strong>,{" "}
-            <strong>Orders</strong>, and <strong>Payments</strong> read/write
-            permissions
-          </li>
-          <li>Copy your Merchant ID (shown in the URL or under Business Information)</li>
-          <li>
-            Add these environment variables to your deployment:
-            <pre className="mt-2 rounded bg-muted p-3 text-xs overflow-x-auto">
-              {`CLOVER_MERCHANT_ID=your_merchant_id
-CLOVER_API_TOKEN=your_api_token
-CLOVER_ENVIRONMENT=sandbox
-CLOVER_WEBHOOK_SECRET=your_webhook_secret`}
-            </pre>
-          </li>
-          <li>
-            Or use the OAuth flow: navigate to{" "}
-            <strong>/api/clover/oauth</strong> to connect via Clover app
-            authorization
-          </li>
-          <li>
-            For webhooks, set your webhook URL in Clover to:{" "}
-            <code className="rounded bg-muted px-1.5 py-0.5 text-xs">
-              https://your-domain.com/api/clover/webhook
-            </code>
-          </li>
-        </ol>
-      </section>
+              {syncing === "push" ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <ArrowUpFromLine className="h-4 w-4" />
+              )}
+              Push to Clover
+            </button>
+            <button
+              onClick={() => handleSync("pull")}
+              disabled={!!syncing}
+              className="flex items-center gap-2 rounded-lg bg-[#002244] px-4 py-2.5 text-sm font-medium text-white hover:bg-[#002244]/90 disabled:opacity-50 transition-colors"
+            >
+              {syncing === "pull" ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <ArrowDownToLine className="h-4 w-4" />
+              )}
+              Pull from Clover
+            </button>
+            <button
+              onClick={() => handleSync("full")}
+              disabled={!!syncing}
+              className="flex items-center gap-2 rounded-lg border border-surface-700 bg-surface-800 px-4 py-2.5 text-sm font-medium text-foreground hover:bg-surface-700 disabled:opacity-50 transition-colors"
+            >
+              {syncing === "full" ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <RefreshCw className="h-4 w-4" />
+              )}
+              Full Sync
+            </button>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Push sends website inventory to Clover. Pull imports Clover items into the website. Full Sync does both, with Clover as stock source of truth.
+          </p>
+        </div>
+      )}
+
+      {/* Sync History */}
+      {syncLogs.length > 0 && (
+        <div className="rounded-xl border border-surface-800 bg-surface-900 p-6 space-y-4">
+          <h2 className="text-lg font-semibold">Sync History</h2>
+          <div className="space-y-3">
+            {syncLogs.map((log, i) => (
+              <div
+                key={i}
+                className="flex items-start gap-3 rounded-lg border border-surface-800 bg-[#0A0A0B] p-4"
+              >
+                {log.success ? (
+                  <CheckCircle2 className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
+                ) : (
+                  <XCircle className="h-5 w-5 text-red-500 mt-0.5 flex-shrink-0" />
+                )}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm font-medium capitalize">{log.direction} Sync</p>
+                    <span className="text-xs text-muted-foreground">
+                      {new Date(log.timestamp).toLocaleTimeString()}
+                    </span>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {log.report.total} total / {log.report.updated} updated / {log.report.created} created / {log.report.skipped} skipped
+                  </p>
+                  {log.report.errors.length > 0 && (
+                    <div className="mt-2 space-y-1">
+                      {log.report.errors.map((err, j) => (
+                        <p key={j} className="text-xs text-red-400">{err}</p>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

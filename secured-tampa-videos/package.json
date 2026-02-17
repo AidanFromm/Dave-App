@@ -1,0 +1,29 @@
+{
+  "name": "secured-tampa-videos",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "dev": "npx remotion studio src/index.ts",
+    "build": "npx remotion render src/index.ts PromoVideo out/promo-video.mp4",
+    "build:story": "npx remotion render src/index.ts InstagramStory out/instagram-story.mp4",
+    "build:showcase": "npx remotion render src/index.ts ProductShowcase out/product-showcase.mp4",
+    "build:intro": "npx remotion render src/index.ts StoreIntro out/store-intro.mp4",
+    "build:drop": "npx remotion render src/index.ts DropAnnouncement out/drop-announcement.mp4",
+    "build:all": "npx remotion render src/index.ts PromoVideo out/promo-video.mp4 && npx remotion render src/index.ts InstagramStory out/instagram-story.mp4 && npx remotion render src/index.ts ProductShowcase out/product-showcase.mp4 && npx remotion render src/index.ts StoreIntro out/store-intro.mp4 && npx remotion render src/index.ts DropAnnouncement out/drop-announcement.mp4"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "@remotion/bundler": "^4.0.423",
+    "@remotion/cli": "^4.0.423",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
+    "remotion": "^4.0.423",
+    "typescript": "^5.9.3"
+  }
+}

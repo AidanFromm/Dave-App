@@ -17,6 +17,7 @@ import {
   ExternalLink,
   Truck,
   HelpCircle,
+  Store,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -37,6 +38,12 @@ const NAV_SECTIONS = [
       { href: "/admin/drops", label: "Drops", icon: Flame },
       { href: "/admin/discounts", label: "Discount Codes", icon: Tag },
       { href: "/admin/shipping", label: "Shipping", icon: Truck },
+    ],
+  },
+  {
+    label: "Integrations",
+    items: [
+      { href: "/admin/clover", label: "Clover POS", icon: Store },
     ],
   },
   {
