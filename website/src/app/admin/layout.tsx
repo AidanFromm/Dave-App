@@ -46,6 +46,8 @@ export default function AdminLayout({
     <div className="flex min-h-screen bg-surface-950">
       <AdminSidebar />
       <div className="flex flex-1 flex-col min-w-0">
+        {/* Spacer for fixed mobile sidebar hamburger */}
+        <div className="h-14 md:hidden" />
         <AdminHeader />
         <main className="flex-1 overflow-auto p-4 md:p-6 lg:p-8">
           <Breadcrumbs />

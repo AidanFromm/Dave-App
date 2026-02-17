@@ -118,8 +118,8 @@ export function AdminSidebar() {
         <SidebarContent />
       </aside>
 
-      {/* Mobile hamburger */}
-      <div className="flex items-center border-b border-surface-800 bg-surface-900 p-3 md:hidden">
+      {/* Mobile hamburger — absolutely positioned so it doesn't take flex space */}
+      <div className="fixed top-0 left-0 right-0 z-40 flex items-center border-b border-surface-800 bg-surface-900 p-3 md:hidden">
         <button
           onClick={() => setMobileOpen(true)}
           className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-surface-800/50 transition-colors"
