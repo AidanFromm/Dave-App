@@ -39,13 +39,14 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { email, items, fulfillmentType, shippingAddress, discountCode, phone } = body as {
+    const { email, items, fulfillmentType, shippingAddress, discountCode, giftCardCode, phone } = body as {
       total?: number;
       email?: string;
       items?: CartItem[];
       fulfillmentType?: string;
       shippingAddress?: object;
       discountCode?: string;
+      giftCardCode?: string;
       phone?: string;
     };
 
@@ -204,11 +205,48 @@ export async function POST(request: Request) {
       }
     }
 
-    const total = subtotal + tax + shippingCost - discountAmount;
+    // Validate and apply gift card
+    let giftCardAmount = 0;
+    let validatedGiftCardId: string | null = null;
+    let validatedGiftCardCode: string | null = null;
+    if (giftCardCode) {
+      const { data: giftCard } = await supabase
+        .from("gift_cards")
+        .select("id, code, remaining_balance, is_active, expires_at")
+        .eq("code", giftCardCode.toUpperCase().trim())
+        .single();
 
-    if (total <= 0) {
+      if (
+        giftCard &&
+        giftCard.is_active &&
+        giftCard.remaining_balance > 0 &&
+        (!giftCard.expires_at || new Date(giftCard.expires_at) >= new Date())
+      ) {
+        validatedGiftCardId = giftCard.id;
+        validatedGiftCardCode = giftCard.code;
+        // Apply up to the remaining balance or the pre-giftcard total, whichever is smaller
+        const preGiftCardTotal = subtotal + tax + shippingCost - discountAmount;
+        giftCardAmount = Math.min(Number(giftCard.remaining_balance), preGiftCardTotal);
+      }
+    }
+
+    const total = subtotal + tax + shippingCost - discountAmount - giftCardAmount;
+
+    // If gift card covers the entire order, we still need a minimal charge or handle differently
+    // For now, if total is 0 or less, we'll need to handle it specially
+    if (total < 0) {
       return NextResponse.json(
         { error: "Invalid order total", code: "INVALID_TOTAL" },
+        { status: 400 }
+      );
+    }
+
+    // If gift card covers entire order (total = 0), create a $0 order without Stripe
+    if (total === 0) {
+      // TODO: Handle fully gift-card-covered orders without Stripe
+      // For now, require at least $0.50 for Stripe minimum
+      return NextResponse.json(
+        { error: "Gift card covers entire order. Free checkout coming soon.", code: "FULLY_COVERED" },
         { status: 400 }
       );
     }
@@ -247,6 +285,9 @@ export async function POST(request: Request) {
         shippingCost: shippingCost.toFixed(2),
         discountCode: validatedDiscountCode || "",
         discountAmount: discountAmount.toFixed(2),
+        giftCardId: validatedGiftCardId || "",
+        giftCardCode: validatedGiftCardCode || "",
+        giftCardAmount: giftCardAmount.toFixed(2),
         phone: phone ?? "",
         deliveryMethod: ft === "pickup" ? "pickup" : "shipping",
       },

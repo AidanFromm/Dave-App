@@ -1,13 +1,12 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { requireAdmin } from "@/lib/admin-auth";
 
 // GET - List all drop products
 export async function GET() {
   try {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const auth = await requireAdmin();
+    if (auth.error) return auth.error;
 
     const admin = createAdminClient();
     const { data, error } = await admin
@@ -27,9 +26,8 @@ export async function GET() {
 // POST - Create a drop (flag product as drop)
 export async function POST(request: Request) {
   try {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const auth = await requireAdmin();
+    if (auth.error) return auth.error;
 
     const { productId, dropPrice, dropQuantity, dropStartsAt, dropEndsAt } = await request.json();
 
@@ -77,9 +75,8 @@ export async function POST(request: Request) {
 // PATCH - Update drop details
 export async function PATCH(request: Request) {
   try {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const auth = await requireAdmin();
+    if (auth.error) return auth.error;
 
     const { productId, dropPrice, dropQuantity, dropStartsAt, dropEndsAt } = await request.json();
     if (!productId) return NextResponse.json({ error: "Product ID required" }, { status: 400 });
@@ -108,9 +105,8 @@ export async function PATCH(request: Request) {
 // DELETE - End drop (return product to regular inventory)
 export async function DELETE(request: Request) {
   try {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const auth = await requireAdmin();
+    if (auth.error) return auth.error;
 
     const { productId } = await request.json();
     if (!productId) return NextResponse.json({ error: "Product ID required" }, { status: 400 });

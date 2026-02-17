@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { requireAdmin } from "@/lib/admin-auth";
 
 function generateGiftCardCode(): string {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -15,9 +15,8 @@ function generateGiftCardCode(): string {
 // GET - List all gift cards
 export async function GET() {
   try {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const auth = await requireAdmin();
+    if (auth.error) return auth.error;
 
     const admin = createAdminClient();
     const { data, error } = await admin
@@ -52,9 +51,8 @@ export async function GET() {
 // POST - Create manual gift card
 export async function POST(request: Request) {
   try {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const auth = await requireAdmin();
+    if (auth.error) return auth.error;
 
     const body = await request.json();
     const { amount, recipientEmail, recipientName, message, expiresAt } = body;
@@ -124,9 +122,8 @@ export async function POST(request: Request) {
 // PATCH - Deactivate/reactivate
 export async function PATCH(request: Request) {
   try {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const auth = await requireAdmin();
+    if (auth.error) return auth.error;
 
     const { id, isActive } = await request.json();
     if (!id) return NextResponse.json({ error: "Gift card ID required" }, { status: 400 });

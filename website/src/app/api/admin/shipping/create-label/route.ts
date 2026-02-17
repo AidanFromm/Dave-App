@@ -1,15 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { createShipment, createTransaction, FROM_ADDRESS, DEFAULT_PARCEL } from "@/lib/shippo";
+import { requireAdmin } from "@/lib/admin-auth";
 import type { Address } from "@/types/order";
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
 
 export async function POST(req: NextRequest) {
   try {
+    const auth = await requireAdmin();
+    if (auth.error) return auth.error;
+
+    const supabase = createAdminClient();
     const { orderId, rateId } = await req.json();
     if (!orderId) {
       return NextResponse.json({ error: "orderId is required" }, { status: 400 });

@@ -1,9 +1,13 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { requireAdmin } from "@/lib/admin-auth";
 import { sendSMS } from "@/lib/twilio";
 
 export async function POST(request: Request) {
   try {
+    const auth = await requireAdmin();
+    if (auth.error) return auth.error;
+
     const { orderId, pickupStatus } = (await request.json()) as {
       orderId?: string;
       pickupStatus?: string;

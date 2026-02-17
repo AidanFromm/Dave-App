@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { requireAdmin } from "@/lib/admin-auth";
 import type { AdjustmentReason, AdjustmentSource } from "@/types/admin";
 
 interface AdjustBody {
@@ -11,16 +12,10 @@ interface AdjustBody {
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = await createClient();
+    const auth = await requireAdmin();
+    if (auth.error) return auth.error;
 
-    // Auth check
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const supabase = createAdminClient();
 
     const body = (await request.json()) as AdjustBody;
     const { productId, quantityChange, reason, notes } = body;
@@ -91,7 +86,7 @@ export async function POST(request: NextRequest) {
         previous_quantity: previousQuantity,
         new_quantity: newQuantity,
         notes: notes ?? null,
-        adjusted_by: user.id,
+        adjusted_by: auth.user.id,
         source: "admin" as AdjustmentSource,
       });
 

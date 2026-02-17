@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getStripe } from "@/lib/stripe";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { requireAdmin } from "@/lib/admin-auth";
 import { Resend } from "resend";
 import { refundEmail } from "@/lib/email-templates";
 
@@ -11,6 +12,9 @@ const FROM = "Secured Tampa <orders@securedtampa.com>";
 
 export async function POST(request: Request) {
   try {
+    const auth = await requireAdmin();
+    if (auth.error) return auth.error;
+
     const body = await request.json();
     const { orderId, amount, reason } = body as {
       orderId?: string;

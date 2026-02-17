@@ -1,9 +1,7 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { requireAdmin } from "@/lib/admin-auth";
 import * as Sentry from "@sentry/nextjs";
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 
 const STOCKX_API_KEY = process.env.STOCKX_API_KEY ?? "";
 const STOCKX_BASE = "https://api.stockx.com/v2";
@@ -33,7 +31,10 @@ async function fetchStockXPrice(styleId: string): Promise<number | null> {
 
 export async function POST() {
   try {
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    const auth = await requireAdmin();
+    if (auth.error) return auth.error;
+
+    const supabase = createAdminClient();
 
     // Get all sneaker products with a sku/style_id
     const { data: products, error } = await supabase
@@ -102,7 +103,10 @@ export async function POST() {
 
 export async function GET() {
   try {
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    const auth = await requireAdmin();
+    if (auth.error) return auth.error;
+
+    const supabase = createAdminClient();
 
     const { data: products, error } = await supabase
       .from("products")

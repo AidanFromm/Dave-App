@@ -168,6 +168,9 @@ export async function POST(request: Request) {
       shippingCost: shippingCostStr,
       discountCode: discountCodeMeta,
       discountAmount: discountAmountStr,
+      giftCardId: giftCardIdMeta,
+      giftCardCode: giftCardCodeMeta,
+      giftCardAmount: giftCardAmountStr,
       phone: phoneMeta,
       deliveryMethod: deliveryMethodMeta,
     } = paymentIntent.metadata;
@@ -223,6 +226,8 @@ export async function POST(request: Request) {
       shipping_cost: shippingCost,
       discount: discountAmountStr ? parseFloat(discountAmountStr) : 0,
       discount_code: discountCodeMeta || null,
+      gift_card_amount: giftCardAmountStr ? parseFloat(giftCardAmountStr) : 0,
+      gift_card_code: giftCardCodeMeta || null,
       total,
       status: "paid",
       fulfillment_type: fulfillmentType || "ship",
@@ -253,6 +258,47 @@ export async function POST(request: Request) {
           .from("discounts")
           .update({ uses: (disc.uses || 0) + 1 })
           .eq("code", discountCodeMeta);
+      }
+    }
+
+    // Redeem gift card if used
+    if (giftCardIdMeta && giftCardAmountStr) {
+      const giftCardAmount = parseFloat(giftCardAmountStr);
+      if (giftCardAmount > 0) {
+        // Get current balance
+        const { data: giftCard } = await supabase
+          .from("gift_cards")
+          .select("id, remaining_balance")
+          .eq("id", giftCardIdMeta)
+          .single();
+
+        if (giftCard) {
+          const newBalance = Math.max(0, Number(giftCard.remaining_balance) - giftCardAmount);
+          
+          // Update remaining balance
+          await supabase
+            .from("gift_cards")
+            .update({ remaining_balance: newBalance })
+            .eq("id", giftCardIdMeta);
+
+          // Get the order ID we just created
+          const { data: orderData } = await supabase
+            .from("orders")
+            .select("id")
+            .eq("order_number", orderNumber)
+            .single();
+
+          // Record the transaction
+          await supabase.from("gift_card_transactions").insert({
+            gift_card_id: giftCardIdMeta,
+            order_id: orderData?.id || null,
+            amount: giftCardAmount,
+            type: "redemption",
+            note: `Redeemed for order ${orderNumber}`,
+          });
+
+          console.log(`Gift card ${giftCardCodeMeta} redeemed: $${giftCardAmount}, new balance: $${newBalance}`);
+        }
       }
     }
 

@@ -1,7 +1,11 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { requireAdmin } from "@/lib/admin-auth";
 
 export async function GET() {
+  const auth = await requireAdmin();
+  if (auth.error) return auth.error;
+
   const supabase = createAdminClient();
   const { data, error } = await supabase
     .from("discounts")
@@ -15,6 +19,9 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  const auth = await requireAdmin();
+  if (auth.error) return auth.error;
+
   const body = await request.json();
   const { code, type, value, min_order, max_uses, expires_at } = body;
 
@@ -43,6 +50,9 @@ export async function POST(request: Request) {
 }
 
 export async function PATCH(request: Request) {
+  const auth = await requireAdmin();
+  if (auth.error) return auth.error;
+
   const { id, active } = await request.json();
   const supabase = createAdminClient();
   const { error } = await supabase
@@ -57,6 +67,9 @@ export async function PATCH(request: Request) {
 }
 
 export async function DELETE(request: Request) {
+  const auth = await requireAdmin();
+  if (auth.error) return auth.error;
+
   const { id } = await request.json();
   const supabase = createAdminClient();
   const { error } = await supabase.from("discounts").delete().eq("id", id);
