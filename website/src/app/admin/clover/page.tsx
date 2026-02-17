@@ -108,9 +108,9 @@ export default function CloverAdminPage() {
 
   if (loading) {
     return (
-      <div className="p-6 space-y-6">
+      <div className="space-y-6">
         <div className="flex items-center gap-3">
-          <Store className="h-6 w-6 text-[#FB4F14]" />
+          <Store className="h-6 w-6 text-primary" />
           <h1 className="text-2xl font-bold">Clover POS</h1>
         </div>
         <div className="flex items-center gap-2 text-muted-foreground">
@@ -122,11 +122,11 @@ export default function CloverAdminPage() {
   }
 
   return (
-    <div className="p-6 max-w-5xl space-y-6">
+    <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="flex items-center gap-3">
-          <Store className="h-6 w-6 text-[#FB4F14]" />
+          <Store className="h-6 w-6 text-primary" />
           <div>
             <h1 className="text-2xl font-bold">Clover POS Integration</h1>
             <p className="text-sm text-muted-foreground mt-0.5">
@@ -136,7 +136,7 @@ export default function CloverAdminPage() {
         </div>
         <button
           onClick={fetchStatus}
-          className="flex items-center gap-2 rounded-lg border border-surface-800 px-3 py-2 text-sm text-muted-foreground hover:bg-surface-800/50 transition-colors"
+          className="flex items-center gap-2 rounded-lg border border-border bg-card px-4 py-2.5 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all duration-200 self-start"
         >
           <RefreshCw className="h-4 w-4" />
           Refresh
@@ -144,7 +144,7 @@ export default function CloverAdminPage() {
       </div>
 
       {/* Connection Status Card */}
-      <div className="rounded-xl border border-surface-800 bg-surface-900 p-6">
+      <div className="rounded-xl border border-border/50 bg-card p-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             {status?.connected ? (
@@ -182,26 +182,26 @@ export default function CloverAdminPage() {
       {/* Item Count Comparison */}
       {status?.connected && (
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div className="rounded-xl border border-surface-800 bg-surface-900 p-5">
+          <div className="rounded-xl border border-border/50 bg-card p-5 transition-colors hover:border-border">
             <div className="flex items-center gap-2 text-muted-foreground mb-2">
               <Package className="h-4 w-4" />
-              <span className="text-xs font-medium uppercase tracking-wider">Website Items</span>
+              <span className="text-xs font-semibold uppercase tracking-wider">Website Items</span>
             </div>
-            <p className="text-3xl font-bold">{status.websiteItemCount}</p>
+            <p className="text-2xl font-mono font-bold">{status.websiteItemCount}</p>
           </div>
-          <div className="rounded-xl border border-surface-800 bg-surface-900 p-5">
+          <div className="rounded-xl border border-border/50 bg-card p-5 transition-colors hover:border-border">
             <div className="flex items-center gap-2 text-muted-foreground mb-2">
               <Store className="h-4 w-4" />
-              <span className="text-xs font-medium uppercase tracking-wider">Clover Items</span>
+              <span className="text-xs font-semibold uppercase tracking-wider">Clover Items</span>
             </div>
-            <p className="text-3xl font-bold">{status.cloverItemCount}</p>
+            <p className="text-2xl font-mono font-bold">{status.cloverItemCount}</p>
           </div>
-          <div className="rounded-xl border border-surface-800 bg-surface-900 p-5">
+          <div className="rounded-xl border border-border/50 bg-card p-5 transition-colors hover:border-border">
             <div className="flex items-center gap-2 text-muted-foreground mb-2">
               <AlertTriangle className="h-4 w-4" />
-              <span className="text-xs font-medium uppercase tracking-wider">Difference</span>
+              <span className="text-xs font-semibold uppercase tracking-wider">Difference</span>
             </div>
-            <p className="text-3xl font-bold">
+            <p className="text-2xl font-mono font-bold">
               {Math.abs(status.websiteItemCount - status.cloverItemCount)}
             </p>
           </div>
@@ -210,16 +210,16 @@ export default function CloverAdminPage() {
 
       {/* Sync Controls */}
       {status?.connected && (
-        <div className="rounded-xl border border-surface-800 bg-surface-900 p-6 space-y-4">
+        <div className="rounded-xl border border-border/50 bg-card p-6 space-y-4">
           <h2 className="text-lg font-semibold flex items-center gap-2">
-            <Zap className="h-5 w-5 text-[#FB4F14]" />
+            <Zap className="h-5 w-5 text-primary" />
             Sync Controls
           </h2>
           <div className="flex flex-wrap gap-3">
             <button
               onClick={() => handleSync("push")}
               disabled={!!syncing}
-              className="flex items-center gap-2 rounded-lg bg-[#FB4F14] px-4 py-2.5 text-sm font-medium text-white hover:bg-[#FB4F14]/90 disabled:opacity-50 transition-colors"
+              className="flex items-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/85 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
             >
               {syncing === "push" ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -231,7 +231,7 @@ export default function CloverAdminPage() {
             <button
               onClick={() => handleSync("pull")}
               disabled={!!syncing}
-              className="flex items-center gap-2 rounded-lg bg-[#002244] px-4 py-2.5 text-sm font-medium text-white hover:bg-[#002244]/90 disabled:opacity-50 transition-colors"
+              className="flex items-center gap-2 rounded-lg bg-brand-navy px-5 py-2.5 text-sm font-medium text-white hover:bg-brand-navy-light disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
             >
               {syncing === "pull" ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -243,7 +243,7 @@ export default function CloverAdminPage() {
             <button
               onClick={() => handleSync("full")}
               disabled={!!syncing}
-              className="flex items-center gap-2 rounded-lg border border-surface-700 bg-surface-800 px-4 py-2.5 text-sm font-medium text-foreground hover:bg-surface-700 disabled:opacity-50 transition-colors"
+              className="flex items-center gap-2 rounded-lg border border-border bg-card px-5 py-2.5 text-sm font-medium text-foreground hover:bg-muted/50 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
             >
               {syncing === "full" ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -261,13 +261,13 @@ export default function CloverAdminPage() {
 
       {/* Sync History */}
       {syncLogs.length > 0 && (
-        <div className="rounded-xl border border-surface-800 bg-surface-900 p-6 space-y-4">
+        <div className="rounded-xl border border-border/50 bg-card p-6 space-y-4">
           <h2 className="text-lg font-semibold">Sync History</h2>
           <div className="space-y-3">
             {syncLogs.map((log, i) => (
               <div
                 key={i}
-                className="flex items-start gap-3 rounded-lg border border-surface-800 bg-[#0A0A0B] p-4"
+                className="flex items-start gap-3 rounded-xl border border-border/50 bg-background p-4"
               >
                 {log.success ? (
                   <CheckCircle2 className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />

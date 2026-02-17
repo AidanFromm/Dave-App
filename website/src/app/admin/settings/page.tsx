@@ -208,7 +208,7 @@ export default function SettingsPage() {
       </div>
 
       {/* Store Settings */}
-      <div className="rounded-xl shadow-card bg-card p-4 sm:p-6">
+      <div className="rounded-xl border border-border/50 bg-card p-4 sm:p-6">
         <div className="flex items-center justify-between mb-6 gap-3">
           <div className="flex items-center gap-2 min-w-0">
             <Store className="h-5 w-5 text-primary flex-shrink-0" />
@@ -228,7 +228,7 @@ export default function SettingsPage() {
           ) : (
             <div className="flex gap-2 flex-shrink-0">
               <button
-                className="rounded-lg border border-border px-3 py-2 text-sm font-medium hover:bg-muted transition-colors min-h-[44px]"
+                className="rounded-lg border border-border px-4 py-2.5 text-sm font-medium hover:bg-muted/50 transition-all duration-200 min-h-[44px]"
                 onClick={() => setStoreEditing(false)}
               >
                 Cancel
@@ -253,21 +253,21 @@ export default function SettingsPage() {
             <div className="space-y-4">
               <div className="space-y-1.5">
                 <label className="text-sm text-muted-foreground flex items-center gap-2"><Store className="h-4 w-4" /> Store Name</label>
-                <input value={storeName} onChange={(e) => setStoreName(e.target.value)} className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50" />
+                <input value={storeName} onChange={(e) => setStoreName(e.target.value)} className="w-full rounded-lg border border-border bg-white/5 px-4 py-3 text-sm placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all duration-200" />
               </div>
               <div className="space-y-1.5">
                 <label className="text-sm text-muted-foreground flex items-center gap-2"><MapPin className="h-4 w-4" /> Address</label>
-                <input value={storeAddress} onChange={(e) => setStoreAddress(e.target.value)} className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50" />
+                <input value={storeAddress} onChange={(e) => setStoreAddress(e.target.value)} className="w-full rounded-lg border border-border bg-white/5 px-4 py-3 text-sm placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all duration-200" />
               </div>
             </div>
             <div className="space-y-4">
               <div className="space-y-1.5">
                 <label className="text-sm text-muted-foreground flex items-center gap-2"><Phone className="h-4 w-4" /> Phone</label>
-                <input value={storePhone} onChange={(e) => setStorePhone(e.target.value)} placeholder="(555) 555-5555" className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50" />
+                <input value={storePhone} onChange={(e) => setStorePhone(e.target.value)} placeholder="(555) 555-5555" className="w-full rounded-lg border border-border bg-white/5 px-4 py-3 text-sm placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all duration-200" />
               </div>
               <div className="space-y-1.5">
                 <label className="text-sm text-muted-foreground flex items-center gap-2"><Mail className="h-4 w-4" /> Email</label>
-                <input value={storeEmail} onChange={(e) => setStoreEmail(e.target.value)} className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50" />
+                <input value={storeEmail} onChange={(e) => setStoreEmail(e.target.value)} className="w-full rounded-lg border border-border bg-white/5 px-4 py-3 text-sm placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all duration-200" />
               </div>
             </div>
           </div>
@@ -310,7 +310,7 @@ export default function SettingsPage() {
       </div>
 
       {/* Tax & Shipping Rates */}
-      <div className="rounded-xl shadow-card bg-card p-4 sm:p-6">
+      <div className="rounded-xl border border-border/50 bg-card p-4 sm:p-6">
         <div className="flex items-center gap-2 mb-6">
           <DollarSign className="h-5 w-5 text-primary" />
           <div>
@@ -328,7 +328,7 @@ export default function SettingsPage() {
               max="20"
               value={taxRate}
               onChange={(e) => setTaxRate(parseFloat(e.target.value) || 0)}
-              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+              className="w-full rounded-lg border border-border bg-white/5 px-4 py-3 text-sm placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all duration-200"
             />
           </div>
           <div className="space-y-1.5">
@@ -339,7 +339,7 @@ export default function SettingsPage() {
               min="0"
               value={shippingFlat}
               onChange={(e) => setShippingFlat(parseFloat(e.target.value) || 0)}
-              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+              className="w-full rounded-lg border border-border bg-white/5 px-4 py-3 text-sm placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all duration-200"
             />
           </div>
           <div className="space-y-1.5">
@@ -350,13 +350,13 @@ export default function SettingsPage() {
               min="0"
               value={freeShippingMin}
               onChange={(e) => setFreeShippingMin(parseFloat(e.target.value) || 0)}
-              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+              className="w-full rounded-lg border border-border bg-white/5 px-4 py-3 text-sm placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all duration-200"
             />
           </div>
         </div>
         <div className="mt-4 flex justify-end">
           <button
-            className="rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors min-h-[44px] w-full sm:w-auto"
+            className="rounded-lg bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/85 transition-all duration-200 min-h-[44px] w-full sm:w-auto"
             onClick={() => {
               localStorage.setItem("secured_tax_shipping", JSON.stringify({ taxRate, shippingFlat, freeShippingMin }));
               toast.success("Tax & shipping rates saved!");
@@ -368,7 +368,7 @@ export default function SettingsPage() {
       </div>
 
       {/* Staff Management */}
-      <div className="rounded-xl shadow-card bg-card p-4 sm:p-6">
+      <div className="rounded-xl border border-border/50 bg-card p-4 sm:p-6">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4">
           <div className="flex items-center gap-2">
             <Users className="h-5 w-5 text-primary" />
@@ -376,7 +376,7 @@ export default function SettingsPage() {
           </div>
           <Link
             href="/admin/staff"
-            className="rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors min-h-[44px] flex items-center w-full sm:w-auto justify-center"
+            className="rounded-lg bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/85 transition-all duration-200 min-h-[44px] flex items-center w-full sm:w-auto justify-center"
           >
             Manage Staff
           </Link>
@@ -387,7 +387,7 @@ export default function SettingsPage() {
       </div>
 
       {/* Clover Integration */}
-      <div className="rounded-xl shadow-card bg-card p-4 sm:p-6">
+      <div className="rounded-xl border border-border/50 bg-card p-4 sm:p-6">
         <div className="flex items-center gap-2 mb-6">
           <Link2 className="h-5 w-5 text-primary" />
           <h3 className="text-lg font-semibold">Clover Integration</h3>
@@ -417,7 +417,7 @@ export default function SettingsPage() {
             {!cloverStatus.isConnected ? (
               <button
                 onClick={handleCloverConnect}
-                className="rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors min-h-[44px] w-full sm:w-auto"
+                className="rounded-lg bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/85 transition-all duration-200 min-h-[44px] w-full sm:w-auto"
               >
                 Connect Clover
               </button>
@@ -446,7 +446,7 @@ export default function SettingsPage() {
               <button
                 onClick={handleSync}
                 disabled={syncing}
-                className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px] w-full sm:w-auto justify-center"
+                className="flex items-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/85 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px] w-full sm:w-auto justify-center"
               >
                 <RefreshCw
                   className={`h-4 w-4 ${syncing ? "animate-spin" : ""}`}
@@ -459,7 +459,7 @@ export default function SettingsPage() {
       </div>
 
       {/* StockX Integration */}
-      <div className="rounded-xl shadow-card bg-card p-4 sm:p-6">
+      <div className="rounded-xl border border-border/50 bg-card p-4 sm:p-6">
         <div className="flex items-center gap-2 mb-6">
           <ExternalLink className="h-5 w-5 text-primary" />
           <h3 className="text-lg font-semibold">StockX Integration</h3>
@@ -509,7 +509,7 @@ export default function SettingsPage() {
                 onClick={() => {
                   window.location.href = "/api/stockx/auth";
                 }}
-                className="rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors min-h-[44px] flex-1 sm:flex-none"
+                className="rounded-lg bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/85 transition-all duration-200 min-h-[44px] flex-1 sm:flex-none"
               >
                 {stockxConnected ? "Reconnect" : "Connect StockX"}
               </button>
@@ -552,7 +552,7 @@ export default function SettingsPage() {
       </div>
 
       {/* Notifications */}
-      <div className="rounded-xl shadow-card bg-card p-4 sm:p-6">
+      <div className="rounded-xl border border-border/50 bg-card p-4 sm:p-6">
         <div className="flex items-center gap-2 mb-6">
           <Bell className="h-5 w-5 text-primary" />
           <h3 className="text-lg font-semibold">Notifications</h3>
