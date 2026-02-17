@@ -180,7 +180,7 @@ export class CloverClient {
       });
       return true;
     } catch (error) {
-      console.error(`Failed to update stock for item ${itemId}:`, error);
+      // Failed to update Clover stock
       return false;
     }
   }

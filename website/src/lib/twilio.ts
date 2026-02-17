@@ -20,12 +20,12 @@ export async function sendSMS(to: string, body: string): Promise<{ success: bool
 
     const data = await res.json();
     if (!res.ok) {
-      console.error("Twilio error:", data);
+      // Twilio API error
       return { success: false, error: data.message ?? "SMS failed" };
     }
     return { success: true, sid: data.sid };
   } catch (err: any) {
-    console.error("Twilio fetch error:", err);
+    // Twilio fetch error
     return { success: false, error: err.message };
   }
 }

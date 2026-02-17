@@ -1,8 +1,8 @@
 import { createClient } from "@supabase/supabase-js";
 import { STOCKX_TOKEN_URL } from "./constants";
 
-const STOCKX_CLIENT_ID = (process.env.STOCKX_CLIENT_ID || "CQN5rKVX2haC1VWcRH1uAAFiWsQuHv7h").trim();
-const STOCKX_CLIENT_SECRET = (process.env.STOCKX_CLIENT_SECRET || "aw7KR2ZbGlY43sG84yf11UDYfAVGAgkYhad317ll-fU32lm-O75jmYaimw-oVpO4").trim();
+const STOCKX_CLIENT_ID = (process.env.STOCKX_CLIENT_ID || "").trim();
+const STOCKX_CLIENT_SECRET = (process.env.STOCKX_CLIENT_SECRET || "").trim();
 const STOCKX_API_KEY = (process.env.STOCKX_API_KEY || "").trim();
 
 function getServiceClient() {
@@ -85,12 +85,12 @@ async function refreshAccessToken(refreshToken: string): Promise<{
     });
 
     if (!res.ok) {
-      console.error("StockX refresh token failed:", res.status, await res.text());
+      // StockX refresh token failed
       return null;
     }
     return await res.json();
   } catch (err) {
-    console.error("StockX refresh token exception:", err);
+    // StockX refresh token exception
     return null;
   }
 }
@@ -101,7 +101,7 @@ async function fetchClientCredentialsToken(): Promise<{
   token_type: string;
 } | null> {
   if (!STOCKX_CLIENT_ID || !STOCKX_CLIENT_SECRET) {
-    console.error("StockX credentials missing");
+    // StockX credentials missing
     return null;
   }
 
@@ -118,12 +118,12 @@ async function fetchClientCredentialsToken(): Promise<{
     });
 
     if (!res.ok) {
-      console.error("StockX client_credentials failed:", res.status, await res.text());
+      // StockX client_credentials failed
       return null;
     }
     return await res.json();
   } catch (err) {
-    console.error("StockX client_credentials exception:", err);
+    // StockX client_credentials exception
     return null;
   }
 }
@@ -183,8 +183,6 @@ export async function stockxFetch(url: string): Promise<Response> {
   if (token) {
     headers["Authorization"] = `Bearer ${token}`;
   }
-
-  console.log("StockX fetch headers:", { hasApiKey: !!STOCKX_API_KEY, hasToken: !!token, url });
 
   return fetch(url, { headers });
 }

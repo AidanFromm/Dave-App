@@ -92,7 +92,7 @@ export async function createPurchase(input: CreatePurchaseInput) {
     .insert(productInserts);
 
   if (productsError) {
-    console.error("Failed to create inventory entries:", productsError);
+    // Failed to create inventory entries - purchase was recorded
     // Don't throw - purchase was recorded successfully
   }
 

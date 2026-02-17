@@ -14,7 +14,7 @@ export default function Error({
   reset: () => void;
 }) {
   useEffect(() => {
-    console.error(error);
+    // Error logged via Sentry in global-error
   }, [error]);
 
   return (

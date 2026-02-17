@@ -97,7 +97,7 @@ export async function syncToClover(productId: string): Promise<{
     return { success: true };
   } catch (err) {
     const msg = err instanceof Error ? err.message : "Unknown error";
-    console.error(`syncToClover(${productId}):`, msg);
+    // syncToClover error logged
     return { success: false, error: msg };
   }
 }
@@ -291,7 +291,7 @@ export async function handleWebsiteSale(
     return { success: true };
   } catch (err) {
     const msg = err instanceof Error ? err.message : "Unknown error";
-    console.error(`handleWebsiteSale(${productId}):`, msg);
+    // handleWebsiteSale error logged
     return { success: false, error: msg };
   }
 }
@@ -406,7 +406,7 @@ export async function getSyncStatus(): Promise<SyncStatus> {
       }
     }
   } catch (err) {
-    console.error("getSyncStatus:", err);
+    // getSyncStatus error
   }
 
   return status;

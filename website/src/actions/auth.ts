@@ -48,7 +48,7 @@ export async function signUp(
   });
 
   if (error) {
-    console.error("SignUp error:", error);
+    // SignUp failed
     return { error: error.message };
   }
 
@@ -64,11 +64,11 @@ export async function signUp(
       });
 
       if (insertError) {
-        console.error("Customer insert error:", insertError);
+        // Customer insert failed - user can still verify email
         // Don't fail signup if customer insert fails - user can still verify email
       }
     } catch (err) {
-      console.error("Customer insert exception:", err);
+      // Customer insert exception - non-fatal
     }
   }
 

@@ -38,6 +38,10 @@ export const metadata: Metadata = {
   description:
     "Shop premium sneakers, streetwear, and Pokemon cards at Secured Tampa. New drops, used gems, and rare collectibles.",
   metadataBase: new URL("https://securedtampa.com"),
+  icons: {
+    icon: "/favicon.ico",
+    apple: "/apple-touch-icon.png",
+  },
   openGraph: {
     type: "website",
     locale: "en_US",
