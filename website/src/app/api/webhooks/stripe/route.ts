@@ -128,7 +128,7 @@ async function sendOrderConfirmationEmail(params: {
       const errBody = await res.text();
       console.error("Resend API error:", res.status, errBody);
     } else {
-      console.log(`Confirmation email sent to ${email} for order ${orderNumber}`);
+      // Email sent successfully
     }
   } catch (err) {
     console.error("Failed to send confirmation email:", err);
@@ -186,7 +186,7 @@ export async function POST(request: Request) {
       .single();
 
     if (existingOrder) {
-      console.log(`Webhook already processed for payment ${paymentIntent.id} (order ${existingOrder.order_number})`);
+      // Duplicate webhook — already processed
       return NextResponse.json({ received: true, duplicate: true });
     }
 
@@ -309,7 +309,7 @@ export async function POST(request: Request) {
             note: `Redeemed for order ${orderNumber}`,
           });
 
-          console.log(`Gift card ${giftCardCodeMeta} redeemed: $${giftCardAmount}, new balance: $${newBalance}`);
+          // Gift card redeemed successfully
         }
       }
     }
