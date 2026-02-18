@@ -28,6 +28,7 @@ import {
   Loader2,
   Footprints,
   Sparkles,
+  Trash2,
 } from "lucide-react";
 import { Pagination } from "@/components/ui/pagination";
 import { toast } from "sonner";
@@ -60,6 +61,9 @@ export default function AdminProductsPage() {
   const [sortField, setSortField] = useState<SortField>("name");
   const [sortDir, setSortDir] = useState<SortDir>("asc");
   const [currentPage, setCurrentPage] = useState(1);
+
+  const [deleteTarget, setDeleteTarget] = useState<GroupedProduct | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   // Toggle state with localStorage persistence
   const [mode, setMode] = useState<InventoryMode>(() => {
@@ -157,6 +161,29 @@ export default function AdminProductsPage() {
       // silent
     }
   }, []);
+
+  const handleDeleteProduct = async () => {
+    if (!deleteTarget) return;
+    setDeleteLoading(true);
+    try {
+      const res = await fetch("/api/admin/products", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ productName: deleteTarget.name }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error ?? "Delete failed");
+      }
+      toast.success(`${deleteTarget.name} deleted`);
+      setDeleteTarget(null);
+      refreshProducts();
+    } catch (err: any) {
+      toast.error(err.message ?? "Failed to delete product");
+    } finally {
+      setDeleteLoading(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -311,6 +338,7 @@ export default function AdminProductsPage() {
                   </button>
                 </th>
                 <th className="px-4 py-3 text-left font-medium text-muted-foreground">Status</th>
+                <th className="px-4 py-3 w-[50px]"></th>
               </tr>
             </thead>
             <tbody>
@@ -430,6 +458,15 @@ export default function AdminProductsPage() {
                           {product.totalQuantity === 0 ? "Out of Stock" : product.totalQuantity <= 3 ? "Low Stock" : "In Stock"}
                         </Badge>
                       </td>
+                      <td className="px-4 py-3">
+                        <button
+                          onClick={(e) => { e.preventDefault(); e.stopPropagation(); setDeleteTarget(product); }}
+                          className="rounded p-1.5 text-muted-foreground hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950 transition-colors"
+                          title="Delete product"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </td>
                     </tr>
                   </Link>
                 ))
@@ -501,11 +538,19 @@ export default function AdminProductsPage() {
                   )}
                 </div>
               </div>
-              <div className="text-right flex-shrink-0">
-                <p className="text-sm font-medium">{formatCurrency(product.sellPrice)}</p>
-                <p className={cn("text-xs", product.totalQuantity === 0 ? "text-destructive" : "text-muted-foreground")}>
-                  Qty: {product.totalQuantity}
-                </p>
+              <div className="text-right flex-shrink-0 flex items-center gap-2">
+                <div>
+                  <p className="text-sm font-medium">{formatCurrency(product.sellPrice)}</p>
+                  <p className={cn("text-xs", product.totalQuantity === 0 ? "text-destructive" : "text-muted-foreground")}>
+                    Qty: {product.totalQuantity}
+                  </p>
+                </div>
+                <button
+                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); setDeleteTarget(product); }}
+                  className="rounded p-1.5 text-muted-foreground hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950 transition-colors"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
               </div>
             </Link>
           ))
@@ -522,6 +567,42 @@ export default function AdminProductsPage() {
           </div>
           <Pagination currentPage={safePage} totalPages={totalPages} onPageChange={setCurrentPage} />
         </>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deleteTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+          <div className="mx-4 w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-2xl">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/30">
+                <Trash2 className="h-5 w-5 text-red-600 dark:text-red-400" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold">Delete Product</h3>
+                <p className="text-sm text-muted-foreground">This cannot be undone.</p>
+              </div>
+            </div>
+            <p className="mt-4 text-sm">
+              Are you sure you want to delete <strong>{deleteTarget.name}</strong>? All variants and inventory data will be permanently removed.
+            </p>
+            <div className="mt-6 flex gap-2 justify-end">
+              <button
+                onClick={() => setDeleteTarget(null)}
+                disabled={deleteLoading}
+                className="rounded-lg border border-border px-4 py-2 text-sm font-medium hover:bg-muted transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDeleteProduct}
+                disabled={deleteLoading}
+                className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 transition-colors disabled:opacity-50"
+              >
+                {deleteLoading ? "Deleting..." : "Delete"}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Add Sneaker Modal */}

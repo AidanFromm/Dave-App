@@ -65,6 +65,8 @@ export default function AdminOrderDetailPage() {
   const [productSearch, setProductSearch] = useState("");
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
+  const [pickupVerifyCode, setPickupVerifyCode] = useState("");
+  const [pickupVerifyLoading, setPickupVerifyLoading] = useState(false);
 
   const fetchOrder = async () => {
     const supabase = createClient();
@@ -252,6 +254,28 @@ export default function AdminOrderDetailPage() {
       toast.error(err.message ?? "Failed to update pickup status");
     } finally {
       setActionLoading(false);
+    }
+  };
+
+  const handleVerifyPickup = async () => {
+    if (!pickupVerifyCode.trim()) {
+      toast.error("Enter the pickup code");
+      return;
+    }
+    if (pickupVerifyCode.trim() !== order?.pickup_code) {
+      toast.error("Invalid pickup code. Please try again.");
+      setPickupVerifyCode("");
+      return;
+    }
+    setPickupVerifyLoading(true);
+    try {
+      await handlePickupStatus("picked_up");
+      toast.success("Pickup verified — order marked as picked up");
+      setPickupVerifyCode("");
+    } catch (err: any) {
+      toast.error(err.message ?? "Verification failed");
+    } finally {
+      setPickupVerifyLoading(false);
     }
   };
 
@@ -922,6 +946,15 @@ export default function AdminOrderDetailPage() {
                     ? "Picked Up"
                     : "Pending"}
               </Badge>
+
+              {/* Pickup Code Display */}
+              {order.pickup_code && (
+                <div className="mt-3 rounded-lg border-2 border-[#FB4F14]/50 bg-[#FB4F14]/5 p-3 text-center">
+                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Pickup Code</p>
+                  <p className="mt-1 text-2xl font-bold tracking-[0.3em] text-[#FB4F14]">{order.pickup_code}</p>
+                </div>
+              )}
+
               <div className="mt-3 flex flex-col gap-2">
                 {(!order.pickup_status || order.pickup_status === "pending") && (
                   <Button
@@ -935,14 +968,43 @@ export default function AdminOrderDetailPage() {
                   </Button>
                 )}
                 {order.pickup_status === "ready" && (
-                  <Button
-                    size="sm"
-                    onClick={() => handlePickupStatus("picked_up")}
-                    disabled={actionLoading}
-                  >
-                    <CheckCircle className="mr-1.5 h-4 w-4" />
-                    Mark as Picked Up
-                  </Button>
+                  <>
+                    <div className="space-y-2">
+                      <label className="text-xs font-medium text-muted-foreground">Enter customer's pickup code to verify</label>
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          maxLength={6}
+                          value={pickupVerifyCode}
+                          onChange={(e) => setPickupVerifyCode(e.target.value.replace(/\D/g, ""))}
+                          placeholder="000000"
+                          className="flex-1 rounded-lg border border-border bg-background px-3 py-2 text-center text-lg font-mono tracking-[0.3em] focus:outline-none focus:ring-2 focus:ring-[#FB4F14]"
+                        />
+                      </div>
+                      <Button
+                        size="sm"
+                        className="w-full bg-[#FB4F14] hover:bg-[#e04400]"
+                        onClick={handleVerifyPickup}
+                        disabled={pickupVerifyLoading || pickupVerifyCode.length !== 6}
+                      >
+                        <CheckCircle className="mr-1.5 h-4 w-4" />
+                        {pickupVerifyLoading ? "Verifying..." : "Verify Pickup"}
+                      </Button>
+                    </div>
+                    <div className="relative">
+                      <div className="absolute inset-0 flex items-center"><span className="w-full border-t" /></div>
+                      <div className="relative flex justify-center text-xs uppercase"><span className="bg-card px-2 text-muted-foreground">or</span></div>
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handlePickupStatus("picked_up")}
+                      disabled={actionLoading}
+                    >
+                      <CheckCircle className="mr-1.5 h-4 w-4" />
+                      Mark as Picked Up (Skip Verify)
+                    </Button>
+                  </>
                 )}
               </div>
             </div>

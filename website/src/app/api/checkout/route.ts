@@ -269,11 +269,16 @@ export async function POST(request: Request) {
       };
     });
 
-    // Create PaymentIntent with item data in metadata
+    // Create PaymentIntent with item data in metadata + fraud protection
     const paymentIntent = await stripe.paymentIntents.create({
       amount: Math.round(total * 100), // cents
       currency: "usd",
       receipt_email: sanitizedEmail || undefined,
+      payment_method_options: {
+        card: {
+          request_three_d_secure: "automatic",
+        },
+      },
       metadata: {
         fulfillmentType: ft,
         email: email ?? "",

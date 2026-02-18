@@ -14,6 +14,10 @@ interface OrderItem {
   name: string;
 }
 
+function generatePickupCode(): string {
+  return String(Math.floor(100000 + Math.random() * 900000));
+}
+
 async function sendOrderConfirmationEmail(params: {
   email: string;
   orderNumber: string;
@@ -24,6 +28,7 @@ async function sendOrderConfirmationEmail(params: {
   total: number;
   fulfillmentType: string;
   shippingAddress?: Record<string, string> | null;
+  pickupCode?: string | null;
 }) {
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey) {
@@ -47,6 +52,7 @@ async function sendOrderConfirmationEmail(params: {
     )
     .join("");
 
+  const { pickupCode } = params;
   const deliveryInfo =
     fulfillmentType === "ship" && shippingAddress
       ? `<p style="margin:0;color:#ccc;">
@@ -56,7 +62,12 @@ async function sendOrderConfirmationEmail(params: {
         </p>
         <p style="margin:8px 0 0;color:#999;font-size:13px;">Estimated delivery: 3–5 business days</p>`
       : `<p style="margin:0;color:#ccc;">Store Pickup — Tampa, FL</p>
-         <p style="margin:8px 0 0;color:#999;font-size:13px;">We'll notify you when your order is ready</p>`;
+         <p style="margin:8px 0 0;color:#999;font-size:13px;">We'll notify you when your order is ready</p>
+         ${pickupCode ? `<div style="margin:16px 0 0;padding:16px;background:#1a1a1a;border:2px solid #FB4F14;border-radius:8px;text-align:center;">
+           <p style="margin:0;color:#999;font-size:12px;text-transform:uppercase;letter-spacing:1px;">Your Pickup Code</p>
+           <p style="margin:8px 0 0;color:#FB4F14;font-size:32px;font-weight:bold;letter-spacing:6px;">${pickupCode}</p>
+           <p style="margin:8px 0 0;color:#999;font-size:12px;">Show this code when picking up your order</p>
+         </div>` : ""}`;
 
   const html = `
 <!DOCTYPE html>
@@ -218,6 +229,8 @@ export async function POST(request: Request) {
 
     // Create order record
     const orderNumber = generateOrderNumber();
+    const isPickup = deliveryMethodMeta === "pickup" || fulfillmentType === "pickup";
+    const pickupCode = isPickup ? generatePickupCode() : null;
 
     // Format items for order record
     const formattedItems = orderItems.map((item) => ({
@@ -248,7 +261,8 @@ export async function POST(request: Request) {
       items: formattedItems,
       shipping_address: shipping,
       delivery_method: deliveryMethodMeta || (fulfillmentType === "pickup" ? "pickup" : "shipping"),
-      pickup_status: (deliveryMethodMeta === "pickup" || fulfillmentType === "pickup") ? "pending" : null,
+      pickup_status: isPickup ? "pending" : null,
+      pickup_code: pickupCode,
       customer_phone: phoneMeta || null,
       created_at: now,
       updated_at: now,
@@ -431,6 +445,7 @@ export async function POST(request: Request) {
         total,
         fulfillmentType: fulfillmentType || "ship",
         shippingAddress: shipping,
+        pickupCode,
       });
     }
   }

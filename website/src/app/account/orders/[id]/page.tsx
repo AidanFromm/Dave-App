@@ -111,6 +111,20 @@ export default async function OrderDetailPage({ params }: Props) {
         </div>
       )}
 
+      {/* Pickup Code */}
+      {order.fulfillment_type === "pickup" && order.pickup_code && (
+        <div className="mt-6 rounded-xl shadow-card bg-card p-4 sm:p-6">
+          <h2 className="font-semibold">Pickup Verification</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Show this code when picking up your order in-store.
+          </p>
+          <div className="mt-3 rounded-lg border-2 border-[#FB4F14]/50 bg-[#FB4F14]/5 p-4 text-center">
+            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Your Pickup Code</p>
+            <p className="mt-2 text-3xl font-bold tracking-[0.3em] text-[#FB4F14]">{order.pickup_code}</p>
+          </div>
+        </div>
+      )}
+
       {/* Tracking */}
       {order.tracking_number && (
         <div className="mt-6">
