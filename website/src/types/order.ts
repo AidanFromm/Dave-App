@@ -103,6 +103,7 @@ export interface Order {
   internal_notes: string | null;
   delivery_method: "shipping" | "pickup";
   pickup_status: PickupStatus | null;
+  pickup_code: string | null;
   refund_amount: number | null;
   refund_reason: string | null;
   created_at: string;
