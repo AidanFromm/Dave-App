@@ -25,7 +25,9 @@ export async function GET(
 
     const productName = p.title || p.name || "";
     const attrs = p.productAttributes || {};
-    const urlKey = p.urlKey || "";
+    const urlKey = p.urlKey || p.url_key || "";
+    
+    console.log("[StockX Product]", { id, productName, urlKey, hasAttrs: !!attrs, rawKeys: Object.keys(p) });
 
     // StockX v2 doesn't include media URLs in product response
     // Try multiple CDN patterns to find a working image
@@ -64,12 +66,15 @@ export async function GET(
       ]);
 
       // Try each candidate with a HEAD request (parallel for speed)
+      console.log("[StockX Image] Trying candidates:", Array.from(candidates));
       const results = await Promise.allSettled(
         Array.from(candidates).map(async (candidate) => {
           try {
             const imgRes = await fetch(candidate, { method: "HEAD", signal: AbortSignal.timeout(2000) });
+            console.log(`[StockX Image] ${candidate} -> ${imgRes.status}`);
             return imgRes.ok ? candidate : null;
-          } catch {
+          } catch (e) {
+            console.log(`[StockX Image] ${candidate} -> error`);
             return null;
           }
         })
@@ -82,6 +87,10 @@ export async function GET(
           thumbUrl = base + "?fit=fill&bg=FFFFFF&w=300&h=214&fm=webp&auto=compress&q=80&trim=color";
           break;
         }
+      }
+      
+      if (!imageUrl) {
+        console.log("[StockX Image] No working image found for:", productName, "urlKey:", urlKey, "styleId:", styleId);
       }
     }
 
