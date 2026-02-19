@@ -3,14 +3,12 @@
 import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Heart, ShoppingBag, Eye } from "lucide-react";
+import { Heart, ShoppingBag } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import type { Product } from "@/types/product";
 import {
   isNewDrop,
-  isActiveDrop,
   getDropStatus,
   getDropDisplayPrice,
   getDropRemainingQuantity,
@@ -45,7 +43,6 @@ export function ProductCard({ product, availableSizes }: ProductCardProps) {
     : product.quantity <= 0;
   const [isHovered, setIsHovered] = useState(false);
 
-  const isSneaker = product.size && !product.name.toLowerCase().includes("pokemon");
   const isPokemon = product.brand?.toLowerCase() === "pokemon tcg" || 
     product.name.toLowerCase().includes("pokemon") ||
     product.tags?.some((t) => t.toLowerCase().includes("pokemon"));
@@ -61,22 +58,19 @@ export function ProductCard({ product, availableSizes }: ProductCardProps) {
 
   return (
     <motion.div
-      className="group relative flex flex-col overflow-hidden rounded-xl bg-card border border-border/50 hover:border-primary/30 transition-all duration-200"
+      className="group relative flex flex-col overflow-hidden rounded-xl border border-border bg-white transition-all duration-200 hover:shadow-lg hover:shadow-black/5"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
-      whileHover={{ y: -4 }}
+      whileHover={{ y: -2 }}
       transition={{ duration: 0.2 }}
     >
       {/* Image Container */}
       <Link 
         href={`/product/${product.id}`} 
-        className="relative aspect-square overflow-hidden bg-surface-850"
+        className="relative aspect-square overflow-hidden bg-white"
       >
         {product.images?.[0] ? (
-          <div className={cn(
-            "relative h-full w-full overflow-hidden",
-            isUsed && !isPokemon ? "" : "bg-white p-4"
-          )}>
+          <div className="relative h-full w-full">
             <Image
               src={product.images[0]}
               alt={product.name}
@@ -84,29 +78,29 @@ export function ProductCard({ product, availableSizes }: ProductCardProps) {
               sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
               className={cn(
                 "transition-transform duration-300 group-hover:scale-[1.03]",
-                isUsed && !isPokemon ? "object-cover" : "object-contain"
+                isUsed && !isPokemon ? "object-cover" : "object-contain p-3 sm:p-4"
               )}
             />
           </div>
         ) : (
-          <div className="flex h-full items-center justify-center text-muted-foreground">
+          <div className="flex h-full items-center justify-center bg-neutral-50 text-muted-foreground text-sm">
             No Image
           </div>
         )}
 
         {/* SOLD OUT overlay */}
         {soldOut && (
-          <div className="absolute inset-0 flex items-center justify-center bg-surface-950/70 backdrop-blur-sm">
-            <span className="rounded-full bg-surface-800 px-4 py-2 text-xs font-bold uppercase tracking-wider text-muted-foreground">
+          <div className="absolute inset-0 flex items-center justify-center bg-white/80 backdrop-blur-[2px]">
+            <span className="rounded-full bg-neutral-900 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-white">
               Sold Out
             </span>
           </div>
         )}
 
-        {/* Discount badge — top left (only discount overlays the image) */}
+        {/* Discount badge — top left */}
         {discount && (
           <div className="absolute left-2 top-2 z-10">
-            <span className="bg-destructive text-white text-[10px] font-bold px-2 py-0.5 rounded">
+            <span className="bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded shadow-sm">
               -{discount}%
             </span>
           </div>
@@ -119,7 +113,7 @@ export function ProductCard({ product, availableSizes }: ProductCardProps) {
           className="absolute right-2 top-2 z-10"
         >
           <button
-            className="flex h-8 w-8 items-center justify-center rounded-full bg-surface-900/80 backdrop-blur-sm transition-colors hover:bg-surface-900"
+            className="flex h-8 w-8 items-center justify-center rounded-full bg-white/90 shadow-sm border border-border/50 transition-colors hover:bg-white"
             onClick={(e) => {
               e.preventDefault();
               toggleProduct(product.id);
@@ -130,25 +124,25 @@ export function ProductCard({ product, availableSizes }: ProductCardProps) {
                 "h-3.5 w-3.5 transition-colors",
                 wishlisted
                   ? "fill-red-500 text-red-500"
-                  : "text-muted-foreground"
+                  : "text-neutral-400"
               )}
             />
           </button>
         </motion.div>
 
-        {/* Quick actions on hover */}
+        {/* Quick add button on hover */}
         <AnimatePresence>
           {isHovered && !soldOut && (
             <motion.div
-              initial={{ opacity: 0, y: 10 }}
+              initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 10 }}
-              transition={{ duration: 0.2 }}
-              className="absolute bottom-3 right-3 flex gap-2 z-10"
+              exit={{ opacity: 0, y: 8 }}
+              transition={{ duration: 0.15 }}
+              className="absolute bottom-2.5 right-2.5 z-10"
             >
               <Button
                 size="icon"
-                className="h-9 w-9 rounded-full shadow-lg bg-primary hover:bg-primary/90"
+                className="h-9 w-9 rounded-full shadow-md bg-primary hover:bg-primary/90"
                 onClick={handleQuickAdd}
               >
                 <ShoppingBag className="h-4 w-4" />
@@ -161,17 +155,17 @@ export function ProductCard({ product, availableSizes }: ProductCardProps) {
       {/* Product Info */}
       <Link
         href={`/product/${product.id}`}
-        className="flex flex-1 flex-col p-2 sm:p-3"
+        className="flex flex-1 flex-col p-2.5 sm:p-3 border-t border-border/50 bg-white"
       >
         {/* Brand */}
         {product.brand && (
-          <span className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground">
+          <span className="text-[10px] font-medium uppercase tracking-wider text-neutral-500">
             {product.brand}
           </span>
         )}
         
         {/* Product Name */}
-        <h3 className="mt-0.5 line-clamp-2 text-xs sm:text-sm font-semibold leading-snug text-foreground group-hover:text-primary transition-colors">
+        <h3 className="mt-0.5 line-clamp-2 text-xs sm:text-sm font-semibold leading-snug text-neutral-900 group-hover:text-primary transition-colors">
           {product.name}
         </h3>
 
@@ -179,12 +173,12 @@ export function ProductCard({ product, availableSizes }: ProductCardProps) {
         {availableSizes && availableSizes.length > 1 && (
           <div className="mt-1.5 flex flex-wrap gap-1">
             {availableSizes.slice(0, 3).map((size) => (
-              <span key={size} className="text-[10px] px-1.5 py-0.5 bg-surface-800 rounded text-muted-foreground">
+              <span key={size} className="text-[10px] px-1.5 py-0.5 bg-neutral-100 rounded text-neutral-600 font-medium">
                 {size}
               </span>
             ))}
             {availableSizes.length > 3 && (
-              <span className="text-[10px] px-1.5 py-0.5 bg-surface-800 rounded text-muted-foreground">
+              <span className="text-[10px] px-1.5 py-0.5 bg-neutral-100 rounded text-neutral-600 font-medium">
                 +{availableSizes.length - 3}
               </span>
             )}
@@ -192,16 +186,16 @@ export function ProductCard({ product, availableSizes }: ProductCardProps) {
         )}
         
         {/* Price */}
-        <div className="mt-auto pt-1.5 sm:pt-2 flex items-baseline gap-1.5 sm:gap-2">
+        <div className="mt-auto pt-2 flex items-baseline gap-2">
           <span className="text-sm sm:text-base font-mono font-bold text-primary">
             {formatCurrency(isDrop ? dropDisplayPrice : product.price)}
           </span>
           {isDrop && product.drop_price != null && product.drop_price !== product.price ? (
-            <span className="text-xs font-mono text-muted-foreground line-through">
+            <span className="text-xs font-mono text-neutral-400 line-through">
               {formatCurrency(product.price)}
             </span>
           ) : product.compare_at_price && product.compare_at_price > product.price ? (
-            <span className="text-xs font-mono text-muted-foreground line-through">
+            <span className="text-xs font-mono text-neutral-400 line-through">
               {formatCurrency(product.compare_at_price)}
             </span>
           ) : null}
@@ -209,33 +203,33 @@ export function ProductCard({ product, availableSizes }: ProductCardProps) {
 
         {/* Drop quantity remaining */}
         {isDrop && dropRemaining !== null && dropRemaining > 0 && dropRemaining <= 10 && (
-          <p className="text-[10px] font-semibold text-red-400 mt-0.5">
+          <p className="text-[10px] font-semibold text-red-500 mt-0.5">
             Only {dropRemaining} left
           </p>
         )}
 
-        {/* Tags — bottom */}
-        <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+        {/* Tags */}
+        <div className="mt-1.5 flex flex-wrap items-center gap-1">
           {isDrop && (
-            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#FB4F14]/15 text-[#FB4F14] uppercase tracking-wider">
+            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-primary/10 text-primary uppercase tracking-wide">
               Limited
             </span>
           )}
           {isPokemon ? (
             <>
-              <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-yellow-500/15 text-yellow-500">
+              <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-yellow-100 text-yellow-700">
                 Pokemon
               </span>
               {product.tags?.some((t) => t.toLowerCase().includes("graded")) ? (
-                <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-blue-500/15 text-blue-400">
+                <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-blue-100 text-blue-600">
                   {product.tags?.find((t) => /psa|bgs|cgc/i.test(t))?.toUpperCase() || "Graded"}
                 </span>
               ) : product.tags?.some((t) => t.toLowerCase().includes("sealed")) ? (
-                <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-purple-500/15 text-purple-400">
+                <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-purple-100 text-purple-600">
                   Sealed
                 </span>
               ) : (
-                <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-surface-700/50 text-muted-foreground">
+                <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-neutral-100 text-neutral-500">
                   Raw
                 </span>
               )}
@@ -243,16 +237,16 @@ export function ProductCard({ product, availableSizes }: ProductCardProps) {
           ) : (
             <>
               {newDrop && (
-                <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-primary/15 text-primary">
-                  New Arrival
+                <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-primary/10 text-primary">
+                  New
                 </span>
               )}
               <span
                 className={cn(
-                  "text-[10px] font-semibold px-2 py-0.5 rounded-full",
+                  "text-[10px] font-semibold px-1.5 py-0.5 rounded",
                   product.condition === "new"
-                    ? "bg-green-500/10 text-green-500"
-                    : "bg-blue-500/10 text-blue-500"
+                    ? "bg-green-100 text-green-700"
+                    : "bg-blue-100 text-blue-600"
                 )}
               >
                 {CONDITION_LABELS[product.condition]}
