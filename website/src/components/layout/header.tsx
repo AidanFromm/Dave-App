@@ -73,9 +73,9 @@ export function Header() {
           <Image
             src="/logo-transparent.png"
             alt="Secured Tampa"
-            width={160}
-            height={60}
-            className="h-12 w-auto object-contain"
+            width={200}
+            height={75}
+            className="h-14 sm:h-16 w-auto object-contain"
             priority
           />
         </Link>
