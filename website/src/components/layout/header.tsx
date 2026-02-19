@@ -68,9 +68,9 @@ export function Header() {
           <Image
             src="/secured-text.png"
             alt="Secured"
-            width={120}
-            height={45}
-            className="h-9 sm:h-10 w-auto object-contain"
+            width={150}
+            height={55}
+            className="h-10 sm:h-12 w-auto object-contain"
             priority
           />
         </Link>
