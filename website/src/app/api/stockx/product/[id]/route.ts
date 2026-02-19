@@ -82,9 +82,9 @@ export async function GET(
 
       for (const result of results) {
         if (result.status === "fulfilled" && result.value) {
-          const base = result.value;
-          imageUrl = base + "?fit=fill&bg=FFFFFF&w=700&h=500&fm=webp&auto=compress&q=90&trim=color";
-          thumbUrl = base + "?fit=fill&bg=FFFFFF&w=300&h=214&fm=webp&auto=compress&q=80&trim=color";
+          // StockX CDN no longer supports query params - use base URL only
+          imageUrl = result.value;
+          thumbUrl = result.value;
           break;
         }
       }

@@ -32,8 +32,8 @@ export async function GET(request: Request) {
       const urlKey = p.urlKey || p.url_key || "";
       
       if (!imageUrl && urlKey) {
-        // StockX CDN uses lowercase urlKey
-        imageUrl = `https://images.stockx.com/images/${urlKey.toLowerCase()}.jpg?fit=fill&bg=FFFFFF&w=300&h=214&fm=webp&auto=compress&q=80&trim=color`;
+        // StockX CDN uses lowercase urlKey - no query params!
+        imageUrl = `https://images.stockx.com/images/${urlKey.toLowerCase()}.jpg`;
       }
       
       return {
