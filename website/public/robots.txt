@@ -1,0 +1,11 @@
+# Secured Tampa - robots.txt
+User-agent: *
+Allow: /
+
+# Sitemaps
+Sitemap: https://securedtampa.com/sitemap.xml
+
+# Disallow admin and API routes
+Disallow: /admin
+Disallow: /api/
+Disallow: /auth/

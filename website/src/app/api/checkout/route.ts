@@ -241,14 +241,129 @@ export async function POST(request: Request) {
       );
     }
 
-    // If gift card covers entire order (total = 0), create a $0 order without Stripe
+    // If gift card covers entire order (total = 0), create order without Stripe
     if (total === 0) {
-      // TODO: Handle fully gift-card-covered orders without Stripe
-      // For now, require at least $0.50 for Stripe minimum
-      return NextResponse.json(
-        { error: "Gift card covers entire order. Free checkout coming soon.", code: "FULLY_COVERED" },
-        { status: 400 }
-      );
+      const supabase = createAdminClient();
+      const now = new Date().toISOString();
+      
+      // Generate order number
+      const orderNumber = `ST-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
+      const isPickup = ft === "pickup";
+      const pickupCode = isPickup ? Math.random().toString(36).substring(2, 8).toUpperCase() : null;
+      
+      // Format items for order
+      const formattedItems = items.map((item) => {
+        const product = productMap.get(item.product_id || item.id);
+        const variantPrice = item.variant_id && variantMap.has(item.variant_id)
+          ? Number(variantMap.get(item.variant_id)!.price)
+          : null;
+        return {
+          product_id: item.product_id || item.id,
+          variant_id: item.variant_id || null,
+          name: item.name,
+          price: variantPrice ?? (product ? Number(product.price) : item.price),
+          quantity: item.quantity,
+          size: item.size || null,
+        };
+      });
+      
+      // Create order
+      const { data: order, error: orderError } = await supabase.from("orders").insert({
+        order_number: orderNumber,
+        customer_email: sanitizedEmail || "unknown@checkout.com",
+        sales_channel: "web",
+        subtotal,
+        tax,
+        shipping_cost: shippingCost,
+        discount: discountAmount,
+        discount_code: validatedDiscountCode || null,
+        gift_card_amount: giftCardAmount,
+        gift_card_code: validatedGiftCardCode || null,
+        total: 0,
+        status: "paid",
+        fulfillment_type: ft,
+        stripe_payment_id: `gc-${Date.now()}`, // Gift card payment ID
+        stripe_payment_status: "succeeded",
+        items: formattedItems,
+        shipping_address: shippingAddress || null,
+        delivery_method: isPickup ? "pickup" : "shipping",
+        pickup_status: isPickup ? "pending" : null,
+        pickup_code: pickupCode,
+        customer_phone: phone || null,
+        created_at: now,
+        updated_at: now,
+      }).select().single();
+      
+      if (orderError) {
+        console.error("Failed to create gift card order:", orderError);
+        return NextResponse.json(
+          { error: "Failed to create order", code: "ORDER_ERROR" },
+          { status: 500 }
+        );
+      }
+      
+      // Deduct gift card balance
+      if (validatedGiftCardId) {
+        const { data: gc } = await supabase
+          .from("gift_cards")
+          .select("balance")
+          .eq("id", validatedGiftCardId)
+          .single();
+        
+        if (gc) {
+          const newBalance = Math.max(0, gc.balance - giftCardAmount);
+          await supabase
+            .from("gift_cards")
+            .update({ balance: newBalance, updated_at: now })
+            .eq("id", validatedGiftCardId);
+          
+          // Record transaction
+          await supabase.from("gift_card_transactions").insert({
+            gift_card_id: validatedGiftCardId,
+            order_id: order.id,
+            amount: -giftCardAmount,
+            type: "redemption",
+            created_at: now,
+          });
+        }
+      }
+      
+      // Update inventory for each item
+      for (const item of items) {
+        const productId = item.product_id || item.id;
+        if (item.variant_id) {
+          const { data: variant } = await supabase
+            .from("product_variants")
+            .select("id, quantity")
+            .eq("id", item.variant_id)
+            .single();
+          if (variant) {
+            await supabase
+              .from("product_variants")
+              .update({ quantity: Math.max(0, variant.quantity - item.quantity) })
+              .eq("id", item.variant_id);
+          }
+        }
+        const { data: product } = await supabase
+          .from("products")
+          .select("id, quantity")
+          .eq("id", productId)
+          .single();
+        if (product) {
+          await supabase
+            .from("products")
+            .update({ quantity: Math.max(0, product.quantity - item.quantity) })
+            .eq("id", productId);
+        }
+      }
+      
+      // Return success - client will redirect to confirmation
+      return NextResponse.json({
+        success: true,
+        orderNumber,
+        orderId: order.id,
+        giftCardFullyCovered: true,
+      });
     }
 
     const stripe = getStripe();
