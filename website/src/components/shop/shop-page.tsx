@@ -44,10 +44,45 @@ const POKEMON_TYPE_OPTIONS = [
   { value: "sealed", label: "Sealed Product" },
 ];
 
-const SIZE_OPTIONS = [
-  "4", "4.5", "5", "5.5", "6", "6.5", "7", "7.5", "8", "8.5",
-  "9", "9.5", "10", "10.5", "11", "11.5", "12", "12.5", "13", "14",
-];
+// Size categories matching Nike/StockX standards
+type SizeCategory = "mens" | "womens" | "gradeSchool" | "preschool" | "toddler" | "crib";
+
+const SIZE_CATEGORIES: Record<SizeCategory, { label: string; sizes: string[] }> = {
+  mens: {
+    label: "Men",
+    sizes: [
+      "3.5", "4", "4.5", "5", "5.5", "6", "6.5", "7", "7.5",
+      "8", "8.5", "9", "9.5", "10", "10.5", "11", "11.5",
+      "12", "13", "14", "15", "16", "17", "18",
+    ],
+  },
+  womens: {
+    label: "Women",
+    sizes: [
+      "5", "5.5", "6", "6.5", "7", "7.5", "8", "8.5",
+      "9", "9.5", "10", "10.5", "11", "12", "13", "14",
+    ],
+  },
+  gradeSchool: {
+    label: "GS",
+    sizes: ["3.5Y", "4Y", "4.5Y", "5Y", "5.5Y", "6Y", "6.5Y", "7Y"],
+  },
+  preschool: {
+    label: "PS",
+    sizes: ["10.5C", "11C", "11.5C", "12C", "12.5C", "13C", "13.5C", "1Y", "1.5Y", "2Y", "2.5Y", "3Y"],
+  },
+  toddler: {
+    label: "TD",
+    sizes: ["2C", "3C", "4C", "5C", "6C", "7C", "8C", "9C", "10C"],
+  },
+  crib: {
+    label: "Crib",
+    sizes: ["0C", "1C", "2C", "3C", "4C"],
+  },
+};
+
+// Legacy flat array for backward compatibility
+const SIZE_OPTIONS = SIZE_CATEGORIES.mens.sizes;
 
 interface ShopPageProps {
   initialProducts: Product[];
@@ -89,6 +124,7 @@ export function ShopPage({ initialProducts, categories }: ShopPageProps) {
     searchParams.get("ptype")?.split(",").filter(Boolean) || []
   );
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
+  const [sizeCategory, setSizeCategory] = useState<SizeCategory>("mens");
 
   const debouncedSearch = useDebounce(search, 300);
   const debouncedBrand = useDebounce(brand, 300);
@@ -411,13 +447,33 @@ export function ShopPage({ initialProducts, categories }: ShopPageProps) {
       {!(categoryFilter.length === 1 && categoryFilter[0] === "pokemon") && filter !== "pokemon" && (
       <div>
         <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Size</h3>
+        
+        {/* Size Category Tabs */}
+        <div className="flex flex-wrap gap-1 mb-3 pb-2 border-b border-border/30">
+          {(Object.keys(SIZE_CATEGORIES) as SizeCategory[]).map((cat) => (
+            <button
+              key={cat}
+              onClick={() => setSizeCategory(cat)}
+              className={cn(
+                "px-2 py-1 rounded text-[10px] font-semibold uppercase transition-colors",
+                sizeCategory === cat
+                  ? "bg-primary text-white"
+                  : "bg-muted text-muted-foreground hover:text-foreground"
+              )}
+            >
+              {SIZE_CATEGORIES[cat].label}
+            </button>
+          ))}
+        </div>
+
+        {/* Size Buttons for Selected Category */}
         <div className="flex flex-wrap gap-1.5">
-          {SIZE_OPTIONS.map((size) => (
+          {SIZE_CATEGORIES[sizeCategory].sizes.map((size) => (
             <button
               key={size}
               onClick={() => toggleArrayFilter(sizeFilter, size, setSizeFilter)}
               className={cn(
-                "px-2.5 py-1 rounded text-xs font-medium transition-colors",
+                "px-2.5 py-1.5 rounded text-xs font-medium transition-colors min-w-[40px]",
                 sizeFilter.includes(size)
                   ? "bg-primary text-white"
                   : "bg-surface-800/50 text-muted-foreground hover:text-foreground hover:bg-surface-800"
@@ -427,6 +483,25 @@ export function ShopPage({ initialProducts, categories }: ShopPageProps) {
             </button>
           ))}
         </div>
+
+        {/* Show selected sizes from all categories */}
+        {sizeFilter.length > 0 && (
+          <div className="mt-3 pt-2 border-t border-border/30">
+            <p className="text-[10px] text-muted-foreground mb-1.5">Selected:</p>
+            <div className="flex flex-wrap gap-1">
+              {sizeFilter.map((size) => (
+                <button
+                  key={size}
+                  onClick={() => toggleArrayFilter(sizeFilter, size, setSizeFilter)}
+                  className="px-2 py-0.5 rounded bg-primary/20 text-primary text-[10px] font-medium flex items-center gap-1 hover:bg-primary/30"
+                >
+                  {size}
+                  <X className="h-2.5 w-2.5" />
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
       )}
 
