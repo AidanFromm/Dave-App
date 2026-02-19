@@ -31,38 +31,55 @@ export async function GET(
     // Try multiple CDN patterns to find a working image
     let imageUrl = "";
     let thumbUrl = "";
-    if (urlKey || productName) {
+    const styleId = p.styleId || attrs.sku || "";
+    
+    if (urlKey || productName || styleId) {
+      // Helper to title-case a string
+      const toTitleCase = (str: string) => str.split("-").map((w: string) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join("-");
+      
       // Convert urlKey to Title-Case
-      const titleKey = urlKey ? urlKey.split("-").map((w: string) => w.charAt(0).toUpperCase() + w.slice(1)).join("-") : "";
-      // Product title as hyphenated
-      const titleHyphen = productName.split(/\s+/).join("-");
+      const titleKey = urlKey ? toTitleCase(urlKey) : "";
+      // Product title as hyphenated (remove parentheses and special chars)
+      const cleanTitle = productName.replace(/[()]/g, "").replace(/\s+/g, "-").replace(/--+/g, "-");
+      const titleHyphen = toTitleCase(cleanTitle);
+      // Without year suffix like (2025)
+      const titleNoYear = toTitleCase(productName.replace(/\s*\(\d{4}\)\s*/g, "").replace(/\s+/g, "-"));
       // For Jordans: StockX CDN often prefixes "Air-" 
       const airPrefix = productName.startsWith("Jordan") ? "Air-" + titleHyphen : "";
-      // Try urlKey without common colorway suffixes (white, black, etc.)
-      const simplifiedKey = titleKey
-        .replace(/-White(?=-|$)/g, "")
-        .replace(/-Black(?=-|$)/g, "")
-        .replace(/-Grey(?=-|$)/g, "")
-        .replace(/-Gray(?=-|$)/g, "");
+      const airPrefixNoYear = productName.startsWith("Jordan") ? "Air-" + titleNoYear : "";
+      // Style ID (SKU) based - very reliable
+      const skuKey = styleId ? styleId.replace(/\s+/g, "-") : "";
 
       const candidates = new Set([
-        // Most likely: Air-prefixed title
+        // SKU-based (most reliable)
+        ...(skuKey ? [`https://images.stockx.com/images/${skuKey}.jpg`] : []),
+        ...(skuKey ? [`https://images.stockx.com/images/${skuKey}_Product.jpg`] : []),
+        // Air-prefixed without year (common pattern)
+        ...(airPrefixNoYear ? [`https://images.stockx.com/images/${airPrefixNoYear}.jpg`] : []),
+        // Air-prefixed with year
         ...(airPrefix ? [`https://images.stockx.com/images/${airPrefix}.jpg`] : []),
         // Title-cased urlKey
         ...(titleKey ? [`https://images.stockx.com/images/${titleKey}.jpg`] : []),
-        // Simplified urlKey (without colorway words)
-        ...(simplifiedKey !== titleKey ? [`https://images.stockx.com/images/${simplifiedKey}.jpg`] : []),
-        // Plain title
+        // Title without year
+        `https://images.stockx.com/images/${titleNoYear}.jpg`,
+        // Plain title with year
         `https://images.stockx.com/images/${titleHyphen}.jpg`,
         // PNG variants
+        ...(skuKey ? [`https://images.stockx.com/images/${skuKey}.png`] : []),
         ...(titleKey ? [`https://images.stockx.com/images/${titleKey}.png`] : []),
+        // Product suffix pattern
+        ...(titleNoYear ? [`https://images.stockx.com/images/${titleNoYear}_Product.jpg`] : []),
       ]);
 
       // Try each candidate with a HEAD request (parallel for speed)
       const results = await Promise.allSettled(
         Array.from(candidates).map(async (candidate) => {
-          const imgRes = await fetch(candidate, { method: "HEAD", signal: AbortSignal.timeout(2000) });
-          return imgRes.ok ? candidate : null;
+          try {
+            const imgRes = await fetch(candidate, { method: "HEAD", signal: AbortSignal.timeout(2000) });
+            return imgRes.ok ? candidate : null;
+          } catch {
+            return null;
+          }
         })
       );
 
