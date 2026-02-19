@@ -7,9 +7,6 @@ import {
   Heart,
   User,
   Menu,
-  Sun,
-  Moon,
-  Monitor,
   LogOut,
   Shield,
   Search,
@@ -17,7 +14,6 @@ import {
   Instagram,
 } from "lucide-react";
 import { useState, useEffect } from "react";
-import { useTheme } from "next-themes";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
@@ -44,7 +40,6 @@ export function Header() {
   const isAdminRoute = pathname.startsWith("/admin");
   const [mobileOpen, setMobileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const { theme, setTheme } = useTheme();
   const { user, signOut, isAdmin } = useAuth();
   const itemCount = useCartStore((s) => s.getItemCount());
   const openCartDrawer = useCartDrawerStore((s) => s.open);
@@ -62,19 +57,21 @@ export function Header() {
       className={cn(
         "sticky top-0 z-50 w-full transition-all duration-300",
         scrolled
-          ? "bg-surface-950/95 backdrop-blur-xl shadow-lg shadow-black/5 dark:shadow-black/20 border-b border-surface-800/50"
-          : "bg-surface-950 border-b border-surface-800/30"
+          ? "bg-white/95 backdrop-blur-xl shadow-lg shadow-black/5 border-b border-gray-200"
+          : "bg-white border-b border-gray-100"
       )}
     >
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
         {/* Logo */}
         <Link href="/" className="flex items-center group">
           <span 
-            className="text-2xl sm:text-3xl text-primary"
+            className="text-xl sm:text-2xl"
             style={{ 
               fontFamily: 'var(--font-script), cursive',
-              textShadow: '2px 2px 0 #002244, -1px -1px 0 #002244, 1px -1px 0 #002244, -1px 1px 0 #002244',
-              WebkitTextStroke: '0.5px #002244'
+              color: '#FFF8F0',
+              textShadow: '3px 3px 0 #002244, -1px -1px 0 #FB4F14, 1px -1px 0 #FB4F14, -1px 1px 0 #FB4F14, 1px 1px 0 #FB4F14, 2px 2px 0 #002244',
+              WebkitTextStroke: '1px #FB4F14',
+              letterSpacing: '-0.02em'
             }}
           >
             Secured
@@ -106,28 +103,6 @@ export function Header() {
 
         {/* Right side actions */}
         <div className="flex items-center gap-1">
-          {/* Theme toggle */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="hidden sm:flex h-9 w-9 text-muted-foreground hover:text-foreground">
-                <Sun className="h-4 w-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-                <Moon className="absolute h-4 w-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
-                <span className="sr-only">Toggle theme</span>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="bg-surface-900 border-surface-800">
-              <DropdownMenuItem onClick={() => setTheme("light")}>
-                <Sun className="mr-2 h-4 w-4" /> Light
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setTheme("dark")}>
-                <Moon className="mr-2 h-4 w-4" /> Dark
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setTheme("system")}>
-                <Monitor className="mr-2 h-4 w-4" /> System
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-
           {/* Instagram */}
           <Button variant="ghost" size="icon" asChild className="hidden sm:flex h-9 w-9 text-muted-foreground hover:text-foreground">
             <a href="https://instagram.com/securedtampa" target="_blank" rel="noopener noreferrer">
@@ -325,29 +300,6 @@ export function Header() {
                   </Link>
                 )}
 
-                <div className="h-px bg-surface-800 my-3" />
-
-                <div className="px-4">
-                  <p className="text-xs text-muted-foreground mb-2 uppercase tracking-wider font-medium">Theme</p>
-                  <div className="flex gap-2">
-                    <Button
-                      variant={theme === "light" ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => setTheme("light")}
-                      className="flex-1 h-9 text-xs"
-                    >
-                      <Sun className="mr-1.5 h-3.5 w-3.5" /> Light
-                    </Button>
-                    <Button
-                      variant={theme === "dark" ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => setTheme("dark")}
-                      className="flex-1 h-9 text-xs"
-                    >
-                      <Moon className="mr-1.5 h-3.5 w-3.5" /> Dark
-                    </Button>
-                  </div>
-                </div>
               </nav>
             </SheetContent>
           </Sheet>

@@ -17,12 +17,48 @@ import { VARIANT_CONDITION_LABELS, VARIANT_CONDITIONS } from "@/types/product";
 import { Plus, Trash2, Zap, DollarSign, Package } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-// Common US sneaker sizes (4–15 including halves)
-const COMMON_SIZES = [
-  "4", "4.5", "5", "5.5", "6", "6.5", "7", "7.5",
-  "8", "8.5", "9", "9.5", "10", "10.5", "11", "11.5",
-  "12", "12.5", "13", "13.5", "14", "14.5", "15",
-];
+// Size categories for sneakers
+type SizeCategory = "mens" | "womens" | "gradeSchool" | "preschool" | "toddler" | "crib";
+
+const SIZE_CATEGORIES: Record<SizeCategory, { label: string; sizes: string[] }> = {
+  mens: {
+    label: "Men's",
+    sizes: [
+      "3.5", "4", "4.5", "5", "5.5", "6", "6.5", "7", "7.5",
+      "8", "8.5", "9", "9.5", "10", "10.5", "11", "11.5",
+      "12", "12.5", "13", "13.5", "14", "15", "16", "17", "18",
+    ],
+  },
+  womens: {
+    label: "Women's",
+    sizes: [
+      "5", "5.5", "6", "6.5", "7", "7.5", "8", "8.5",
+      "9", "9.5", "10", "10.5", "11", "11.5", "12", "13", "14",
+    ],
+  },
+  gradeSchool: {
+    label: "Grade School",
+    sizes: ["3.5Y", "4Y", "4.5Y", "5Y", "5.5Y", "6Y", "6.5Y", "7Y"],
+  },
+  preschool: {
+    label: "Preschool",
+    sizes: [
+      "10.5C", "11C", "11.5C", "12C", "12.5C", "13C", "13.5C",
+      "1Y", "1.5Y", "2Y", "2.5Y", "3Y",
+    ],
+  },
+  toddler: {
+    label: "Toddler",
+    sizes: ["2C", "3C", "4C", "5C", "6C", "7C", "8C", "9C", "10C"],
+  },
+  crib: {
+    label: "Crib",
+    sizes: ["0C", "1C", "2C", "3C", "4C"],
+  },
+};
+
+// Legacy - for backward compatibility
+const COMMON_SIZES = SIZE_CATEGORIES.mens.sizes;
 
 export interface VariantRow {
   id?: string; // existing variant ID
@@ -45,8 +81,11 @@ export function VariantSizeMatrix({ variants, onChange }: VariantSizeMatrixProps
   const [bulkCost, setBulkCost] = useState("");
   const [bulkQty, setBulkQty] = useState("");
   const [bulkCondition, setBulkCondition] = useState<VariantCondition>("DS");
+  const [sizeCategory, setSizeCategory] = useState<SizeCategory>("mens");
+  const [customSize, setCustomSize] = useState("");
 
   const existingSizes = new Set(variants.map((v) => v.size));
+  const currentSizes = SIZE_CATEGORIES[sizeCategory].sizes;
 
   const addSize = (size: string) => {
     if (existingSizes.has(size)) return;
@@ -64,8 +103,8 @@ export function VariantSizeMatrix({ variants, onChange }: VariantSizeMatrixProps
     ]);
   };
 
-  const addAllCommonSizes = () => {
-    const newVariants = COMMON_SIZES.filter((s) => !existingSizes.has(s)).map(
+  const addAllSizesInCategory = () => {
+    const newVariants = currentSizes.filter((s) => !existingSizes.has(s)).map(
       (size) => ({
         size,
         condition: bulkCondition,
@@ -77,6 +116,12 @@ export function VariantSizeMatrix({ variants, onChange }: VariantSizeMatrixProps
       })
     );
     onChange([...variants, ...newVariants]);
+  };
+
+  const addCustomSize = () => {
+    if (!customSize.trim() || existingSizes.has(customSize.trim())) return;
+    addSize(customSize.trim());
+    setCustomSize("");
   };
 
   const removeVariant = (index: number) => {
@@ -194,15 +239,36 @@ export function VariantSizeMatrix({ variants, onChange }: VariantSizeMatrixProps
       </div>
 
       {/* Quick-add sizes */}
-      <div className="space-y-2">
+      <div className="space-y-3">
         <div className="flex items-center justify-between">
           <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Quick Add Sizes</p>
-          <Button size="sm" variant="outline" onClick={addAllCommonSizes} className="h-7 text-xs">
-            <Plus className="h-3 w-3 mr-1" /> Add All Sizes (4–15)
+          <Button size="sm" variant="outline" onClick={addAllSizesInCategory} className="h-7 text-xs">
+            <Plus className="h-3 w-3 mr-1" /> Add All {SIZE_CATEGORIES[sizeCategory].label}
           </Button>
         </div>
+
+        {/* Category Tabs */}
+        <div className="flex flex-wrap gap-1.5 border-b border-border pb-3">
+          {(Object.keys(SIZE_CATEGORIES) as SizeCategory[]).map((cat) => (
+            <button
+              key={cat}
+              type="button"
+              onClick={() => setSizeCategory(cat)}
+              className={cn(
+                "rounded-lg px-3 py-1.5 text-xs font-medium transition-colors",
+                sizeCategory === cat
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-muted hover:bg-muted/80 text-muted-foreground"
+              )}
+            >
+              {SIZE_CATEGORIES[cat].label}
+            </button>
+          ))}
+        </div>
+
+        {/* Size Buttons for Selected Category */}
         <div className="flex flex-wrap gap-1.5">
-          {COMMON_SIZES.map((size) => {
+          {currentSizes.map((size) => {
             const exists = existingSizes.has(size);
             return (
               <button
@@ -221,6 +287,21 @@ export function VariantSizeMatrix({ variants, onChange }: VariantSizeMatrixProps
               </button>
             );
           })}
+        </div>
+
+        {/* Custom Size Input */}
+        <div className="flex gap-2 pt-2 border-t border-border">
+          <Input
+            type="text"
+            placeholder="Custom size (e.g. 15.5)"
+            value={customSize}
+            onChange={(e) => setCustomSize(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addCustomSize())}
+            className="h-8 text-sm max-w-[200px]"
+          />
+          <Button size="sm" variant="outline" onClick={addCustomSize} className="h-8 text-xs">
+            <Plus className="h-3 w-3 mr-1" /> Add Custom
+          </Button>
         </div>
       </div>
 
