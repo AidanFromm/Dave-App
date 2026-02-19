@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -40,6 +40,15 @@ export function StockXSearchModal({
   const [results, setResults] = useState<StockXSearchResult[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  // Reset state when modal opens with new query
+  useEffect(() => {
+    if (open && initialQuery) {
+      setQuery(initialQuery);
+      setResults([]);
+      setError("");
+    }
+  }, [open, initialQuery]);
 
   const handleSearch = async () => {
     if (!query.trim()) return;
