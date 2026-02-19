@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import {
   ShoppingBag,
@@ -64,18 +65,14 @@ export function Header() {
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
         {/* Logo */}
         <Link href="/" className="flex items-center group">
-          <span 
-            className="text-xl sm:text-2xl"
-            style={{ 
-              fontFamily: 'var(--font-script), cursive',
-              color: '#FFF8F0',
-              textShadow: '3px 3px 0 #002244, -1px -1px 0 #FB4F14, 1px -1px 0 #FB4F14, -1px 1px 0 #FB4F14, 1px 1px 0 #FB4F14, 2px 2px 0 #002244',
-              WebkitTextStroke: '1px #FB4F14',
-              letterSpacing: '-0.02em'
-            }}
-          >
-            Secured
-          </span>
+          <Image
+            src="/secured-text.png"
+            alt="Secured"
+            width={120}
+            height={45}
+            className="h-9 sm:h-10 w-auto object-contain"
+            priority
+          />
         </Link>
 
         {/* Center navigation — desktop */}
