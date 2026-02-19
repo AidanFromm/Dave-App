@@ -67,15 +67,15 @@ export function Header() {
           : "bg-surface-950 border-b border-surface-800/30"
       )}
     >
-      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+      <div className="mx-auto flex h-24 sm:h-28 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
         {/* Logo */}
         <Link href="/" className="flex items-center group">
           <Image
             src="/logo-transparent.png"
             alt="Secured Tampa"
-            width={200}
-            height={75}
-            className="h-14 sm:h-16 w-auto object-contain"
+            width={280}
+            height={100}
+            className="h-20 sm:h-24 w-auto object-contain"
             priority
           />
         </Link>
