@@ -34,41 +34,33 @@ export async function GET(
     const styleId = p.styleId || attrs.sku || "";
     
     if (urlKey || productName || styleId) {
-      // Helper to title-case a string
-      const toTitleCase = (str: string) => str.split("-").map((w: string) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join("-");
-      
-      // Convert urlKey to Title-Case
-      const titleKey = urlKey ? toTitleCase(urlKey) : "";
-      // Product title as hyphenated (remove parentheses and special chars)
-      const cleanTitle = productName.replace(/[()]/g, "").replace(/\s+/g, "-").replace(/--+/g, "-");
-      const titleHyphen = toTitleCase(cleanTitle);
-      // Without year suffix like (2025)
-      const titleNoYear = toTitleCase(productName.replace(/\s*\(\d{4}\)\s*/g, "").replace(/\s+/g, "-"));
-      // For Jordans: StockX CDN often prefixes "Air-" 
-      const airPrefix = productName.startsWith("Jordan") ? "Air-" + titleHyphen : "";
-      const airPrefixNoYear = productName.startsWith("Jordan") ? "Air-" + titleNoYear : "";
-      // Style ID (SKU) based - very reliable
+      // StockX uses LOWERCASE urlKey for images!
+      const lowerKey = urlKey ? urlKey.toLowerCase() : "";
+      // Product title as hyphenated lowercase (remove parentheses)
+      const cleanTitle = productName.replace(/[()]/g, "").trim().replace(/\s+/g, "-").replace(/--+/g, "-").toLowerCase();
+      // Without year suffix
+      const titleNoYear = productName.replace(/\s*\(\d{4}\)\s*/g, "").trim().replace(/\s+/g, "-").toLowerCase();
+      // For Jordans: StockX CDN uses "air-" prefix
+      const airPrefix = productName.toLowerCase().startsWith("jordan") ? "air-" + cleanTitle : "";
+      const airPrefixNoYear = productName.toLowerCase().startsWith("jordan") ? "air-" + titleNoYear : "";
+      // Style ID (SKU)
       const skuKey = styleId ? styleId.replace(/\s+/g, "-") : "";
 
       const candidates = new Set([
-        // SKU-based (most reliable)
-        ...(skuKey ? [`https://images.stockx.com/images/${skuKey}.jpg`] : []),
-        ...(skuKey ? [`https://images.stockx.com/images/${skuKey}_Product.jpg`] : []),
-        // Air-prefixed without year (common pattern)
-        ...(airPrefixNoYear ? [`https://images.stockx.com/images/${airPrefixNoYear}.jpg`] : []),
-        // Air-prefixed with year
+        // URL key lowercase (MOST RELIABLE)
+        ...(lowerKey ? [`https://images.stockx.com/images/${lowerKey}.jpg`] : []),
+        // Air-prefixed lowercase
         ...(airPrefix ? [`https://images.stockx.com/images/${airPrefix}.jpg`] : []),
-        // Title-cased urlKey
-        ...(titleKey ? [`https://images.stockx.com/images/${titleKey}.jpg`] : []),
-        // Title without year
+        ...(airPrefixNoYear ? [`https://images.stockx.com/images/${airPrefixNoYear}.jpg`] : []),
+        // Clean title lowercase
+        `https://images.stockx.com/images/${cleanTitle}.jpg`,
         `https://images.stockx.com/images/${titleNoYear}.jpg`,
-        // Plain title with year
-        `https://images.stockx.com/images/${titleHyphen}.jpg`,
+        // SKU-based
+        ...(skuKey ? [`https://images.stockx.com/images/${skuKey}.jpg`] : []),
+        // 360 view path (backup)
+        ...(lowerKey ? [`https://images.stockx.com/360/${urlKey}/Images/${urlKey}/Lv2/img01.jpg`] : []),
         // PNG variants
-        ...(skuKey ? [`https://images.stockx.com/images/${skuKey}.png`] : []),
-        ...(titleKey ? [`https://images.stockx.com/images/${titleKey}.png`] : []),
-        // Product suffix pattern
-        ...(titleNoYear ? [`https://images.stockx.com/images/${titleNoYear}_Product.jpg`] : []),
+        ...(lowerKey ? [`https://images.stockx.com/images/${lowerKey}.png`] : []),
       ]);
 
       // Try each candidate with a HEAD request (parallel for speed)
