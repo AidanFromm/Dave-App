@@ -70,8 +70,12 @@ export function Header() {
         {/* Logo */}
         <Link href="/" className="flex items-center group">
           <span 
-            className="text-3xl sm:text-4xl text-primary drop-shadow-sm"
-            style={{ fontFamily: 'var(--font-script), cursive' }}
+            className="text-2xl sm:text-3xl text-primary"
+            style={{ 
+              fontFamily: 'var(--font-script), cursive',
+              textShadow: '2px 2px 0 #002244, -1px -1px 0 #002244, 1px -1px 0 #002244, -1px 1px 0 #002244',
+              WebkitTextStroke: '0.5px #002244'
+            }}
           >
             Secured
           </span>
