@@ -91,6 +91,23 @@ export async function GET(
       
       if (!imageUrl) {
         console.log("[StockX Image] No working image found for:", productName, "urlKey:", urlKey, "styleId:", styleId);
+        
+        // Last resort: Try Google-sourced sneaker databases
+        const googlePatterns = [
+          // GOAT-style patterns (they use similar naming)
+          `https://image.goat.com/transform/v1/attachments/product_template_additional_pictures/images/000/000/000/original/${styleId || cleanTitle}.png`,
+        ].filter(Boolean);
+        
+        for (const pattern of googlePatterns) {
+          try {
+            const res = await fetch(pattern, { method: "HEAD", signal: AbortSignal.timeout(1500) });
+            if (res.ok) {
+              imageUrl = pattern;
+              thumbUrl = pattern;
+              break;
+            }
+          } catch {}
+        }
       }
     }
 

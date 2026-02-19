@@ -24,16 +24,30 @@ export async function GET(request: Request) {
     }
 
     const data = await res.json();
-    const products = (data.products || data.Products || []).map((p: any) => ({
-      id: p.id || p.productId,
-      name: p.title || p.name,
-      brand: p.brand,
-      sku: p.styleId || p.sku,
-      colorway: p.colorway,
-      retailPrice: p.retailPrice,
-      imageUrl: p.media?.thumbUrl || p.media?.imageUrl || p.thumbUrl || p.image,
-      productType: p.productCategory || "sneaker",
-    }));
+    console.log("[StockX Search] Raw first product:", JSON.stringify(data.products?.[0] || {}).slice(0, 500));
+    
+    const products = (data.products || data.Products || []).map((p: any) => {
+      // Try to construct image URL from urlKey if media isn't provided
+      let imageUrl = p.media?.thumbUrl || p.media?.imageUrl || p.thumbUrl || p.image || "";
+      const urlKey = p.urlKey || p.url_key || "";
+      
+      if (!imageUrl && urlKey) {
+        // StockX CDN uses lowercase urlKey
+        imageUrl = `https://images.stockx.com/images/${urlKey.toLowerCase()}.jpg?fit=fill&bg=FFFFFF&w=300&h=214&fm=webp&auto=compress&q=80&trim=color`;
+      }
+      
+      return {
+        id: p.id || p.productId,
+        name: p.title || p.name,
+        brand: p.brand,
+        sku: p.styleId || p.sku,
+        colorway: p.colorway,
+        retailPrice: p.retailPrice,
+        imageUrl,
+        urlKey,  // Pass this through!
+        productType: p.productCategory || "sneaker",
+      };
+    });
 
     return NextResponse.json({ products });
   } catch (error) {
