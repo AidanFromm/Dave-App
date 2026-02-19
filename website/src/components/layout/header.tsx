@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
 import { usePathname } from "next/navigation";
 import {
   ShoppingBag,
@@ -70,14 +69,12 @@ export function Header() {
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
         {/* Logo */}
         <Link href="/" className="flex items-center group">
-          <Image
-            src="/logo-transparent.png"
-            alt="Secured Tampa"
-            width={160}
-            height={56}
-            className="h-10 sm:h-12 w-auto object-contain"
-            priority
-          />
+          <span 
+            className="text-3xl sm:text-4xl text-primary drop-shadow-sm"
+            style={{ fontFamily: 'var(--font-script), cursive' }}
+          >
+            Secured
+          </span>
         </Link>
 
         {/* Center navigation — desktop */}

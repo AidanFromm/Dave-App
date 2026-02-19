@@ -13,9 +13,9 @@ export function Footer() {
               <Image
                 src="/logo-transparent.png"
                 alt="Secured Tampa"
-                width={140}
-                height={52}
-                className="h-11 w-auto object-contain"
+                width={200}
+                height={75}
+                className="h-20 sm:h-24 w-auto object-contain"
               />
             </Link>
             <p className="mt-3 text-sm text-muted-foreground leading-relaxed">
