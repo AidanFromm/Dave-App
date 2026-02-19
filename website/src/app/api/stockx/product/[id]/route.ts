@@ -26,8 +26,6 @@ export async function GET(
     const productName = p.title || p.name || "";
     const attrs = p.productAttributes || {};
     const urlKey = p.urlKey || p.url_key || "";
-    
-    console.log("[StockX Product]", { id, productName, urlKey, hasAttrs: !!attrs, rawKeys: Object.keys(p) });
 
     // StockX v2 doesn't include media URLs in product response
     // Try multiple CDN patterns to find a working image
@@ -66,15 +64,12 @@ export async function GET(
       ]);
 
       // Try each candidate with a HEAD request (parallel for speed)
-      console.log("[StockX Image] Trying candidates:", Array.from(candidates));
       const results = await Promise.allSettled(
         Array.from(candidates).map(async (candidate) => {
           try {
             const imgRes = await fetch(candidate, { method: "HEAD", signal: AbortSignal.timeout(2000) });
-            console.log(`[StockX Image] ${candidate} -> ${imgRes.status}`);
             return imgRes.ok ? candidate : null;
-          } catch (e) {
-            console.log(`[StockX Image] ${candidate} -> error`);
+          } catch {
             return null;
           }
         })
@@ -89,26 +84,6 @@ export async function GET(
         }
       }
       
-      if (!imageUrl) {
-        console.log("[StockX Image] No working image found for:", productName, "urlKey:", urlKey, "styleId:", styleId);
-        
-        // Last resort: Try Google-sourced sneaker databases
-        const googlePatterns = [
-          // GOAT-style patterns (they use similar naming)
-          `https://image.goat.com/transform/v1/attachments/product_template_additional_pictures/images/000/000/000/original/${styleId || cleanTitle}.png`,
-        ].filter(Boolean);
-        
-        for (const pattern of googlePatterns) {
-          try {
-            const res = await fetch(pattern, { method: "HEAD", signal: AbortSignal.timeout(1500) });
-            if (res.ok) {
-              imageUrl = pattern;
-              thumbUrl = pattern;
-              break;
-            }
-          } catch {}
-        }
-      }
     }
 
     // Get variants with proper v2 field mapping

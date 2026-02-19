@@ -24,8 +24,6 @@ export async function GET(request: Request) {
     }
 
     const data = await res.json();
-    console.log("[StockX Search] Raw first product:", JSON.stringify(data.products?.[0] || {}).slice(0, 500));
-    
     const products = (data.products || data.Products || []).map((p: any) => {
       // Try to construct image URL from urlKey if media isn't provided
       let imageUrl = p.media?.thumbUrl || p.media?.imageUrl || p.thumbUrl || p.image || "";
