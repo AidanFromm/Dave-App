@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { Mail, MapPin, Instagram } from "lucide-react";
 
 export function Footer() {
@@ -9,10 +10,13 @@ export function Footer() {
           {/* Brand */}
           <div className="col-span-2 sm:col-span-1">
             <Link href="/" className="inline-block">
-              <span className="font-display text-xl font-bold uppercase tracking-tight">
-                <span className="text-foreground">SECURED</span>
-                <span className="text-primary">TAMPA</span>
-              </span>
+              <Image
+                src="/logo-transparent.png"
+                alt="Secured Tampa"
+                width={140}
+                height={52}
+                className="h-11 w-auto object-contain"
+              />
             </Link>
             <p className="mt-3 text-sm text-muted-foreground leading-relaxed">
               Tampa&apos;s trusted source for authentic sneakers and Pokémon cards.

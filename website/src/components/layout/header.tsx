@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import {
   ShoppingBag,
@@ -68,13 +69,15 @@ export function Header() {
     >
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
         {/* Logo */}
-        <Link href="/" className="flex items-center gap-0.5 group">
-          <span className="font-display text-2xl font-bold uppercase tracking-tight text-foreground transition-colors">
-            SECURED
-          </span>
-          <span className="font-display text-2xl font-bold uppercase tracking-tight text-primary transition-colors">
-            TAMPA
-          </span>
+        <Link href="/" className="flex items-center group">
+          <Image
+            src="/logo-transparent.png"
+            alt="Secured Tampa"
+            width={160}
+            height={60}
+            className="h-12 w-auto object-contain"
+            priority
+          />
         </Link>
 
         {/* Center navigation — desktop */}
