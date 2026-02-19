@@ -5,8 +5,8 @@ import { requireAdmin } from "@/lib/admin-auth";
 // GET: List barcodes without images
 // DELETE: Remove barcodes without images
 export async function GET() {
-  const authError = await requireAdmin();
-  if (authError) return authError;
+  const auth = await requireAdmin();
+  if (auth.error) return auth.error;
 
   const supabase = await createClient();
 
@@ -35,8 +35,8 @@ export async function GET() {
 }
 
 export async function DELETE() {
-  const authError = await requireAdmin();
-  if (authError) return authError;
+  const auth = await requireAdmin();
+  if (auth.error) return auth.error;
 
   const supabase = await createClient();
 
