@@ -323,29 +323,29 @@ export function ProductDetailClient({ product: initialProduct, sizeVariants = []
           )}
 
           {/* Key details row */}
-          <motion.div variants={fadeIn} className="grid grid-cols-2 gap-2 mb-6">
+          <motion.div variants={fadeIn} className="grid grid-cols-2 gap-2.5 mb-6">
             {product.size && mergedSizes.length <= 1 && (
-              <div className="rounded-xl bg-surface-800/30 border border-border/50 p-3">
-                <span className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium">Size</span>
-                <p className="mt-0.5 text-sm font-bold">{product.size}</p>
+              <div className="rounded-xl bg-neutral-50 border border-neutral-200 p-3">
+                <span className="text-[10px] text-neutral-500 uppercase tracking-wider font-medium">Size</span>
+                <p className="mt-0.5 text-sm font-bold text-neutral-900">{product.size}</p>
               </div>
             )}
             {product.colorway && (
-              <div className="rounded-xl bg-surface-800/30 border border-border/50 p-3">
-                <span className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium">Colorway</span>
-                <p className="mt-0.5 text-sm font-semibold line-clamp-1">{product.colorway}</p>
+              <div className="rounded-xl bg-neutral-50 border border-neutral-200 p-3">
+                <span className="text-[10px] text-neutral-500 uppercase tracking-wider font-medium">Colorway</span>
+                <p className="mt-0.5 text-sm font-semibold text-neutral-900 line-clamp-1">{product.colorway}</p>
               </div>
             )}
-            <div className="rounded-xl bg-surface-800/30 border border-border/50 p-3">
-              <span className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium">Box</span>
-              <p className="mt-0.5 text-sm font-semibold">
+            <div className="rounded-xl bg-neutral-50 border border-neutral-200 p-3">
+              <span className="text-[10px] text-neutral-500 uppercase tracking-wider font-medium">Box</span>
+              <p className="mt-0.5 text-sm font-semibold text-neutral-900">
                 {product.has_box ? "Included" : "No Box"}
               </p>
             </div>
             {product.sku && (
-              <div className="rounded-xl bg-surface-800/30 border border-border/50 p-3">
-                <span className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium">SKU</span>
-                <p className="mt-0.5 text-xs font-mono text-muted-foreground">{product.sku}</p>
+              <div className="rounded-xl bg-neutral-50 border border-neutral-200 p-3">
+                <span className="text-[10px] text-neutral-500 uppercase tracking-wider font-medium">SKU</span>
+                <p className="mt-0.5 text-xs font-mono text-neutral-600">{product.sku}</p>
               </div>
             )}
           </motion.div>
@@ -519,31 +519,31 @@ export function ProductDetailClient({ product: initialProduct, sizeVariants = []
           <h2 className="font-display text-xl font-bold uppercase tracking-tight mb-6">
             You May Also Like
           </h2>
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+          <div className="grid grid-cols-2 gap-3 sm:gap-4 sm:grid-cols-3 lg:grid-cols-4">
             {relatedProducts.map((rp) => (
               <Link key={rp.id} href={`/product/${rp.id}`} className="group">
-                <div className="aspect-square overflow-hidden rounded-xl border border-border bg-surface-800/30">
+                <div className="aspect-square overflow-hidden rounded-xl border border-border bg-white">
                   {rp.images?.[0] ? (
                     <img
                       src={rp.images[0]}
                       alt={rp.name}
-                      className="h-full w-full object-contain p-2 transition-transform duration-300 group-hover:scale-105"
+                      className="h-full w-full object-contain p-3 transition-transform duration-300 group-hover:scale-105"
                     />
                   ) : (
-                    <div className="flex h-full w-full items-center justify-center">
-                      <Package className="h-8 w-8 text-muted-foreground/30" />
+                    <div className="flex h-full w-full items-center justify-center bg-neutral-50">
+                      <Package className="h-8 w-8 text-neutral-300" />
                     </div>
                   )}
                 </div>
-                <div className="mt-2">
-                  <p className="text-sm font-medium truncate group-hover:text-primary transition-colors">
-                    {rp.name}
-                  </p>
+                <div className="mt-2.5">
                   {rp.brand && (
-                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                    <p className="text-[10px] uppercase tracking-wider text-neutral-500 font-medium">
                       {rp.brand}
                     </p>
                   )}
+                  <p className="text-sm font-semibold truncate group-hover:text-primary transition-colors text-neutral-900">
+                    {rp.name}
+                  </p>
                   <p className="mt-1 text-sm font-mono font-bold text-primary">
                     {formatCurrency(rp.price)}
                   </p>
