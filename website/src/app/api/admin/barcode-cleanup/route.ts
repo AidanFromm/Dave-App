@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { requireAdmin } from "@/lib/auth-guard";
+import { requireAdmin } from "@/lib/admin-auth";
 
 // GET: List barcodes without images
 // DELETE: Remove barcodes without images
