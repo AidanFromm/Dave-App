@@ -156,6 +156,7 @@ export default function ScanPage() {
   const [items, setItems] = useState<ScannedItem[]>([]);
   const [scanHistory, setScanHistory] = useState<ScanHistoryEntry[]>([]);
   const [searchModalOpen, setSearchModalOpen] = useState(false);
+  const [manualLookupMode, setManualLookupMode] = useState(false);
   const [pendingBarcode, setPendingBarcode] = useState("");
   const [selectedPokemonCard, setSelectedPokemonCard] = useState<PokemonCardSearchResult | null>(null);
   const [pokemonSubMode, setPokemonSubMode] = useState<"cards" | "sealed">("cards");
@@ -410,6 +411,9 @@ export default function ScanPage() {
     id: string; name: string; brand: string; colorway: string; styleId: string; retailPrice: number; imageUrl: string;
   }) => {
     setSearchModalOpen(false);
+    const isManual = manualLookupMode;
+    setManualLookupMode(false);
+    const barcode = isManual ? `MANUAL-${Date.now()}` : pendingBarcode;
     setScanState("looking_up");
     try {
       const productRes = await fetch(`/api/stockx/product/${product.id}`);
@@ -417,7 +421,7 @@ export default function ScanPage() {
         const productData = await productRes.json();
         const result: ScanResult = {
           source: "stockx",
-          barcode: pendingBarcode,
+          barcode,
           productName: productData.title,
           brand: productData.brand,
           colorway: productData.colorway,
@@ -432,7 +436,7 @@ export default function ScanPage() {
           marketData: null,
         };
         setItems((prev) => [...prev, {
-          id: crypto.randomUUID(), barcode: pendingBarcode, result, quantity: 1,
+          id: crypto.randomUUID(), barcode, result, quantity: 1,
           condition: "new", hasBox: true, cost: "", price: "",
           images: result.imageUrls?.length > 0 ? result.imageUrls : (result.imageUrl ? [result.imageUrl] : []), selectedVariant: null, selectedSize: "",
           marketData: null, expanded: false,
@@ -444,14 +448,14 @@ export default function ScanPage() {
     } catch {}
     // Fallback
     const result: ScanResult = {
-      source: "stockx", barcode: pendingBarcode, productName: product.name,
+      source: "stockx", barcode, productName: product.name,
       brand: product.brand, colorway: product.colorway, styleId: product.styleId,
       size: null, retailPrice: product.retailPrice, imageUrl: product.imageUrl,
       imageUrls: product.imageUrl ? [product.imageUrl] : [], stockxProductId: product.id,
       stockxVariantId: null, variants: [], marketData: null,
     };
     setItems((prev) => [...prev, {
-      id: crypto.randomUUID(), barcode: pendingBarcode, result, quantity: 1,
+      id: crypto.randomUUID(), barcode, result, quantity: 1,
       condition: "new", hasBox: true, cost: "", price: "",
       images: result.imageUrls?.length > 0 ? result.imageUrls : (result.imageUrl ? [result.imageUrl] : []), selectedVariant: null, selectedSize: "",
       marketData: null, expanded: false,
@@ -698,7 +702,24 @@ export default function ScanPage() {
           {/* ─── SCANNING PHASE ─── */}
           {phase === "scanning" && (
             <>
-              <BarcodeScannerInput onScan={handleScan} loading={scanState === "looking_up"} />
+              <div className="flex items-end gap-3">
+                <div className="flex-1">
+                  <BarcodeScannerInput onScan={handleScan} loading={scanState === "looking_up"} />
+                </div>
+                <Button
+                  variant="outline"
+                  size="lg"
+                  className="h-12 gap-2 whitespace-nowrap"
+                  onClick={() => {
+                    setManualLookupMode(true);
+                    setPendingBarcode("");
+                    setSearchModalOpen(true);
+                  }}
+                >
+                  <Search className="h-4 w-4" />
+                  Manual Lookup
+                </Button>
+              </div>
 
               {/* Not found state — StockX modal auto-opens, this is just a subtle indicator */}
               {scanState === "not_found" && !searchModalOpen && (
@@ -749,7 +770,7 @@ export default function ScanPage() {
                                 Size {item.result.size}
                               </Badge>
                             )}
-                            <span className="font-mono">{item.barcode}</span>
+                            <span className="font-mono">{item.barcode.startsWith("MANUAL-") ? (item.result.styleId || "Manual") : item.barcode}</span>
                           </div>
                         </div>
 
@@ -1229,9 +1250,9 @@ export default function ScanPage() {
       {/* StockX Search Modal */}
       <StockXSearchModal
         open={searchModalOpen}
-        onClose={() => setSearchModalOpen(false)}
+        onClose={() => { setSearchModalOpen(false); setManualLookupMode(false); }}
         onSelect={handleStockXSelect}
-        initialQuery={pendingBarcode}
+        initialQuery={manualLookupMode ? "" : pendingBarcode}
       />
     </div>
   );
