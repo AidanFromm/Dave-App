@@ -26,8 +26,9 @@ interface StockXSearchResult {
 interface StockXSearchModalProps {
   open: boolean;
   onClose: () => void;
-  onSelect: (product: StockXSearchResult) => void;
+  onSelect: (product: StockXSearchResult, size?: string) => void;
   initialQuery?: string;
+  showSizeField?: boolean;
 }
 
 export function StockXSearchModal({
@@ -35,16 +36,19 @@ export function StockXSearchModal({
   onClose,
   onSelect,
   initialQuery = "",
+  showSizeField = false,
 }: StockXSearchModalProps) {
   const [query, setQuery] = useState(initialQuery);
+  const [size, setSize] = useState("");
   const [results, setResults] = useState<StockXSearchResult[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
   // Reset state when modal opens with new query
   useEffect(() => {
-    if (open && initialQuery) {
-      setQuery(initialQuery);
+    if (open) {
+      if (initialQuery) setQuery(initialQuery);
+      setSize("");
       setResults([]);
       setError("");
     }
@@ -82,14 +86,29 @@ export function StockXSearchModal({
         </DialogHeader>
 
         <div className="flex gap-2">
-          <Input
-            placeholder="Search by name, style ID..."
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-            autoFocus
-          />
-          <Button onClick={handleSearch} disabled={loading}>
+          <div className={`flex flex-1 items-center gap-0 rounded-lg border border-input bg-background overflow-hidden focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-1 ${showSizeField ? '' : ''}`}>
+            <input
+              placeholder="Search by name, style ID..."
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+              autoFocus
+              className="flex-1 h-10 px-3 text-sm bg-transparent outline-none placeholder:text-muted-foreground"
+            />
+            {showSizeField && (
+              <>
+                <div className="w-px h-6 bg-border" />
+                <input
+                  placeholder="Size"
+                  value={size}
+                  onChange={(e) => setSize(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+                  className="w-20 h-10 px-3 text-sm bg-transparent outline-none placeholder:text-muted-foreground text-center"
+                />
+              </>
+            )}
+          </div>
+          <Button onClick={handleSearch} disabled={loading} size="icon" className="h-10 w-10 shrink-0">
             {loading ? (
               <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
@@ -107,7 +126,7 @@ export function StockXSearchModal({
             <button
               key={product.id}
               type="button"
-              onClick={() => onSelect(product)}
+              onClick={() => onSelect(product, size || undefined)}
               className="flex w-full items-center gap-3 rounded-lg border border-border p-3 text-left transition-colors hover:bg-accent"
             >
               {(product.imageUrl || product.thumbnailUrl) && (

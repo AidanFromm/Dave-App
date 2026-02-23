@@ -3,17 +3,19 @@
 import { useRef, useEffect, useState, useCallback } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { ScanBarcode, Loader2, Camera, CameraOff, Keyboard } from "lucide-react";
+import { ScanBarcode, Loader2, Camera, CameraOff, Keyboard, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface BarcodeScannerInputProps {
   onScan: (barcode: string) => void;
+  onManualLookup?: () => void;
   disabled?: boolean;
   loading?: boolean;
 }
 
 export function BarcodeScannerInput({
   onScan,
+  onManualLookup,
   disabled,
   loading,
 }: BarcodeScannerInputProps) {
@@ -187,36 +189,45 @@ export function BarcodeScannerInput({
 
   return (
     <div className="space-y-3">
-      {/* Mode toggle */}
+      {/* Mode toggle — 3 equal tabs */}
       <div className="flex gap-2">
-        <Button
+        <button
           type="button"
-          variant={cameraMode ? "default" : "outline"}
-          size="sm"
           onClick={() => setCameraMode(true)}
           disabled={loading}
           className={cn(
-            "flex-1",
-            cameraMode && "bg-[#FB4F14] hover:bg-[#FB4F14]/90 text-white"
+            "flex-1 flex items-center justify-center gap-2 rounded-xl border-2 px-3 py-3.5 text-sm font-semibold transition-all",
+            cameraMode
+              ? "border-[#FB4F14] bg-[#FB4F14] text-white shadow-md"
+              : "border-border bg-card text-muted-foreground hover:border-foreground/30 hover:text-foreground"
           )}
         >
-          <Camera className="mr-2 h-4 w-4" />
+          <Camera className="h-4 w-4" />
           Camera Scan
-        </Button>
-        <Button
+        </button>
+        <button
           type="button"
-          variant={!cameraMode ? "default" : "outline"}
-          size="sm"
           onClick={() => setCameraMode(false)}
           disabled={loading}
           className={cn(
-            "flex-1",
-            !cameraMode && "bg-[#002244] hover:bg-[#002244]/90 text-white"
+            "flex-1 flex items-center justify-center gap-2 rounded-xl border-2 px-3 py-3.5 text-sm font-semibold transition-all",
+            !cameraMode
+              ? "border-[#002244] bg-[#002244] text-white shadow-md"
+              : "border-border bg-card text-muted-foreground hover:border-foreground/30 hover:text-foreground"
           )}
         >
-          <Keyboard className="mr-2 h-4 w-4" />
+          <Keyboard className="h-4 w-4" />
           Type / Scan Gun
-        </Button>
+        </button>
+        <button
+          type="button"
+          onClick={() => onManualLookup?.()}
+          disabled={loading}
+          className="flex-1 flex items-center justify-center gap-2 rounded-xl border-2 border-border bg-card px-3 py-3.5 text-sm font-semibold text-muted-foreground transition-all hover:border-foreground/30 hover:text-foreground"
+        >
+          <Search className="h-4 w-4" />
+          Manual Lookup
+        </button>
       </div>
 
       {/* Camera viewfinder */}

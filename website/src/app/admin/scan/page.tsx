@@ -409,7 +409,7 @@ export default function ScanPage() {
 
   const handleStockXSelect = async (product: {
     id: string; name: string; brand: string; colorway: string; styleId: string; retailPrice: number; imageUrl: string;
-  }) => {
+  }, manualSize?: string) => {
     setSearchModalOpen(false);
     const isManual = manualLookupMode;
     setManualLookupMode(false);
@@ -435,11 +435,24 @@ export default function ScanPage() {
           variants: productData.variants ?? [],
           marketData: null,
         };
+        // Try to match variant by size if provided
+        let matchedVariant = null;
+        let matchedMarketData = null;
+        if (manualSize && result.variants.length > 0) {
+          matchedVariant = result.variants.find((v) => v.size === manualSize) ?? null;
+          if (matchedVariant && result.stockxProductId) {
+            try {
+              const mdRes = await fetch(`/api/stockx/market-data/${result.stockxProductId}/${matchedVariant.id}`);
+              if (mdRes.ok) matchedMarketData = await mdRes.json();
+            } catch {}
+          }
+        }
         setItems((prev) => [...prev, {
           id: crypto.randomUUID(), barcode, result, quantity: 1,
           condition: "new", hasBox: true, cost: "", price: "",
-          images: result.imageUrls?.length > 0 ? result.imageUrls : (result.imageUrl ? [result.imageUrl] : []), selectedVariant: null, selectedSize: "",
-          marketData: null, expanded: false,
+          images: result.imageUrls?.length > 0 ? result.imageUrls : (result.imageUrl ? [result.imageUrl] : []),
+          selectedVariant: matchedVariant, selectedSize: manualSize || "",
+          marketData: matchedMarketData, expanded: false,
         }]);
         setScanState("idle");
         playTone("success");
@@ -457,7 +470,8 @@ export default function ScanPage() {
     setItems((prev) => [...prev, {
       id: crypto.randomUUID(), barcode, result, quantity: 1,
       condition: "new", hasBox: true, cost: "", price: "",
-      images: result.imageUrls?.length > 0 ? result.imageUrls : (result.imageUrl ? [result.imageUrl] : []), selectedVariant: null, selectedSize: "",
+      images: result.imageUrls?.length > 0 ? result.imageUrls : (result.imageUrl ? [result.imageUrl] : []),
+      selectedVariant: null, selectedSize: manualSize || "",
       marketData: null, expanded: false,
     }]);
     setScanState("idle");
@@ -702,24 +716,15 @@ export default function ScanPage() {
           {/* ─── SCANNING PHASE ─── */}
           {phase === "scanning" && (
             <>
-              <div className="flex items-end gap-3">
-                <div className="flex-1">
-                  <BarcodeScannerInput onScan={handleScan} loading={scanState === "looking_up"} />
-                </div>
-                <Button
-                  variant="outline"
-                  size="lg"
-                  className="h-12 gap-2 whitespace-nowrap"
-                  onClick={() => {
-                    setManualLookupMode(true);
-                    setPendingBarcode("");
-                    setSearchModalOpen(true);
-                  }}
-                >
-                  <Search className="h-4 w-4" />
-                  Manual Lookup
-                </Button>
-              </div>
+              <BarcodeScannerInput
+                onScan={handleScan}
+                onManualLookup={() => {
+                  setManualLookupMode(true);
+                  setPendingBarcode("");
+                  setSearchModalOpen(true);
+                }}
+                loading={scanState === "looking_up"}
+              />
 
               {/* Not found state — StockX modal auto-opens, this is just a subtle indicator */}
               {scanState === "not_found" && !searchModalOpen && (
@@ -1253,6 +1258,7 @@ export default function ScanPage() {
         onClose={() => { setSearchModalOpen(false); setManualLookupMode(false); }}
         onSelect={handleStockXSelect}
         initialQuery={manualLookupMode ? "" : pendingBarcode}
+        showSizeField={manualLookupMode}
       />
     </div>
   );
