@@ -23,6 +23,12 @@ interface StockXSearchResult {
   imageUrl: string;
 }
 
+const SNEAKER_SIZES = [
+  "3.5", "4", "4.5", "5", "5.5", "6", "6.5", "7", "7.5",
+  "8", "8.5", "9", "9.5", "10", "10.5", "11", "11.5",
+  "12", "12.5", "13", "14", "15", "16",
+];
+
 interface StockXSearchModalProps {
   open: boolean;
   onClose: () => void;
@@ -86,7 +92,7 @@ export function StockXSearchModal({
         </DialogHeader>
 
         <div className="flex gap-2">
-          <div className={`flex flex-1 items-center gap-0 rounded-lg border border-input bg-background overflow-hidden focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-1 ${showSizeField ? '' : ''}`}>
+          <div className="flex flex-1 items-center gap-0 rounded-lg border border-input bg-background overflow-hidden focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-1">
             <input
               placeholder="Search by name, style ID..."
               value={query}
@@ -98,13 +104,16 @@ export function StockXSearchModal({
             {showSizeField && (
               <>
                 <div className="w-px h-6 bg-border" />
-                <input
-                  placeholder="Size"
+                <select
                   value={size}
                   onChange={(e) => setSize(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-                  className="w-20 h-10 px-3 text-sm bg-transparent outline-none placeholder:text-muted-foreground text-center"
-                />
+                  className="h-10 px-2 text-sm bg-transparent outline-none text-center appearance-none cursor-pointer min-w-[80px]"
+                >
+                  <option value="">Size</option>
+                  {SNEAKER_SIZES.map((s) => (
+                    <option key={s} value={s}>{s}</option>
+                  ))}
+                </select>
               </>
             )}
           </div>
