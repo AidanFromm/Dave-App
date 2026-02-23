@@ -1,6 +1,30 @@
 import { NextResponse } from "next/server";
 import { stockxFetch } from "@/lib/stockx";
 
+// GOAT image fallback — search GOAT's Algolia index
+async function findGoatImage(styleCode: string | undefined, productName: string | undefined): Promise<string | null> {
+  const query = styleCode || productName;
+  if (!query) return null;
+  try {
+    const algoliaUrl = "https://2fwotdvm2o-dsn.algolia.net/1/indexes/product_variants_v2/query";
+    const resp = await fetch(
+      `${algoliaUrl}?x-algolia-agent=Algolia&x-algolia-application-id=2FWOTDVM2O&x-algolia-api-key=ac96de6fef0e02bb95d433d8d5c7038a`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ params: `query=${encodeURIComponent(query)}&hitsPerPage=1` }),
+      }
+    );
+    if (!resp.ok) return null;
+    const data = await resp.json();
+    const hit = data?.hits?.[0];
+    if (!hit) return null;
+    return hit.main_picture_url || hit.grid_picture_url || hit.original_picture_url || null;
+  } catch {
+    return null;
+  }
+}
+
 export async function GET(
   _request: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -77,13 +101,21 @@ export async function GET(
 
       for (const result of results) {
         if (result.status === "fulfilled" && result.value) {
-          // StockX CDN no longer supports query params - use base URL only
           imageUrl = result.value;
           thumbUrl = result.value;
           break;
         }
       }
       
+    }
+
+    // GOAT fallback if no StockX image found
+    if (!imageUrl) {
+      const goatImage = await findGoatImage(styleId, productName);
+      if (goatImage) {
+        imageUrl = goatImage;
+        thumbUrl = goatImage;
+      }
     }
 
     // Get variants with proper v2 field mapping

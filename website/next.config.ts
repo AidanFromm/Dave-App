@@ -64,6 +64,10 @@ const nextConfig: NextConfig = {
         protocol: "https",
         hostname: "**.walmartimages.com",
       },
+      {
+        protocol: "https",
+        hostname: "image.goat.com",
+      },
     ],
   },
 };
