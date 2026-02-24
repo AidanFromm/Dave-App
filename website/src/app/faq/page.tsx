@@ -38,19 +38,15 @@ const faqs = [
     questions: [
       {
         q: "What is your return policy?",
-        a: "We accept returns within 7 days of delivery. Items must be in original, unworn condition with all tags attached.",
+        a: "All sales are final. We do not accept returns, exchanges, or offer refunds. However, every item is backed by our 100% authenticity guarantee — if an item is not authentic, you'll receive a full refund.",
       },
       {
-        q: "Can I return worn sneakers?",
-        a: "No. Sneakers must be unworn and in original condition. Any signs of wear will result in the return being declined.",
+        q: "What if I receive an inauthentic item?",
+        a: "Contact us immediately at securedtampa.llc@gmail.com with photos. If the item is not authentic, we will issue a full refund — no questions asked.",
       },
       {
-        q: "Can I return Pokémon cards?",
-        a: "Pokémon cards and sealed collectibles are final sale unless they arrive damaged or not as described.",
-      },
-      {
-        q: "How long do refunds take?",
-        a: "Refunds are processed within 3–5 business days of receiving your return, issued to the original payment method.",
+        q: "Can I exchange an item?",
+        a: "We do not offer exchanges. All sales are final.",
       },
     ],
   },

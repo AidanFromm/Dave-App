@@ -44,7 +44,7 @@ export function Footer() {
               </li>
               <li>
                 <Link href="/drops" className="text-muted-foreground hover:text-primary transition-colors">
-                  New Drops
+                  Daily Deals
                 </Link>
               </li>
               <li>

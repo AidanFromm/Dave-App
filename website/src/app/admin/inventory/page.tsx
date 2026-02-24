@@ -61,9 +61,15 @@ function isPokemonProduct(name: string, tags: string[]): boolean {
 
 function classifyProductClient(product: Product): "sneaker" | "pokemon" | "other" {
   const tags = product.tags ?? [];
+  const lowerTags = tags.map((t) => t.toLowerCase());
+
+  // Used condition items default to sneaker unless explicitly tagged pokemon
+  if (product.condition?.startsWith("used_") && !lowerTags.includes("pokemon")) {
+    return "sneaker";
+  }
+
   if (isPokemonProduct(product.name, tags)) return "pokemon";
 
-  const lowerTags = tags.map((t) => t.toLowerCase());
   if (
     lowerTags.includes("sneaker") ||
     lowerTags.includes("sneakers") ||

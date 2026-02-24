@@ -144,7 +144,6 @@ export async function addScannedProductToInventory(data: ScanFormData): Promise<
       is_featured: false,
       is_drop: false,
       tags,
-      ...(Object.keys(metadata).length > 0 ? { metadata } : {}),
     })
     .select("id")
     .single();

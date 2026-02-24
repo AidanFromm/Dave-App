@@ -77,10 +77,7 @@ function CreateDropModal({ onCreated, editProduct, onClose }: CreateDropModalPro
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(editProduct ?? null);
   const [dropPrice, setDropPrice] = useState(editProduct?.drop_price?.toString() ?? "");
   const [dropQuantity, setDropQuantity] = useState(editProduct?.drop_quantity?.toString() ?? "");
-  const [startDate, setStartDate] = useState(editProduct?.drop_starts_at ? new Date(editProduct.drop_starts_at).toISOString().split("T")[0] : "");
-  const [startTime, setStartTime] = useState(editProduct?.drop_starts_at ? new Date(editProduct.drop_starts_at).toTimeString().slice(0, 5) : "");
-  const [endDate, setEndDate] = useState(editProduct?.drop_ends_at ? new Date(editProduct.drop_ends_at).toISOString().split("T")[0] : "");
-  const [endTime, setEndTime] = useState(editProduct?.drop_ends_at ? new Date(editProduct.drop_ends_at).toTimeString().slice(0, 5) : "");
+  // Deal is active immediately - no date/time selection needed
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
@@ -112,14 +109,10 @@ function CreateDropModal({ onCreated, editProduct, onClose }: CreateDropModalPro
       toast.error("Select a product");
       return;
     }
-    if (!startDate || !startTime) {
-      toast.error("Start date and time are required");
-      return;
-    }
     setSubmitting(true);
     try {
-      const dropStartsAt = new Date(`${startDate}T${startTime}`).toISOString();
-      const dropEndsAt = endDate && endTime ? new Date(`${endDate}T${endTime}`).toISOString() : null;
+      const dropStartsAt = new Date().toISOString();
+      const dropEndsAt = null;
 
       const res = await fetch("/api/admin/products/drop", {
         method: editProduct ? "PATCH" : "POST",
@@ -136,11 +129,11 @@ function CreateDropModal({ onCreated, editProduct, onClose }: CreateDropModalPro
         const err = await res.json().catch(() => ({}));
         throw new Error(err.error || "Failed");
       }
-      toast.success(editProduct ? "Drop updated" : "Drop created");
+      toast.success(editProduct ? "Daily Deal updated" : "Daily Deal created");
       handleClose();
       onCreated();
     } catch (e: unknown) {
-      toast.error(e instanceof Error ? e.message : "Failed to save drop");
+      toast.error(e instanceof Error ? e.message : "Failed to save daily deal");
     } finally {
       setSubmitting(false);
     }
@@ -152,10 +145,6 @@ function CreateDropModal({ onCreated, editProduct, onClose }: CreateDropModalPro
     setProductSearch("");
     setDropPrice("");
     setDropQuantity("");
-    setStartDate("");
-    setStartTime("");
-    setEndDate("");
-    setEndTime("");
     onClose?.();
   };
 
@@ -165,7 +154,7 @@ function CreateDropModal({ onCreated, editProduct, onClose }: CreateDropModalPro
         <DialogTrigger asChild>
           <Button className="bg-[#FB4F14] hover:bg-[#FB4F14]/90">
             <Plus className="mr-2 h-4 w-4" />
-            Create Drop
+            Create Daily Deal
           </Button>
         </DialogTrigger>
       )}
@@ -173,7 +162,7 @@ function CreateDropModal({ onCreated, editProduct, onClose }: CreateDropModalPro
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-white">
             <Flame className="h-5 w-5 text-[#FB4F14]" />
-            {editProduct ? "Edit Drop" : "Create New Drop"}
+            {editProduct ? "Edit Daily Deal" : "Create Daily Deal"}
           </DialogTitle>
         </DialogHeader>
         <div className="space-y-4 py-4">
@@ -247,7 +236,7 @@ function CreateDropModal({ onCreated, editProduct, onClose }: CreateDropModalPro
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label className="text-gray-300">Drop Price (optional)</Label>
+              <Label className="text-gray-300">Sale Price (optional)</Label>
               <div className="relative">
                 <DollarSign className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500" />
                 <Input
@@ -261,7 +250,7 @@ function CreateDropModal({ onCreated, editProduct, onClose }: CreateDropModalPro
               </div>
             </div>
             <div className="space-y-2">
-              <Label className="text-gray-300">Drop Quantity (optional)</Label>
+              <Label className="text-gray-300">Quantity (optional)</Label>
               <div className="relative">
                 <Package className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500" />
                 <Input
@@ -275,35 +264,13 @@ function CreateDropModal({ onCreated, editProduct, onClose }: CreateDropModalPro
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label className="text-gray-300">Start Date</Label>
-              <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="bg-[#001a33] border-gray-700" />
-            </div>
-            <div className="space-y-2">
-              <Label className="text-gray-300">Start Time</Label>
-              <Input type="time" value={startTime} onChange={(e) => setStartTime(e.target.value)} className="bg-[#001a33] border-gray-700" />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label className="text-gray-300">End Date (optional)</Label>
-              <Input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="bg-[#001a33] border-gray-700" />
-            </div>
-            <div className="space-y-2">
-              <Label className="text-gray-300">End Time</Label>
-              <Input type="time" value={endTime} onChange={(e) => setEndTime(e.target.value)} className="bg-[#001a33] border-gray-700" />
-            </div>
-          </div>
-
           <Button
             onClick={handleSubmit}
-            disabled={(!editProduct && !selectedProduct) || !startDate || !startTime || submitting}
+            disabled={(!editProduct && !selectedProduct) || submitting}
             className="w-full bg-[#FB4F14] hover:bg-[#FB4F14]/90"
           >
             {submitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Flame className="mr-2 h-4 w-4" />}
-            {editProduct ? "Update Drop" : "Create Drop"}
+            {editProduct ? "Update Daily Deal" : "Create Daily Deal"}
           </Button>
         </div>
       </DialogContent>
@@ -325,7 +292,7 @@ export default function AdminDropsPage() {
         setDrops(data.products ?? []);
       }
     } catch {
-      toast.error("Failed to load drops");
+      toast.error("Failed to load daily deals");
     } finally {
       setLoading(false);
     }
@@ -334,7 +301,7 @@ export default function AdminDropsPage() {
   useEffect(() => { loadDrops(); }, [loadDrops]);
 
   const handleEndDrop = async (product: Product) => {
-    if (!confirm(`End drop for "${product.name}"? Remaining stock will return to regular inventory.`)) return;
+    if (!confirm(`End daily deal for "${product.name}"? Remaining stock will return to regular inventory.`)) return;
     try {
       const res = await fetch("/api/admin/products/drop", {
         method: "DELETE",
@@ -342,10 +309,10 @@ export default function AdminDropsPage() {
         body: JSON.stringify({ productId: product.id }),
       });
       if (!res.ok) throw new Error();
-      toast.success("Drop ended, product returned to regular inventory");
+      toast.success("Daily deal ended, product returned to regular inventory");
       loadDrops();
     } catch {
-      toast.error("Failed to end drop");
+      toast.error("Failed to end daily deal");
     }
   };
 
@@ -371,9 +338,9 @@ export default function AdminDropsPage() {
         <div>
           <h1 className="text-2xl font-bold flex items-center gap-2">
             <Flame className="h-6 w-6 text-[#FB4F14]" />
-            Drops Manager
+            Daily Deals
           </h1>
-          <p className="text-muted-foreground mt-1">Create and manage exclusive limited drops</p>
+          <p className="text-muted-foreground mt-1">Create and manage daily deals</p>
         </div>
         <CreateDropModal onCreated={loadDrops} />
       </div>
@@ -383,7 +350,7 @@ export default function AdminDropsPage() {
         <div className="rounded-xl border bg-card p-4">
           <div className="flex items-center gap-2">
             <Package className="h-4 w-4 text-muted-foreground" />
-            <p className="text-sm text-muted-foreground">Total Drops</p>
+            <p className="text-sm text-muted-foreground">Total Deals</p>
           </div>
           <p className="text-2xl font-bold mt-1">{stats.total}</p>
         </div>
@@ -404,7 +371,7 @@ export default function AdminDropsPage() {
         <div className="rounded-xl border bg-card p-4">
           <div className="flex items-center gap-2">
             <TrendingUp className="h-4 w-4 text-[#FB4F14]" />
-            <p className="text-sm text-muted-foreground">Drop Revenue</p>
+            <p className="text-sm text-muted-foreground">Deal Revenue</p>
           </div>
           <p className="text-2xl font-bold mt-1 text-[#FB4F14]">{formatCurrency(stats.revenue)}</p>
         </div>
@@ -417,7 +384,7 @@ export default function AdminDropsPage() {
             <SelectValue placeholder="Filter" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Drops</SelectItem>
+            <SelectItem value="all">All Deals</SelectItem>
             <SelectItem value="live">Live</SelectItem>
             <SelectItem value="upcoming">Upcoming</SelectItem>
             <SelectItem value="ended">Ended</SelectItem>
@@ -445,8 +412,8 @@ export default function AdminDropsPage() {
       ) : filtered.length === 0 ? (
         <div className="rounded-xl border border-dashed p-12 text-center">
           <Flame className="mx-auto h-12 w-12 text-muted-foreground/30" />
-          <h3 className="mt-4 font-semibold">No Drops Found</h3>
-          <p className="text-sm text-muted-foreground mt-1">Create a drop to get started</p>
+          <h3 className="mt-4 font-semibold">No Daily Deals Found</h3>
+          <p className="text-sm text-muted-foreground mt-1">Create a daily deal to get started</p>
         </div>
       ) : (
         <div className="space-y-3">
@@ -539,7 +506,7 @@ export default function AdminDropsPage() {
                       onClick={() => handleEndDrop(product)}
                     >
                       <StopCircle className="mr-1 h-3 w-3" />
-                      End Drop
+                      End Deal
                     </Button>
                   )}
                   {(status === "ended" || status === "sold_out") && (

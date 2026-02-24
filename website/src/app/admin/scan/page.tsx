@@ -1035,7 +1035,7 @@ export default function ScanPage() {
                               ) : (
                                 /* Upload Section for Used */
                                 <div className="space-y-3">
-                                  <ImageUpload images={item.images} onChange={(imgs) => updateItem(item.id, { images: imgs })} />
+                                  <ImageUpload images={item.images} onChange={(imgs) => updateItem(item.id, { images: imgs })} maxImages={5} />
                                 </div>
                               )}
                             </div>

@@ -767,7 +767,7 @@ function AddSneakerModal({
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="new">New</SelectItem>
-                  <SelectItem value="used_like_new">Used - Like New</SelectItem>
+                  <SelectItem value="used_like_new">Preowned</SelectItem>
                   <SelectItem value="used_good">Used - Good</SelectItem>
                   <SelectItem value="used_fair">Used - Fair</SelectItem>
                 </SelectContent>

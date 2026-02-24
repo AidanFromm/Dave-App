@@ -21,7 +21,7 @@ type ShopFilter = "all" | "drops" | "sneakers" | "new" | "used" | "pokemon";
 
 const FILTERS: { key: ShopFilter; label: string }[] = [
   { key: "all", label: "All" },
-  { key: "drops", label: "Drops" },
+  { key: "drops", label: "Daily Deals" },
   { key: "sneakers", label: "Sneakers" },
   { key: "new", label: "New" },
   { key: "used", label: "Used" },

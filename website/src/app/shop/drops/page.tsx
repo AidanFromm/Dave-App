@@ -80,11 +80,11 @@ export default function ShopDropsPage() {
       <div className="text-center mb-10">
         <div className="inline-flex items-center gap-2 rounded-full bg-[#FB4F14]/10 px-4 py-2 text-sm font-medium text-[#FB4F14] mb-4">
           <Flame className="h-4 w-4" />
-          Exclusive Releases
+          Daily Deals
         </div>
-        <h1 className="text-3xl font-extrabold tracking-tight sm:text-4xl">Drops</h1>
+        <h1 className="text-3xl font-extrabold tracking-tight sm:text-4xl">Daily Deals</h1>
         <p className="mt-3 text-muted-foreground max-w-lg mx-auto">
-          Limited releases -- exclusive pricing, limited quantities. When they're gone, they're gone.
+          Exclusive pricing, limited quantities. When they&apos;re gone, they&apos;re gone.
         </p>
       </div>
 
@@ -97,8 +97,8 @@ export default function ShopDropsPage() {
       ) : liveDrops.length === 0 && upcomingDrops.length === 0 ? (
         <div className="text-center py-20">
           <Clock className="h-16 w-16 text-muted-foreground/30 mx-auto mb-4" />
-          <h3 className="text-xl font-semibold">No drops scheduled</h3>
-          <p className="text-muted-foreground mt-2">Check back soon for upcoming releases.</p>
+          <h3 className="text-xl font-semibold">No daily deals right now</h3>
+          <p className="text-muted-foreground mt-2">Check back soon for new deals.</p>
           <Button asChild className="mt-6 bg-[#FB4F14] hover:bg-[#FB4F14]/90">
             <Link href="/">Shop All Products</Link>
           </Button>

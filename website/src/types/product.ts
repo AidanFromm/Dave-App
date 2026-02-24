@@ -2,7 +2,7 @@ export type ProductCondition = "new" | "used_like_new" | "used_good" | "used_fai
 
 export const CONDITION_LABELS: Record<ProductCondition, string> = {
   new: "New",
-  used_like_new: "Like New",
+  used_like_new: "Preowned",
   used_good: "Good",
   used_fair: "Fair",
 };
