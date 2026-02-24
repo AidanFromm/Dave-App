@@ -14,7 +14,7 @@ const FILTERS: { key: ShopFilter; label: string }[] = [
   { key: "drops", label: "Daily Deals" },
   { key: "sneakers", label: "Sneakers" },
   { key: "new", label: "New" },
-  { key: "used", label: "Used" },
+  { key: "used", label: "Preowned" },
   { key: "pokemon", label: "Pokemon" },
 ];
 

@@ -263,7 +263,7 @@ export default function AdminProductsPage() {
                     : "bg-muted/30 border-transparent text-muted-foreground hover:bg-muted/50"
                 )}
               >
-                {f === "all" ? "All" : f === "new" ? "New" : "Used"}
+                {f === "all" ? "All" : f === "new" ? "New" : "Preowned"}
               </button>
             ))}
           </>
@@ -411,7 +411,7 @@ export default function AdminProductsPage() {
                                   : "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400"
                               )}
                             >
-                              {getSneakerCondition(product) === "new" ? "New" : "Used"}
+                              {getSneakerCondition(product) === "new" ? "New" : "Preowned"}
                             </Badge>
                           </td>
                         </>
@@ -528,7 +528,7 @@ export default function AdminProductsPage() {
                     <>
                       <span className="text-xs text-muted-foreground">{product.variantCount} size{product.variantCount !== 1 ? "s" : ""}</span>
                       <Badge variant="secondary" className={cn("text-[10px] font-medium", getSneakerCondition(product) === "new" ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400" : "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400")}>
-                        {getSneakerCondition(product) === "new" ? "New" : "Used"}
+                        {getSneakerCondition(product) === "new" ? "New" : "Preowned"}
                       </Badge>
                     </>
                   ) : (

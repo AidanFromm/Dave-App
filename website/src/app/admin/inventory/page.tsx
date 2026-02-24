@@ -90,7 +90,7 @@ const PRIMARY_TABS: { value: CategoryFilter; label: string }[] = [
 const CONDITION_TABS: { value: ConditionFilter; label: string }[] = [
   { value: "all", label: "All Conditions" },
   { value: "new", label: "New" },
-  { value: "used", label: "Used" },
+  { value: "Preowned", label: "Preowned" },
 ];
 
 export default function InventoryPage() {

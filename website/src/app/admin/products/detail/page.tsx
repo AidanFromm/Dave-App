@@ -348,7 +348,7 @@ function ProductDetailPage() {
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="new">New</SelectItem>
-                    <SelectItem value="used">Used</SelectItem>
+                    <SelectItem value="used">Preowned</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -395,7 +395,7 @@ function ProductDetailPage() {
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="new">New</SelectItem>
-                    <SelectItem value="used">Used</SelectItem>
+                    <SelectItem value="used">Preowned</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

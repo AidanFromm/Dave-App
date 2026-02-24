@@ -24,7 +24,7 @@ const FILTERS: { key: ShopFilter; label: string }[] = [
   { key: "drops", label: "Daily Deals" },
   { key: "sneakers", label: "Sneakers" },
   { key: "new", label: "New" },
-  { key: "used", label: "Used" },
+  { key: "used", label: "Preowned" },
   { key: "pokemon", label: "Pokemon" },
 ];
 
@@ -35,7 +35,7 @@ const CATEGORY_OPTIONS = [
 
 const CONDITION_OPTIONS = [
   { value: "new", label: "New" },
-  { value: "used", label: "Used" },
+  { value: "used", label: "Preowned" },
 ];
 
 const POKEMON_TYPE_OPTIONS = [

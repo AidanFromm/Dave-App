@@ -281,7 +281,7 @@ export function ProductForm({ product, categories, existingVariants = [] }: Prod
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="new">New</SelectItem>
-              <SelectItem value="used">Used</SelectItem>
+              <SelectItem value="used">Preowned</SelectItem>
             </SelectContent>
           </Select>
         </div>
