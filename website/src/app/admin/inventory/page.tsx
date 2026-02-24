@@ -94,8 +94,9 @@ function classifyProductClient(product: Product): "sneaker" | "pokemon" | "other
   // Explicit pokemon tag always wins
   if (lowerTags.includes("pokemon")) return "pokemon";
 
-  // Sneaker brand in name = sneaker (takes priority over ambiguous pokemon keywords)
-  if (SNEAKER_BRANDS.some((brand) => lowerName.includes(brand))) {
+  // Sneaker brand in name or brand field = sneaker (takes priority over ambiguous pokemon keywords)
+  const lowerBrand = (product.brand || "").toLowerCase();
+  if (SNEAKER_BRANDS.some((brand) => lowerName.includes(brand) || lowerBrand.includes(brand))) {
     return "sneaker";
   }
 
