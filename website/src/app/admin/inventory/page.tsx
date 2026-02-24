@@ -79,12 +79,25 @@ function isPokemonProduct(name: string, tags: string[]): boolean {
   return false;
 }
 
+const SNEAKER_BRANDS = [
+  "nike", "jordan", "air jordan", "adidas", "yeezy", "new balance", "puma",
+  "reebok", "converse", "vans", "asics", "saucony", "salomon", "hoka",
+  "on running", "under armour", "balenciaga", "gucci", "dior", "louis vuitton",
+  "air max", "dunk", "air force", "sb dunk",
+];
+
 function classifyProductClient(product: Product): "sneaker" | "pokemon" | "other" {
   const tags = product.tags ?? [];
   const lowerTags = tags.map((t) => t.toLowerCase());
+  const lowerName = product.name.toLowerCase();
 
   // Explicit pokemon tag always wins
   if (lowerTags.includes("pokemon")) return "pokemon";
+
+  // Sneaker brand in name = sneaker (takes priority over ambiguous pokemon keywords)
+  if (SNEAKER_BRANDS.some((brand) => lowerName.includes(brand))) {
+    return "sneaker";
+  }
 
   // If product has sneaker-like attributes, classify as sneaker first
   if (
