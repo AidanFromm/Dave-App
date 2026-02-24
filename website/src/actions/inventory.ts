@@ -90,35 +90,80 @@ async function buildCategoryCache(supabase: Awaited<ReturnType<typeof createClie
   return cache;
 }
 
-const POKEMON_KEYWORDS = [
-  "pokemon", "pokémon", "pikachu", "charizard", "mewtwo", "booster",
-  "etb", "elite trainer", "trainer box", "paldea", "obsidian", "scarlet",
-  "violet", "prismatic", "surging sparks", "twilight masquerade",
+// Only match pokemon via explicit tag or very specific multi-word keywords
+const POKEMON_KEYWORDS_STRICT = [
+  "pokemon", "pokémon", "pikachu", "charizard", "mewtwo",
+  "booster box", "booster pack", "elite trainer box", "trainer box",
+  "vmax", "vstar", "ex box",
+];
+
+const POKEMON_KEYWORDS_LOOSE = [
+  "etb", "paldea", "obsidian flames", "scarlet & violet", "scarlet and violet",
+  "prismatic evolutions", "surging sparks", "twilight masquerade",
   "temporal forces", "paldean fates", "paradox rift", "raging surf",
   "lost origin", "astral radiance", "brilliant stars", "evolving skies",
   "fusion strike", "celebrations", "vivid voltage", "darkness ablaze",
-  "rebel clash", "sword", "shield", "vmax", "vstar", "ex box",
+  "rebel clash", "sword & shield", "sword and shield",
+];
+
+const SNEAKER_BRANDS = [
+  "nike", "jordan", "air jordan", "adidas", "yeezy", "new balance", "puma",
+  "reebok", "converse", "vans", "asics", "saucony", "salomon", "hoka",
+  "on running", "under armour", "balenciaga", "gucci", "dior", "louis vuitton",
+  "air max", "dunk", "air force", "sb dunk",
 ];
 
 function isPokemonProduct(name: string, tags: string[]): boolean {
   const lowerName = name.toLowerCase();
   const lowerTags = tags.map((t) => t.toLowerCase());
-  return POKEMON_KEYWORDS.some(
-    (kw) => lowerName.includes(kw) || lowerTags.some((t) => t.includes(kw))
-  );
+
+  if (lowerTags.includes("pokemon")) return true;
+
+  if (POKEMON_KEYWORDS_STRICT.some((kw) => lowerName.includes(kw) || lowerTags.some((t) => t.includes(kw)))) {
+    return true;
+  }
+
+  if (POKEMON_KEYWORDS_LOOSE.some((kw) => lowerName.includes(kw))) {
+    return true;
+  }
+
+  return false;
 }
 
 function classifyProduct(
   product: Product,
   catCache: Map<string, "sneaker" | "pokemon" | "other">
 ): "sneaker" | "pokemon" | "other" {
-  if (isPokemonProduct(product.name, product.tags ?? [])) return "pokemon";
+  const tags = product.tags ?? [];
+  const lowerTags = tags.map((t) => t.toLowerCase());
+  const lowerName = product.name.toLowerCase();
+  const lowerBrand = (product.brand || "").toLowerCase();
 
-  const lowerTags = (product.tags ?? []).map((t) => t.toLowerCase());
-  if (lowerTags.includes("sneaker") || lowerTags.includes("sneakers")) return "sneaker";
+  // Explicit pokemon tag always wins
+  if (lowerTags.includes("pokemon")) return "pokemon";
+
+  // Sneaker brand in name or brand field = sneaker first
+  if (SNEAKER_BRANDS.some((brand) => lowerName.includes(brand) || lowerBrand.includes(brand))) {
+    return "sneaker";
+  }
+
+  // Sneaker tags or used condition = sneaker
+  if (
+    lowerTags.includes("sneaker") || lowerTags.includes("sneakers") ||
+    lowerTags.includes("shoe") || lowerTags.includes("shoes") ||
+    product.condition?.startsWith("used_")
+  ) {
+    return "sneaker";
+  }
+
+  // Then check pokemon keywords
+  if (isPokemonProduct(product.name, tags)) return "pokemon";
+
+  // Category cache fallback
   if (product.category_id && catCache.has(product.category_id)) {
     return catCache.get(product.category_id)!;
   }
+
   return "sneaker";
 }
 
