@@ -41,30 +41,57 @@ interface GroupedRow {
 type SortField = "name" | "totalQuantity" | "totalValue";
 type SortDir = "asc" | "desc";
 
-const POKEMON_KEYWORDS = [
-  "pokemon", "pokémon", "pikachu", "charizard", "mewtwo", "booster",
-  "etb", "elite trainer", "trainer box", "paldea", "obsidian", "scarlet",
-  "violet", "prismatic", "surging sparks", "twilight masquerade",
+// Only match pokemon via explicit tag or very specific multi-word keywords
+// Single words like "obsidian", "scarlet", "violet", "sword", "shield" match sneaker names
+const POKEMON_KEYWORDS_STRICT = [
+  "pokemon", "pokémon", "pikachu", "charizard", "mewtwo",
+  "booster box", "booster pack", "elite trainer box", "trainer box",
+  "vmax", "vstar", "ex box",
+];
+
+// These only match if product also has other pokemon signals
+const POKEMON_KEYWORDS_LOOSE = [
+  "etb", "paldea", "obsidian flames", "scarlet & violet", "scarlet and violet",
+  "prismatic evolutions", "surging sparks", "twilight masquerade",
   "temporal forces", "paldean fates", "paradox rift", "raging surf",
   "lost origin", "astral radiance", "brilliant stars", "evolving skies",
   "fusion strike", "celebrations", "vivid voltage", "darkness ablaze",
-  "rebel clash", "sword", "shield", "vmax", "vstar", "ex box",
+  "rebel clash", "sword & shield", "sword and shield",
 ];
 
 function isPokemonProduct(name: string, tags: string[]): boolean {
   const lowerName = name.toLowerCase();
   const lowerTags = tags.map((t) => t.toLowerCase());
-  return POKEMON_KEYWORDS.some(
-    (kw) => lowerName.includes(kw) || lowerTags.some((t) => t.includes(kw))
-  );
+
+  // Explicit pokemon tag is definitive
+  if (lowerTags.includes("pokemon")) return true;
+
+  // Check strict keywords (unique to pokemon, won't match sneakers)
+  if (POKEMON_KEYWORDS_STRICT.some((kw) => lowerName.includes(kw) || lowerTags.some((t) => t.includes(kw)))) {
+    return true;
+  }
+
+  // Loose keywords only match by name (multi-word, more specific)
+  if (POKEMON_KEYWORDS_LOOSE.some((kw) => lowerName.includes(kw))) {
+    return true;
+  }
+
+  return false;
 }
 
 function classifyProductClient(product: Product): "sneaker" | "pokemon" | "other" {
   const tags = product.tags ?? [];
   const lowerTags = tags.map((t) => t.toLowerCase());
 
-  // Used condition items default to sneaker unless explicitly tagged pokemon
-  if (product.condition?.startsWith("used_") && !lowerTags.includes("pokemon")) {
+  // Explicit pokemon tag always wins
+  if (lowerTags.includes("pokemon")) return "pokemon";
+
+  // If product has sneaker-like attributes, classify as sneaker first
+  if (
+    lowerTags.includes("sneaker") || lowerTags.includes("sneakers") ||
+    lowerTags.includes("shoe") || lowerTags.includes("shoes") ||
+    product.condition?.startsWith("used_")
+  ) {
     return "sneaker";
   }
 
