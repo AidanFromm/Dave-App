@@ -101,6 +101,11 @@ function PaymentForm() {
         </Button>
       </motion.div>
 
+      <p className="text-center text-xs text-muted-foreground">
+        All sales are final. By completing this purchase you agree to our{" "}
+        <a href="/returns" className="underline hover:text-foreground">return policy</a>.
+      </p>
+
       <div className="flex items-center justify-center gap-4 text-xs text-muted-foreground">
         <div className="flex items-center gap-1.5">
           <Shield className="h-4 w-4" />
