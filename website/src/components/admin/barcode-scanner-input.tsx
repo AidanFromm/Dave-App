@@ -82,17 +82,17 @@ export function BarcodeScannerInput({
         await scanner.start(
           { facingMode: "environment" },
           {
-            fps: 10,
+            fps: 2,
             qrbox: { width: 280, height: 150 },
             aspectRatio: 1.777,
             disableFlip: false,
           },
           (decodedText: string) => {
-            // Deduplicate: ignore same barcode within 3 seconds
+            // Deduplicate: ignore same barcode within 8 seconds
             const now = Date.now();
             if (
               decodedText === lastScannedRef.current &&
-              now - lastScannedTimeRef.current < 3000
+              now - lastScannedTimeRef.current < 8000
             ) {
               return;
             }
