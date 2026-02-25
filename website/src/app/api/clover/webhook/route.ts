@@ -132,7 +132,7 @@ async function handleOrderWebhook(
   const { error: orderError } = await supabase.from("orders").insert({
     order_number: orderNumber,
     status: "delivered",
-    sales_channel: "in_store",
+    channel: "in_store",
     items,
     subtotal,
     tax,

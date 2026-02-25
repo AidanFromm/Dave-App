@@ -114,7 +114,7 @@ export async function POST(request: NextRequest) {
             await supabase.from("orders").insert({
               order_number: `SEC-${dateStr}-${suffix}`,
               status: "delivered",
-              sales_channel: "in_store",
+              channel: "in_store",
               items,
               subtotal,
               tax,

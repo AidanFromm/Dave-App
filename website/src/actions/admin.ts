@@ -25,7 +25,7 @@ export async function getDashboardStats(days: number = 30) {
   // Current period orders
   const { data: orders } = await supabase
     .from("orders")
-    .select("total, items, sales_channel, created_at")
+    .select("total, items, channel, created_at")
     .gte("created_at", startDate.toISOString());
 
   const currentOrders = orders ?? [];
@@ -36,8 +36,8 @@ export async function getDashboardStats(days: number = 30) {
     const items = o.items as Array<{ quantity: number }> | null;
     return sum + (items?.reduce((s, i) => s + (i.quantity ?? 0), 0) ?? 0);
   }, 0);
-  const webOrders = currentOrders.filter((o) => o.sales_channel === "web").length;
-  const instoreOrders = currentOrders.filter((o) => o.sales_channel === "in_store").length;
+  const webOrders = currentOrders.filter((o) => o.channel === "web").length;
+  const instoreOrders = currentOrders.filter((o) => o.channel === "in_store").length;
 
   // Previous period for comparison
   const prevStartDate = new Date(startDate);
@@ -81,7 +81,7 @@ export async function getRevenueOverTime(days: number = 30) {
 
   const { data: orders } = await supabase
     .from("orders")
-    .select("total, sales_channel, created_at")
+    .select("total, channel, created_at")
     .gte("created_at", startDate.toISOString())
     .order("created_at", { ascending: true });
 
@@ -92,7 +92,7 @@ export async function getRevenueOverTime(days: number = 30) {
     const existing = byDate.get(date) ?? { web: 0, instore: 0, total: 0 };
     const amount = o.total ?? 0;
     existing.total += amount;
-    if (o.sales_channel === "web") existing.web += amount;
+    if (o.channel === "web") existing.web += amount;
     else existing.instore += amount;
     byDate.set(date, existing);
   });
@@ -201,7 +201,7 @@ export async function getAdminOrders(status?: string, channel?: string) {
     .order("created_at", { ascending: false });
 
   if (status) query = query.eq("status", status);
-  if (channel) query = query.eq("sales_channel", channel);
+  if (channel) query = query.eq("channel", channel);
 
   const { data } = await query;
   return data ?? [];

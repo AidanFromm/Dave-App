@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
     // Fetch orders for the period
     const { data: orders, error } = await adminSupabase
       .from("orders")
-      .select("total, items, sales_channel, created_at")
+      .select("total, items, channel, created_at")
       .gte("created_at", startDate.toISOString())
       .order("created_at", { ascending: true });
 
@@ -62,7 +62,7 @@ export async function GET(request: NextRequest) {
       existing.revenue += amount;
       existing.orders += 1;
 
-      if (order.sales_channel === "web") {
+      if (order.channel === "web") {
         existing.web_orders += 1;
         existing.web_revenue += amount;
       } else {

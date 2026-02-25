@@ -174,9 +174,9 @@ export function OrderTable({ orders }: OrderTableProps) {
                   <td className="py-3 text-center">
                     <Badge
                       variant="outline"
-                      className={`text-[10px] border-0 ${CHANNEL_COLORS[order.sales_channel ?? order.channel ?? "web"] ?? ""}`}
+                      className={`text-[10px] border-0 ${CHANNEL_COLORS[order.channel ?? "web"] ?? ""}`}
                     >
-                      {getChannelLabel(order.sales_channel ?? order.channel ?? "web")}
+                      {getChannelLabel(order.channel ?? "web")}
                     </Badge>
                   </td>
                   <td className="py-3 text-center">
