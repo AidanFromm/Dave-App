@@ -201,6 +201,17 @@ export async function POST(request: Request) {
       return NextResponse.json({ received: true, duplicate: true });
     }
 
+    // Try to find existing customer by email to link the order
+    let customerId: string | null = null;
+    if (email) {
+      const { data: existingCustomer } = await supabase
+        .from("customers")
+        .select("id")
+        .eq("email", email)
+        .single();
+      if (existingCustomer) customerId = existingCustomer.id;
+    }
+
     // Parse items from metadata
     let orderItems: OrderItem[] = [];
     try {
@@ -244,6 +255,7 @@ export async function POST(request: Request) {
 
     const { error: orderError } = await supabase.from("orders").insert({
       order_number: orderNumber,
+      customer_id: customerId,
       customer_email: email || "unknown@checkout.com",
       channel: "web",
       subtotal,

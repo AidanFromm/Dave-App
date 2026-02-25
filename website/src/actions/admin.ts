@@ -280,13 +280,33 @@ export async function getCustomerDetail(customerId: string) {
 
   if (!customer) return null;
 
-  const { data: orders } = await supabase
+  // Match orders by customer_id OR by email (web orders may not have customer_id set)
+  const { data: ordersByCustomerId } = await supabase
     .from("orders")
     .select("*")
     .eq("customer_id", customerId)
     .order("created_at", { ascending: false });
 
-  const totalOrders = orders?.length ?? 0;
+  let orders = ordersByCustomerId ?? [];
+
+  // Also fetch orders by email if customer has one (catches web checkout orders)
+  if (customer.email) {
+    const { data: ordersByEmail } = await supabase
+      .from("orders")
+      .select("*")
+      .eq("customer_email", customer.email)
+      .order("created_at", { ascending: false });
+
+    if (ordersByEmail?.length) {
+      const existingIds = new Set(orders.map((o) => o.id));
+      const newOrders = ordersByEmail.filter((o) => !existingIds.has(o.id));
+      orders = [...orders, ...newOrders].sort(
+        (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      );
+    }
+  }
+
+  const totalOrders = orders.length;
   const totalSpend = orders?.reduce((sum, o) => sum + (o.total ?? 0), 0) ?? 0;
   const avgOrderValue = totalOrders > 0 ? totalSpend / totalOrders : 0;
 
