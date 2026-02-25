@@ -12,6 +12,7 @@ import { MetaPixel } from "@/components/analytics/MetaPixel";
 import { CookieConsent } from "@/components/analytics/CookieConsent";
 import { CartSyncProvider } from "@/components/providers/cart-sync-provider";
 import VersionCheck from "@/components/VersionCheck";
+import { PasswordGate } from "@/components/PasswordGate";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -90,20 +91,23 @@ export default function RootLayout({
         className={`${inter.variable} ${oswald.variable} ${jetbrainsMono.variable} ${pacifico.variable} font-sans antialiased`}
       >
         <ThemeProvider>
-          <ErrorBoundary>
-            <div className="flex min-h-screen flex-col">
-              <Header />
-              <main className="flex-1">{children}</main>
-              <FooterWrapper />
-            </div>
-            <CartDrawer />
-            <CartSyncProvider />
-          </ErrorBoundary>
-          <ToastProvider />
-          <GoogleAnalytics />
-          <MetaPixel />
-          <CookieConsent />
-          <VersionCheck />
+          {/* PASSWORD GATE — Remove PasswordGate wrapper + import when ready to go live */}
+          <PasswordGate>
+            <ErrorBoundary>
+              <div className="flex min-h-screen flex-col">
+                <Header />
+                <main className="flex-1">{children}</main>
+                <FooterWrapper />
+              </div>
+              <CartDrawer />
+              <CartSyncProvider />
+            </ErrorBoundary>
+            <ToastProvider />
+            <GoogleAnalytics />
+            <MetaPixel />
+            <CookieConsent />
+            <VersionCheck />
+          </PasswordGate>
         </ThemeProvider>
       </body>
     </html>
