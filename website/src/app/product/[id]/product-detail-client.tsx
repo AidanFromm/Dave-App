@@ -530,8 +530,9 @@ export function ProductDetailClient({ product: initialProduct, sizeVariants = []
                       className="h-full w-full object-contain p-3 transition-transform duration-300 group-hover:scale-105"
                     />
                   ) : (
-                    <div className="flex h-full w-full items-center justify-center bg-neutral-50">
-                      <Package className="h-8 w-8 text-neutral-300" />
+                    <div className="flex h-full w-full flex-col items-center justify-center gap-1.5 bg-gradient-to-b from-neutral-50 to-neutral-100">
+                      <Package className="h-8 w-8 text-neutral-300" strokeWidth={1.5} />
+                      <span className="text-[9px] font-medium uppercase tracking-widest text-neutral-300">Coming Soon</span>
                     </div>
                   )}
                 </div>

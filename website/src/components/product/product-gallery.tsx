@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { useState } from "react";
+import { Package } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { ChevronLeft, ChevronRight, ZoomIn } from "lucide-react";
@@ -20,8 +21,9 @@ export function ProductGallery({ images, name, condition }: ProductGalleryProps)
 
   if (!images.length) {
     return (
-      <div className="flex aspect-square items-center justify-center rounded-2xl border border-border bg-white text-muted-foreground">
-        No Image
+      <div className="flex aspect-square flex-col items-center justify-center gap-3 rounded-2xl border border-neutral-200 bg-gradient-to-b from-neutral-50 to-neutral-100">
+        <Package className="h-16 w-16 text-neutral-300" strokeWidth={1.5} />
+        <span className="text-xs font-medium uppercase tracking-widest text-neutral-300">Photo Coming Soon</span>
       </div>
     );
   }

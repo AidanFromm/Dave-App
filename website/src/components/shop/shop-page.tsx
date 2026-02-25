@@ -2,7 +2,7 @@
 
 import { useMemo, useState, useEffect, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Search, SlidersHorizontal, X } from "lucide-react";
+import { Search, SlidersHorizontal, X, ChevronDown, Package } from "lucide-react";
 import type { Product, Category } from "@/types/product";
 import { isNewDrop, isActiveDrop } from "@/types/product";
 import { ProductGrid } from "@/components/product/product-grid";
@@ -30,7 +30,7 @@ const FILTERS: { key: ShopFilter; label: string }[] = [
 
 const CATEGORY_OPTIONS = [
   { value: "sneakers", label: "Sneakers" },
-  { value: "pokemon", label: "Pokémon" },
+  { value: "pokemon", label: "Pokemon" },
 ];
 
 const CONDITION_OPTIONS = [
@@ -44,7 +44,6 @@ const POKEMON_TYPE_OPTIONS = [
   { value: "sealed", label: "Sealed Product" },
 ];
 
-// Size categories matching Nike/StockX standards
 type SizeCategory = "mens" | "womens" | "gradeSchool" | "preschool" | "toddler" | "crib";
 
 const SIZE_CATEGORIES: Record<SizeCategory, { label: string; sizes: string[] }> = {
@@ -81,8 +80,24 @@ const SIZE_CATEGORIES: Record<SizeCategory, { label: string; sizes: string[] }> 
   },
 };
 
-// Legacy flat array for backward compatibility
 const SIZE_OPTIONS = SIZE_CATEGORIES.mens.sizes;
+
+/* Collapsible filter section */
+function FilterSection({ title, defaultOpen = true, children }: { title: string; defaultOpen?: boolean; children: React.ReactNode }) {
+  const [open, setOpen] = useState(defaultOpen);
+  return (
+    <div className="border-b border-neutral-200/60 pb-4">
+      <button
+        onClick={() => setOpen(!open)}
+        className="flex w-full items-center justify-between py-2 text-xs font-bold uppercase tracking-[0.15em] text-neutral-500 hover:text-neutral-700 transition-colors"
+      >
+        {title}
+        <ChevronDown className={cn("h-3.5 w-3.5 transition-transform duration-200", open && "rotate-180")} />
+      </button>
+      {open && <div className="pt-1">{children}</div>}
+    </div>
+  );
+}
 
 interface ShopPageProps {
   initialProducts: Product[];
@@ -93,11 +108,9 @@ export function ShopPage({ initialProducts, categories }: ShopPageProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  // Drop products loaded separately
   const [dropProducts, setDropProducts] = useState<Product[]>([]);
   const [dropsLoading, setDropsLoading] = useState(false);
 
-  // Read URL params
   const [filter, setFilter] = useState<ShopFilter>(
     (searchParams.get("tab") as ShopFilter) || "all"
   );
@@ -107,7 +120,6 @@ export function ShopPage({ initialProducts, categories }: ShopPageProps) {
   const [search, setSearch] = useState(searchParams.get("q") || "");
   const [currentPage, setCurrentPage] = useState(1);
 
-  // Advanced filters
   const [brand, setBrand] = useState(searchParams.get("brand") || "");
   const [categoryFilter, setCategoryFilter] = useState<string[]>(
     searchParams.get("category")?.split(",").filter(Boolean) || []
@@ -129,7 +141,6 @@ export function ShopPage({ initialProducts, categories }: ShopPageProps) {
   const debouncedSearch = useDebounce(search, 300);
   const debouncedBrand = useDebounce(brand, 300);
 
-  // Load drop products when drops tab is active
   useEffect(() => {
     if (filter === "drops") {
       setDropsLoading(true);
@@ -141,7 +152,6 @@ export function ShopPage({ initialProducts, categories }: ShopPageProps) {
     }
   }, [filter]);
 
-  // Sync URL params
   useEffect(() => {
     const params = new URLSearchParams();
     if (filter !== "all") params.set("tab", filter);
@@ -158,7 +168,6 @@ export function ShopPage({ initialProducts, categories }: ShopPageProps) {
     router.replace(qs ? `?${qs}` : "/", { scroll: false });
   }, [filter, sort, debouncedSearch, debouncedBrand, categoryFilter, conditionFilter, sizeFilter, pokemonTypeFilter, priceMin, priceMax, router]);
 
-  // Get unique brands from products
   const allBrands = useMemo(() => {
     const brands = new Set<string>();
     for (const p of initialProducts) {
@@ -175,6 +184,16 @@ export function ShopPage({ initialProducts, categories }: ShopPageProps) {
   }, [categories]);
 
   const hasActiveFilters = brand || categoryFilter.length > 0 || conditionFilter.length > 0 || sizeFilter.length > 0 || priceMin || priceMax || pokemonTypeFilter.length > 0;
+
+  const activeFilterCount = [
+    brand ? 1 : 0,
+    categoryFilter.length,
+    conditionFilter.length,
+    sizeFilter.length,
+    pokemonTypeFilter.length,
+    priceMin ? 1 : 0,
+    priceMax ? 1 : 0,
+  ].reduce((a, b) => a + b, 0);
 
   const clearAdvancedFilters = () => {
     setBrand("");
@@ -197,7 +216,6 @@ export function ShopPage({ initialProducts, categories }: ShopPageProps) {
   const filterResult = useMemo(() => {
     let products = [...initialProducts];
 
-    // Search filter
     if (debouncedSearch) {
       const q = debouncedSearch.toLowerCase();
       products = products.filter(
@@ -208,10 +226,8 @@ export function ShopPage({ initialProducts, categories }: ShopPageProps) {
       );
     }
 
-    // Tab filter
     switch (filter) {
       case "drops":
-        // Use separately loaded drop products instead of filtering initialProducts
         products = [...dropProducts];
         break;
       case "new":
@@ -244,13 +260,11 @@ export function ShopPage({ initialProducts, categories }: ShopPageProps) {
         break;
     }
 
-    // Brand filter
     if (debouncedBrand) {
       const b = debouncedBrand.toLowerCase();
       products = products.filter((p) => p.brand?.toLowerCase().includes(b));
     }
 
-    // Category filter — use category_id when available, fallback to name/tag matching
     if (categoryFilter.length > 0) {
       products = products.filter((p) => {
         const isPokemon = pokemonCategoryId
@@ -266,7 +280,6 @@ export function ShopPage({ initialProducts, categories }: ShopPageProps) {
       });
     }
 
-    // Pokemon type sub-filter (raw/graded/sealed)
     if (pokemonTypeFilter.length > 0) {
       products = products.filter((p) => {
         const tags = p.tags?.map((t) => t.toLowerCase()) || [];
@@ -277,7 +290,6 @@ export function ShopPage({ initialProducts, categories }: ShopPageProps) {
       });
     }
 
-    // Condition filter (Sneaker Type — only applies to sneakers, excludes Pokemon)
     if (conditionFilter.length > 0) {
       products = products.filter((p) => {
         const isPokemon = pokemonCategoryId
@@ -293,12 +305,10 @@ export function ShopPage({ initialProducts, categories }: ShopPageProps) {
       });
     }
 
-    // Size filter
     if (sizeFilter.length > 0) {
       products = products.filter((p) => p.size && sizeFilter.includes(p.size));
     }
 
-    // Price range
     const minPrice = priceMin ? parseFloat(priceMin) : null;
     const maxPrice = priceMax ? parseFloat(priceMax) : null;
     if (minPrice !== null && !isNaN(minPrice)) {
@@ -308,7 +318,6 @@ export function ShopPage({ initialProducts, categories }: ShopPageProps) {
       products = products.filter((p) => p.price <= maxPrice);
     }
 
-    // Group by product name
     const grouped = new Map<string, Product>();
     const sizesMap = new Map<string, Set<string>>();
     for (const p of products) {
@@ -328,7 +337,6 @@ export function ShopPage({ initialProducts, categories }: ShopPageProps) {
     }
     products = Array.from(grouped.values());
 
-    // Sort
     switch (sort) {
       case "newest":
         products.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
@@ -353,7 +361,6 @@ export function ShopPage({ initialProducts, categories }: ShopPageProps) {
   const filteredProducts = filterResult.products;
   const sizesByName = filterResult.sizesMap;
 
-  // Reset page on filter/search change
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useMemo(() => { setCurrentPage(1); }, [filter, sort, debouncedSearch, debouncedBrand, categoryFilter, conditionFilter, sizeFilter, pokemonTypeFilter, priceMin, priceMax]);
 
@@ -361,194 +368,246 @@ export function ShopPage({ initialProducts, categories }: ShopPageProps) {
   const safePage = Math.min(currentPage, totalPages);
   const paginatedProducts = filteredProducts.slice((safePage - 1) * ITEMS_PER_PAGE, safePage * ITEMS_PER_PAGE);
 
-  // Filter sidebar content (shared between desktop and mobile)
   const FilterContent = () => (
-    <div className="space-y-6">
+    <div className="space-y-1">
       {/* Brand */}
-      <div>
-        <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Brand</h3>
+      <FilterSection title="Brand">
         <Input
           placeholder="Search brand..."
           value={brand}
           onChange={(e) => setBrand(e.target.value)}
-          className="h-8 text-sm bg-surface-800/50 border-surface-700/50"
+          className="h-9 text-sm bg-neutral-50 border-neutral-200 rounded-lg focus-visible:ring-[#FB4F14]/30"
         />
-      </div>
+      </FilterSection>
 
       {/* Category */}
-      <div>
-        <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Category</h3>
-        <div className="space-y-2">
+      <FilterSection title="Category">
+        <div className="space-y-2.5">
           {CATEGORY_OPTIONS.map((opt) => (
-            <label key={opt.value} className="flex items-center gap-2 text-sm cursor-pointer">
+            <label key={opt.value} className="flex items-center gap-2.5 text-sm cursor-pointer group/label">
               <Checkbox
                 checked={categoryFilter.includes(opt.value)}
                 onCheckedChange={() => toggleArrayFilter(categoryFilter, opt.value, setCategoryFilter)}
               />
-              {opt.label}
+              <span className="text-neutral-600 group-hover/label:text-neutral-900 transition-colors">{opt.label}</span>
             </label>
           ))}
         </div>
-      </div>
+      </FilterSection>
 
-      {/* Sneaker Type (shows when Sneakers is selected or sneakers tab active) */}
+      {/* Sneaker Type */}
       {(categoryFilter.includes("sneakers") || filter === "sneakers" || (!categoryFilter.length && filter === "all")) && (
-        <div>
-          <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Sneaker Type</h3>
-          <div className="space-y-2">
+        <FilterSection title="Sneaker Type">
+          <div className="space-y-2.5">
             {CONDITION_OPTIONS.map((opt) => (
-              <label key={opt.value} className="flex items-center gap-2 text-sm cursor-pointer">
+              <label key={opt.value} className="flex items-center gap-2.5 text-sm cursor-pointer group/label">
                 <Checkbox
                   checked={conditionFilter.includes(opt.value)}
                   onCheckedChange={() => toggleArrayFilter(conditionFilter, opt.value, setConditionFilter)}
                 />
-                {opt.label}
+                <span className="text-neutral-600 group-hover/label:text-neutral-900 transition-colors">{opt.label}</span>
               </label>
             ))}
           </div>
-        </div>
+        </FilterSection>
       )}
 
-      {/* Pokemon Type (shows when Pokemon is selected or pokemon tab active) */}
+      {/* Pokemon Type */}
       {(categoryFilter.includes("pokemon") || filter === "pokemon") && (
-        <div>
-          <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Pokémon Type</h3>
-          <div className="space-y-2">
+        <FilterSection title="Pokemon Type">
+          <div className="space-y-2.5">
             {POKEMON_TYPE_OPTIONS.map((opt) => (
-              <label key={opt.value} className="flex items-center gap-2 text-sm cursor-pointer">
+              <label key={opt.value} className="flex items-center gap-2.5 text-sm cursor-pointer group/label">
                 <Checkbox
                   checked={pokemonTypeFilter.includes(opt.value)}
                   onCheckedChange={() => toggleArrayFilter(pokemonTypeFilter, opt.value, setPokemonTypeFilter)}
                 />
-                {opt.label}
+                <span className="text-neutral-600 group-hover/label:text-neutral-900 transition-colors">{opt.label}</span>
               </label>
             ))}
           </div>
-        </div>
+        </FilterSection>
       )}
 
       {/* Price Range */}
-      <div>
-        <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Price Range</h3>
+      <FilterSection title="Price">
         <div className="flex gap-2 items-center">
-          <Input
-            type="number"
-            placeholder="Min"
-            value={priceMin}
-            onChange={(e) => setPriceMin(e.target.value)}
-            className="h-8 text-sm bg-surface-800/50 border-surface-700/50 w-24"
-          />
-          <span className="text-muted-foreground text-sm">-</span>
-          <Input
-            type="number"
-            placeholder="Max"
-            value={priceMax}
-            onChange={(e) => setPriceMax(e.target.value)}
-            className="h-8 text-sm bg-surface-800/50 border-surface-700/50 w-24"
-          />
-        </div>
-      </div>
-
-      {/* Size (hidden when only Pokemon is selected) */}
-      {!(categoryFilter.length === 1 && categoryFilter[0] === "pokemon") && filter !== "pokemon" && (
-      <div>
-        <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Size</h3>
-        
-        {/* Size Category Tabs */}
-        <div className="flex flex-wrap gap-1 mb-3 pb-2 border-b border-border/30">
-          {(Object.keys(SIZE_CATEGORIES) as SizeCategory[]).map((cat) => (
-            <button
-              key={cat}
-              onClick={() => setSizeCategory(cat)}
-              className={cn(
-                "px-2 py-1 rounded text-[10px] font-semibold uppercase transition-colors",
-                sizeCategory === cat
-                  ? "bg-primary text-white"
-                  : "bg-muted text-muted-foreground hover:text-foreground"
-              )}
-            >
-              {SIZE_CATEGORIES[cat].label}
-            </button>
-          ))}
-        </div>
-
-        {/* Size Buttons for Selected Category */}
-        <div className="flex flex-wrap gap-1.5">
-          {SIZE_CATEGORIES[sizeCategory].sizes.map((size) => (
-            <button
-              key={size}
-              onClick={() => toggleArrayFilter(sizeFilter, size, setSizeFilter)}
-              className={cn(
-                "px-2.5 py-1.5 rounded text-xs font-medium transition-colors min-w-[40px]",
-                sizeFilter.includes(size)
-                  ? "bg-primary text-white"
-                  : "bg-surface-800/50 text-muted-foreground hover:text-foreground hover:bg-surface-800"
-              )}
-            >
-              {size}
-            </button>
-          ))}
-        </div>
-
-        {/* Show selected sizes from all categories */}
-        {sizeFilter.length > 0 && (
-          <div className="mt-3 pt-2 border-t border-border/30">
-            <p className="text-[10px] text-muted-foreground mb-1.5">Selected:</p>
-            <div className="flex flex-wrap gap-1">
-              {sizeFilter.map((size) => (
-                <button
-                  key={size}
-                  onClick={() => toggleArrayFilter(sizeFilter, size, setSizeFilter)}
-                  className="px-2 py-0.5 rounded bg-primary/20 text-primary text-[10px] font-medium flex items-center gap-1 hover:bg-primary/30"
-                >
-                  {size}
-                  <X className="h-2.5 w-2.5" />
-                </button>
-              ))}
-            </div>
+          <div className="relative flex-1">
+            <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs text-neutral-400">$</span>
+            <Input
+              type="number"
+              placeholder="Min"
+              value={priceMin}
+              onChange={(e) => setPriceMin(e.target.value)}
+              className="h-9 text-sm bg-neutral-50 border-neutral-200 rounded-lg pl-6 focus-visible:ring-[#FB4F14]/30"
+            />
           </div>
-        )}
-      </div>
+          <span className="text-neutral-300 text-sm">--</span>
+          <div className="relative flex-1">
+            <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs text-neutral-400">$</span>
+            <Input
+              type="number"
+              placeholder="Max"
+              value={priceMax}
+              onChange={(e) => setPriceMax(e.target.value)}
+              className="h-9 text-sm bg-neutral-50 border-neutral-200 rounded-lg pl-6 focus-visible:ring-[#FB4F14]/30"
+            />
+          </div>
+        </div>
+      </FilterSection>
+
+      {/* Size */}
+      {!(categoryFilter.length === 1 && categoryFilter[0] === "pokemon") && filter !== "pokemon" && (
+        <FilterSection title="Size" defaultOpen={false}>
+          {/* Size Category Tabs */}
+          <div className="flex flex-wrap gap-1 mb-3">
+            {(Object.keys(SIZE_CATEGORIES) as SizeCategory[]).map((cat) => (
+              <button
+                key={cat}
+                onClick={() => setSizeCategory(cat)}
+                className={cn(
+                  "px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider transition-all",
+                  sizeCategory === cat
+                    ? "bg-[#002244] text-white shadow-sm"
+                    : "bg-neutral-100 text-neutral-400 hover:text-neutral-600 hover:bg-neutral-200/70"
+                )}
+              >
+                {SIZE_CATEGORIES[cat].label}
+              </button>
+            ))}
+          </div>
+
+          {/* Size Buttons */}
+          <div className="grid grid-cols-4 gap-1.5">
+            {SIZE_CATEGORIES[sizeCategory].sizes.map((size) => (
+              <button
+                key={size}
+                onClick={() => toggleArrayFilter(sizeFilter, size, setSizeFilter)}
+                className={cn(
+                  "px-1 py-2 rounded-lg text-xs font-medium transition-all text-center",
+                  sizeFilter.includes(size)
+                    ? "bg-[#FB4F14] text-white shadow-sm ring-1 ring-[#FB4F14]"
+                    : "bg-neutral-50 text-neutral-600 hover:bg-neutral-100 ring-1 ring-neutral-200/60 hover:ring-neutral-300"
+                )}
+              >
+                {size}
+              </button>
+            ))}
+          </div>
+
+          {/* Selected sizes */}
+          {sizeFilter.length > 0 && (
+            <div className="mt-3 pt-2 border-t border-neutral-200/60">
+              <p className="text-[10px] text-neutral-400 mb-1.5 uppercase tracking-wider font-medium">Selected:</p>
+              <div className="flex flex-wrap gap-1">
+                {sizeFilter.map((size) => (
+                  <button
+                    key={size}
+                    onClick={() => toggleArrayFilter(sizeFilter, size, setSizeFilter)}
+                    className="px-2 py-0.5 rounded-md bg-[#FB4F14]/10 text-[#FB4F14] text-[10px] font-bold flex items-center gap-1 hover:bg-[#FB4F14]/20 transition-colors"
+                  >
+                    {size}
+                    <X className="h-2.5 w-2.5" />
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </FilterSection>
       )}
 
       {/* Clear filters */}
       {hasActiveFilters && (
-        <Button variant="outline" size="sm" className="w-full" onClick={clearAdvancedFilters}>
-          <X className="h-3 w-3 mr-1.5" />
-          Clear Filters
-        </Button>
+        <div className="pt-3">
+          <Button
+            variant="outline"
+            size="sm"
+            className="w-full rounded-lg border-neutral-300 text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900"
+            onClick={clearAdvancedFilters}
+          >
+            <X className="h-3 w-3 mr-1.5" />
+            Clear All Filters
+          </Button>
+        </div>
       )}
     </div>
   );
 
   return (
-    <div className="mx-auto max-w-7xl px-3 py-4 sm:px-6 sm:py-6 lg:px-8">
-      {/* Page title */}
-      <div className="mb-6">
-        <h1 className="font-display text-3xl md:text-4xl font-bold uppercase tracking-tight">
+    <div className="mx-auto max-w-[1400px] px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
+      {/* Page Header */}
+      <div className="mb-8">
+        <h1 className="font-display text-3xl md:text-4xl font-black uppercase tracking-tight text-neutral-900">
           Shop
         </h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Premium sneakers & collectibles, authenticated and hand-picked.
+        <p className="mt-1.5 text-sm text-neutral-500 max-w-md">
+          Premium sneakers and collectibles -- authenticated and hand-picked.
         </p>
       </div>
 
-      {/* Mobile: Search + Sort + Filter tabs */}
-      <div className="lg:hidden space-y-3 pb-4 border-b border-border/50">
-        {/* Search bar */}
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+      {/* Desktop: Tabs + Search + Sort bar */}
+      <div className="hidden lg:flex items-center gap-4 pb-6 border-b border-neutral-200/60">
+        {/* Filter tabs */}
+        <div className="flex gap-1">
+          {FILTERS.map((f) => (
+            <button
+              key={f.key}
+              onClick={() => setFilter(f.key)}
+              className={cn(
+                "whitespace-nowrap rounded-lg px-4 py-2 text-xs font-bold uppercase tracking-wider transition-all",
+                filter === f.key
+                  ? "bg-[#002244] text-white shadow-sm"
+                  : "text-neutral-500 hover:text-neutral-800 hover:bg-neutral-100"
+              )}
+            >
+              {f.label}
+            </button>
+          ))}
+        </div>
+
+        <div className="flex-1" />
+
+        {/* Search */}
+        <div className="relative w-64">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-400" />
           <Input
             type="text"
             placeholder="Search products..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="h-10 rounded-full bg-muted/50 pl-9 pr-9 text-sm"
+            className="h-9 rounded-lg bg-neutral-50 border-neutral-200 pl-9 pr-9 text-sm focus-visible:ring-[#FB4F14]/30"
           />
           {search && (
             <button
               type="button"
-              className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-0.5 text-muted-foreground hover:text-foreground"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600"
+              onClick={() => setSearch("")}
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          )}
+        </div>
+
+        {/* Sort */}
+        <SortSelect value={sort} onChange={setSort} />
+      </div>
+
+      {/* Mobile: Search + Sort + Filter tabs */}
+      <div className="lg:hidden space-y-3 pb-5 border-b border-neutral-200/60">
+        {/* Search bar */}
+        <div className="relative">
+          <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-400" />
+          <Input
+            type="text"
+            placeholder="Search products..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="h-11 rounded-xl bg-neutral-50 border-neutral-200 pl-10 pr-10 text-sm"
+          />
+          {search && (
+            <button
+              type="button"
+              className="absolute right-3.5 top-1/2 -translate-y-1/2 rounded-full p-0.5 text-neutral-400 hover:text-neutral-600"
               onClick={() => setSearch("")}
             >
               <X className="h-3.5 w-3.5" />
@@ -557,16 +616,16 @@ export function ShopPage({ initialProducts, categories }: ShopPageProps) {
         </div>
 
         {/* Filter tabs (horizontal scroll) */}
-        <div className="flex gap-2 overflow-x-auto scrollbar-hide -mx-4 px-4">
+        <div className="flex gap-1.5 overflow-x-auto scrollbar-hide -mx-4 px-4 pb-0.5">
           {FILTERS.map((f) => (
             <button
               key={f.key}
               onClick={() => setFilter(f.key)}
               className={cn(
-                "whitespace-nowrap rounded-full px-3.5 py-1.5 text-xs font-semibold uppercase tracking-wider transition-colors shrink-0",
+                "whitespace-nowrap rounded-lg px-3.5 py-2 text-xs font-bold uppercase tracking-wider transition-all shrink-0",
                 filter === f.key
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-surface-800/50 text-muted-foreground hover:text-foreground"
+                  ? "bg-[#002244] text-white shadow-sm"
+                  : "bg-neutral-100 text-neutral-500 hover:text-neutral-700"
               )}
             >
               {f.label}
@@ -579,19 +638,21 @@ export function ShopPage({ initialProducts, categories }: ShopPageProps) {
           <SortSelect value={sort} onChange={setSort} />
           <Sheet open={mobileFiltersOpen} onOpenChange={setMobileFiltersOpen}>
             <SheetTrigger asChild>
-              <Button variant="outline" size="sm" className="h-9 gap-1.5 relative shrink-0">
+              <Button variant="outline" size="sm" className="h-9 gap-1.5 relative shrink-0 rounded-lg border-neutral-200">
                 <SlidersHorizontal className="h-3.5 w-3.5" />
                 Filters
-                {hasActiveFilters && (
-                  <span className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-primary" />
+                {activeFilterCount > 0 && (
+                  <span className="ml-1 flex h-4 w-4 items-center justify-center rounded-full bg-[#FB4F14] text-[9px] font-bold text-white">
+                    {activeFilterCount}
+                  </span>
                 )}
               </Button>
             </SheetTrigger>
-            <SheetContent side="left" className="w-[85vw] max-w-sm bg-surface-900 border-surface-800">
+            <SheetContent side="left" className="w-[85vw] max-w-sm bg-white border-neutral-200">
               <SheetHeader>
-                <SheetTitle>Filters</SheetTitle>
+                <SheetTitle className="text-left font-display text-lg font-bold uppercase tracking-tight">Filters</SheetTitle>
               </SheetHeader>
-              <div className="mt-6 overflow-y-auto max-h-[calc(100vh-8rem)]">
+              <div className="mt-6 overflow-y-auto max-h-[calc(100vh-8rem)] pr-1">
                 <FilterContent />
               </div>
             </SheetContent>
@@ -600,11 +661,10 @@ export function ShopPage({ initialProducts, categories }: ShopPageProps) {
       </div>
 
       {/* Main layout: sidebar + grid */}
-      <div className="flex gap-8 pt-4">
+      <div className="flex gap-10 pt-6">
         {/* Desktop sidebar */}
-        <aside className="hidden lg:block w-56 shrink-0">
+        <aside className="hidden lg:block w-52 shrink-0">
           <div className="sticky top-24">
-            <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-4">Filters</h2>
             <FilterContent />
           </div>
         </aside>
@@ -612,16 +672,16 @@ export function ShopPage({ initialProducts, categories }: ShopPageProps) {
         {/* Products area */}
         <div className="flex-1 min-w-0">
           {/* Results info */}
-          <div className="flex items-center justify-between pb-4 text-sm text-muted-foreground">
-            <span>
-              <span className="font-mono font-semibold text-foreground">{filteredProducts.length}</span>
+          <div className="flex items-center justify-between pb-5">
+            <p className="text-sm text-neutral-500">
+              <span className="font-bold text-neutral-900">{filteredProducts.length}</span>
               {" "}product{filteredProducts.length !== 1 ? "s" : ""}
-              {debouncedSearch && <> matching &ldquo;<span className="text-primary">{debouncedSearch}</span>&rdquo;</>}
-            </span>
+              {debouncedSearch && <> matching &ldquo;<span className="text-[#FB4F14] font-medium">{debouncedSearch}</span>&rdquo;</>}
+            </p>
             {hasActiveFilters && (
               <button
                 onClick={clearAdvancedFilters}
-                className="text-xs text-primary hover:underline hidden lg:block"
+                className="text-xs font-semibold text-[#FB4F14] hover:underline hidden lg:block"
               >
                 Clear filters
               </button>
