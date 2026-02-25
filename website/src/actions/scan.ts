@@ -93,6 +93,23 @@ export async function addScannedProductToInventory(data: ScanFormData): Promise<
     return { productId: existing.id, error: null };
   }
 
+  // Determine category_id based on product type
+  const POKEMON_CATEGORY_ID = "d2c2f51b-21c3-4382-8b9c-78e482b9db0e";
+  const NEW_SNEAKERS_CATEGORY_ID = "d550d927-fa1a-460d-b9ea-635179564437";
+  const USED_SNEAKERS_CATEGORY_ID = "3be91cd7-2f01-4c53-9653-9831a61a23d3";
+
+  const isPokemon = data.productType === "pokemon" || data.productType === "pokemon_sealed" ||
+    data.productName.toLowerCase().includes("pokemon") || data.productName.toLowerCase().includes("pokémon");
+  
+  let categoryId: string;
+  if (isPokemon) {
+    categoryId = POKEMON_CATEGORY_ID;
+  } else if (data.condition === "new") {
+    categoryId = NEW_SNEAKERS_CATEGORY_ID;
+  } else {
+    categoryId = USED_SNEAKERS_CATEGORY_ID;
+  }
+
   // Build tags for Pokemon products
   const tags: string[] = [];
   if (data.productType === "pokemon" || data.productType === "pokemon_sealed") {
@@ -143,6 +160,7 @@ export async function addScannedProductToInventory(data: ScanFormData): Promise<
       is_active: true,
       is_featured: false,
       is_drop: false,
+      category_id: categoryId,
       tags,
     })
     .select("id")
