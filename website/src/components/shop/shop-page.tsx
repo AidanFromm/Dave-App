@@ -250,12 +250,15 @@ export function ShopPage({ initialProducts, categories }: ShopPageProps) {
       products = products.filter((p) => p.brand?.toLowerCase().includes(b));
     }
 
-    // Category filter
+    // Category filter — use category_id when available, fallback to name/tag matching
     if (categoryFilter.length > 0) {
       products = products.filter((p) => {
-        const isPokemon = p.brand?.toLowerCase() === "pokemon tcg" ||
-          p.name.toLowerCase().includes("pokemon") ||
-          p.tags?.some((t) => t.toLowerCase().includes("pokemon"));
+        const isPokemon = pokemonCategoryId
+          ? p.category_id === pokemonCategoryId
+          : (p.brand?.toLowerCase() === "pokemon tcg" ||
+            p.name.toLowerCase().includes("pokemon") ||
+            p.name.toLowerCase().includes("pokémon") ||
+            p.tags?.some((t) => t.toLowerCase().includes("pokemon")));
 
         if (categoryFilter.includes("pokemon") && isPokemon) return true;
         if (categoryFilter.includes("sneakers") && !isPokemon) return true;
@@ -277,9 +280,12 @@ export function ShopPage({ initialProducts, categories }: ShopPageProps) {
     // Condition filter (Sneaker Type — only applies to sneakers, excludes Pokemon)
     if (conditionFilter.length > 0) {
       products = products.filter((p) => {
-        const isPokemon = p.brand?.toLowerCase() === "pokemon tcg" ||
-          p.name.toLowerCase().includes("pokemon") ||
-          p.tags?.some((t) => t.toLowerCase().includes("pokemon"));
+        const isPokemon = pokemonCategoryId
+          ? p.category_id === pokemonCategoryId
+          : (p.brand?.toLowerCase() === "pokemon tcg" ||
+            p.name.toLowerCase().includes("pokemon") ||
+            p.name.toLowerCase().includes("pokémon") ||
+            p.tags?.some((t) => t.toLowerCase().includes("pokemon")));
         if (isPokemon) return false;
         if (conditionFilter.includes("new") && p.condition === "new") return true;
         if (conditionFilter.includes("used") && p.condition !== "new") return true;
