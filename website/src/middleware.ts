@@ -34,9 +34,8 @@ export function middleware(request: NextRequest) {
     const supabase = createClient(supabaseUrl, serviceKey);
 
     // Fire and forget — don't await, don't block the response
-    supabase
-      .from("visitors")
-      .insert({
+    Promise.resolve(
+      supabase.from("visitors").insert({
         ip,
         city: request.headers.get("x-vercel-ip-city") || null,
         country: request.headers.get("x-vercel-ip-country") || null,
@@ -44,15 +43,13 @@ export function middleware(request: NextRequest) {
         latitude:
           parseFloat(request.headers.get("x-vercel-ip-latitude") || "") || null,
         longitude:
-          parseFloat(request.headers.get("x-vercel-ip-longitude") || "") ||
-          null,
+          parseFloat(request.headers.get("x-vercel-ip-longitude") || "") || null,
         page_path: pathname,
         user_agent: request.headers.get("user-agent") || null,
         device_type: getDeviceType(request.headers.get("user-agent") || ""),
         referrer: request.headers.get("referer") || null,
       })
-      .then(() => {})
-      .catch(() => {});
+    ).catch(() => {});
   }
 
   return NextResponse.next();
