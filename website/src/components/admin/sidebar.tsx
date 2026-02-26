@@ -37,7 +37,7 @@ const NAV_SECTIONS = [
     label: "Store",
     items: [
       { href: "/admin/scan", label: "Scan In", icon: ScanBarcode },
-      { href: "/admin/pos", label: "POS", icon: Store },
+      { href: "/admin/pos", label: "Point of Sale", icon: Store },
       { href: "/admin/drops", label: "Daily Deals", icon: Flame },
       { href: "/admin/discounts", label: "Discount Codes", icon: Tag },
       { href: "/admin/shipping", label: "Shipping", icon: Truck },

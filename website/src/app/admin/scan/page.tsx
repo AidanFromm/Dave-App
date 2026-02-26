@@ -2,7 +2,6 @@
 
 import { useState, useCallback, useEffect, useRef } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ScanOut } from "@/components/admin/scan-out";
 import { BarcodeScannerInput } from "@/components/admin/barcode-scanner-input";
 import { ScanResultCard } from "@/components/admin/scan-result-card";
 import { ScanForm } from "@/components/admin/scan-form";
@@ -154,7 +153,6 @@ function ProductImage({
 // ─── Component ───────────────────────────────────────────────
 
 export default function ScanPage() {
-  const [topTab, setTopTab] = useState<"in" | "out">("in");
   const [phase, setPhase] = useState<ScanPhase>("scanning");
   const [scanState, setScanState] = useState<ScanState>("idle");
   const [items, setItems] = useState<ScannedItem[]>([]);
@@ -666,35 +664,6 @@ export default function ScanPage() {
         </div>
       )}
 
-      {/* Top-level Scan In / Scan Out tabs */}
-      <div className="flex gap-2 mb-6">
-        {(["in", "out"] as const).map((t) => (
-          <button
-            key={t}
-            onClick={() => setTopTab(t)}
-            className={cn(
-              "flex-1 rounded-xl border-2 px-4 py-3 text-base font-bold transition-all",
-              topTab === t
-                ? t === "in"
-                  ? "border-[#002244] bg-[#002244] text-white"
-                  : "border-[#FB4F14] bg-[#FB4F14] text-white"
-                : "border-border bg-card text-muted-foreground hover:border-foreground/30"
-            )}
-          >
-            {t === "in" ? "Scan In" : "Scan Out"}
-          </button>
-        ))}
-      </div>
-
-      {topTab === "out" ? (
-        <div>
-          <h1 className="text-3xl font-bold mb-1">Scan Out</h1>
-          <p className="text-base text-muted-foreground mb-6">
-            Point of sale -- scan product, collect payment, print receipt
-          </p>
-          <ScanOut />
-        </div>
-      ) : (
       <>
       {/* Header */}
       <div className="flex items-center justify-between">
@@ -712,33 +681,33 @@ export default function ScanPage() {
       </div>
 
       {/* Inventory Location Toggle */}
-      <div className="flex items-center gap-2">
+      <div className="space-y-2">
         <span className="text-sm font-medium text-muted-foreground">Scanning to:</span>
-        <div className="inline-flex rounded-lg border border-border p-1 bg-muted/50">
+        <div className="flex gap-3">
           <button
             type="button"
             onClick={() => setInventoryLocation("store")}
             className={cn(
-              "flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition-all",
+              "flex flex-1 items-center justify-center gap-3 rounded-xl border-2 px-6 py-4 text-lg font-bold transition-all",
               inventoryLocation === "store"
-                ? "bg-[#002244] text-white shadow-sm"
-                : "text-muted-foreground hover:text-foreground"
+                ? "border-[#002244] bg-[#002244] text-white shadow-lg"
+                : "border-border bg-card text-muted-foreground hover:border-foreground/30"
             )}
           >
-            <Building2 className="h-4 w-4" />
+            <Building2 className="h-6 w-6" />
             Store
           </button>
           <button
             type="button"
             onClick={() => setInventoryLocation("warehouse")}
             className={cn(
-              "flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition-all",
+              "flex flex-1 items-center justify-center gap-3 rounded-xl border-2 px-6 py-4 text-lg font-bold transition-all",
               inventoryLocation === "warehouse"
-                ? "bg-[#002244] text-white shadow-sm"
-                : "text-muted-foreground hover:text-foreground"
+                ? "border-[#002244] bg-[#002244] text-white shadow-lg"
+                : "border-border bg-card text-muted-foreground hover:border-foreground/30"
             )}
           >
-            <Warehouse className="h-4 w-4" />
+            <Warehouse className="h-6 w-6" />
             Warehouse
           </button>
         </div>
@@ -1333,8 +1302,7 @@ export default function ScanPage() {
 
       {/* StockX Search Modal */}
       </>
-      )}
-      {topTab === "in" && <StockXSearchModal
+      <StockXSearchModal
         open={searchModalOpen}
         onClose={() => { setSearchModalOpen(false); setManualLookupMode(false); }}
         onSelect={handleStockXSelect}
