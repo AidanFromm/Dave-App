@@ -1308,7 +1308,7 @@ export default function ScanPage() {
         onSelect={handleStockXSelect}
         initialQuery={manualLookupMode ? "" : pendingBarcode}
         showSizeField={manualLookupMode}
-      />}
+      />
     </div>
   );
 }
