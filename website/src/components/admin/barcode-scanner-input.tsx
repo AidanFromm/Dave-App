@@ -219,15 +219,6 @@ export function BarcodeScannerInput({
           <Keyboard className="h-4 w-4" />
           Type / Scan Gun
         </button>
-        <button
-          type="button"
-          onClick={() => onManualLookup?.()}
-          disabled={loading}
-          className="flex-1 flex items-center justify-center gap-2 rounded-xl border-2 border-border bg-card px-3 py-3.5 text-sm font-semibold text-muted-foreground transition-all hover:border-foreground/30 hover:text-foreground"
-        >
-          <Search className="h-4 w-4" />
-          Manual Lookup
-        </button>
       </div>
 
       {/* Camera viewfinder */}

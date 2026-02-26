@@ -63,11 +63,18 @@ export async function GET(request: Request) {
 
     const { searchParams } = new URL(request.url);
     const category = searchParams.get("category");
+    const search = searchParams.get("search");
+    const limit = parseInt(searchParams.get("limit") || "200", 10);
 
     let query = supabase
       .from("products")
       .select("*")
-      .order("created_at", { ascending: false });
+      .order("created_at", { ascending: false })
+      .limit(limit);
+
+    if (search) {
+      query = query.or(`name.ilike.%${search}%,brand.ilike.%${search}%,barcode.ilike.%${search}%`);
+    }
 
     if (category === "pokemon") {
       query = query.or("brand.eq.Pokemon TCG,tags.cs.{pokemon}");

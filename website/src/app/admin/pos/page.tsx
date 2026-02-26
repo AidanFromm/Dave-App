@@ -29,7 +29,14 @@ interface InventoryProduct {
   price: number;
   quantity: number;
   image_urls: string[] | null;
+  images: string[] | null;
   barcode: string | null;
+}
+
+function getProductImage(product: InventoryProduct): string | null {
+  const imgs = product.image_urls || product.images;
+  if (Array.isArray(imgs) && imgs.length > 0) return imgs[0];
+  return null;
 }
 
 export default function POSPage() {
@@ -186,9 +193,9 @@ export default function POSPage() {
                 >
                   {/* Image */}
                   <div className="h-16 w-16 flex-shrink-0 overflow-hidden rounded-lg border border-border bg-white">
-                    {product.image_urls?.[0] ? (
+                    {getProductImage(product) ? (
                       <img
-                        src={product.image_urls[0]}
+                        src={getProductImage(product)!}
                         alt={product.name}
                         className="h-full w-full object-contain p-1"
                       />
