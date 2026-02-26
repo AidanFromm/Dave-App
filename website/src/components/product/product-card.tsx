@@ -58,7 +58,7 @@ export function ProductCard({ product, availableSizes }: ProductCardProps) {
 
   return (
     <motion.div
-      className="group relative flex flex-col overflow-hidden rounded-2xl bg-white transition-all duration-300 hover:shadow-xl hover:shadow-black/8 ring-1 ring-neutral-200/80 hover:ring-neutral-300/80"
+      className="group relative flex flex-col h-[380px] overflow-hidden rounded-xl bg-white transition-all duration-200 hover:shadow-lg hover:shadow-black/10 ring-1 ring-neutral-200/80 hover:ring-neutral-300/80"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       whileHover={{ y: -4 }}
@@ -76,10 +76,7 @@ export function ProductCard({ product, availableSizes }: ProductCardProps) {
               alt={product.name}
               fill
               sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
-              className={cn(
-                "transition-transform duration-500 ease-out group-hover:scale-105",
-                isUsed && !isPokemon ? "object-cover" : "object-contain p-4 sm:p-5"
-              )}
+              className="transition-transform duration-500 ease-out group-hover:scale-105 object-contain p-4 sm:p-5"
             />
           </div>
         ) : (

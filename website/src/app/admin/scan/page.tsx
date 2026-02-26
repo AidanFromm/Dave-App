@@ -185,15 +185,18 @@ export default function ScanPage() {
 
   // ─── Session Persistence ─────────────────────────────────
 
-  // Load saved session on mount
+  // Auto-restore saved session on mount (no dialog — just resume seamlessly)
   useEffect(() => {
     try {
       const saved = localStorage.getItem(SESSION_KEY);
       if (saved) {
         const parsed: SavedSession = JSON.parse(saved);
         if (parsed.items && parsed.items.length > 0) {
-          setSavedSession(parsed);
-          setShowResumeDialog(true);
+          // Auto-resume: restore items silently so employees never lose work
+          setItems(parsed.items);
+          setPhase(parsed.phase);
+          if (parsed.sellerName) setSellerName(parsed.sellerName);
+          if (parsed.paymentMethod) setPaymentMethod(parsed.paymentMethod);
         }
       }
     } catch {
@@ -642,27 +645,7 @@ export default function ScanPage() {
 
   return (
     <div className="space-y-6">
-      {/* Resume Session Dialog */}
-      {showResumeDialog && savedSession && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
-          <div className="mx-4 w-full max-w-md rounded-xl border border-border bg-card p-6 shadow-xl">
-            <div className="mb-4 flex justify-center">
-              <div className="flex h-14 w-14 items-center justify-center rounded-full bg-primary/10">
-                <Package className="h-7 w-7 text-primary" />
-              </div>
-            </div>
-            <h2 className="mb-2 text-center text-xl font-bold">Resume Session?</h2>
-            <p className="mb-6 text-center text-sm text-muted-foreground">
-              You have <span className="font-bold text-foreground">{savedSession.items.length}</span> item
-              {savedSession.items.length !== 1 ? "s" : ""} ({savedSession.items.reduce((s, i) => s + i.quantity, 0)} units) from a previous session.
-            </p>
-            <div className="flex gap-3">
-              <Button onClick={handleResumeSession} className="flex-1">Resume</Button>
-              <Button onClick={handleStartFresh} variant="outline" className="flex-1">Start Fresh</Button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Session auto-restores from localStorage — no dialog needed */}
 
       <>
       {/* Header */}

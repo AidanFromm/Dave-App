@@ -552,7 +552,10 @@ export function ShopPage({ initialProducts, categories }: ShopPageProps) {
             )}
           </div>
 
-          <ProductGrid products={paginatedProducts} sizesByName={sizesByName} />
+          <ProductGrid
+            products={paginatedProducts}
+            sizesByName={sizesByName}
+          />
           <Pagination currentPage={safePage} totalPages={totalPages} onPageChange={setCurrentPage} />
         </div>
       </div>
