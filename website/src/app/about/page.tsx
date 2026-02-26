@@ -26,12 +26,12 @@ export default function AboutPage() {
         <h2 className="text-2xl font-semibold">Our Mission</h2>
         <p className="mt-4 text-muted-foreground leading-relaxed">
           Secured Tampa was built to solve one problem: trust. Buying sneakers and 
-          collectibles online shouldn't feel like a gamble. Every item we sell is 
+          collectibles online shouldn&apos;t feel like a gamble. Every item we sell is 
           personally inspected and verified for authenticity before it ever reaches 
           a customer. No exceptions.
         </p>
         <p className="mt-3 text-muted-foreground leading-relaxed">
-          Whether you're looking for the latest Jordan release, a pair of hard-to-find 
+          Whether you&apos;re looking for the latest Jordan release, a pair of hard-to-find 
           Yeezys, or graded Pokémon cards for your collection — we make sure you get 
           exactly what you paid for.
         </p>
@@ -46,7 +46,7 @@ export default function AboutPage() {
           <h3 className="mt-4 text-lg font-semibold">100% Authenticity Guarantee</h3>
           <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
             Every item is verified before listing. If there's ever a concern about 
-            authenticity, we'll make it right — full refund, no questions asked.
+            authenticity, we&apos;ll make it right — full refund, no questions asked.
           </p>
         </div>
 

@@ -99,7 +99,7 @@ export function AdminSidebar() {
                     href={item.href}
                     onClick={() => setMobileOpen(false)}
                     className={cn(
-                      "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-150",
+                      "flex items-center gap-3 rounded-lg px-3 py-3 text-sm font-medium transition-all duration-150 min-h-[44px]",
                       isActive
                         ? "bg-primary/10 text-primary shadow-sm"
                         : "text-muted-foreground hover:bg-surface-800/50 hover:text-foreground"
@@ -131,12 +131,12 @@ export function AdminSidebar() {
   return (
     <>
       {/* Desktop sidebar */}
-      <aside className="hidden w-64 flex-shrink-0 border-r border-surface-800 bg-surface-900 md:flex md:flex-col">
+      <aside className="hidden w-64 flex-shrink-0 border-r border-surface-800 bg-surface-900 lg:flex lg:flex-col">
         <SidebarContent />
       </aside>
 
-      {/* Mobile hamburger — absolutely positioned so it doesn't take flex space */}
-      <div className="fixed top-0 left-0 right-0 z-40 flex items-center border-b border-surface-800 bg-surface-900 p-3 md:hidden">
+      {/* Mobile/iPad hamburger — absolutely positioned so it doesn't take flex space */}
+      <div className="fixed top-0 left-0 right-0 z-40 flex items-center border-b border-surface-800 bg-surface-900 p-3 lg:hidden">
         <button
           onClick={() => setMobileOpen(true)}
           className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-surface-800/50 transition-colors"
@@ -150,9 +150,9 @@ export function AdminSidebar() {
         </button>
       </div>
 
-      {/* Mobile drawer overlay */}
+      {/* Mobile/iPad drawer overlay */}
       {mobileOpen && (
-        <div className="fixed inset-0 z-50 md:hidden">
+        <div className="fixed inset-0 z-50 lg:hidden">
           <div
             className="absolute inset-0 bg-black/60 backdrop-blur-sm"
             onClick={() => setMobileOpen(false)}

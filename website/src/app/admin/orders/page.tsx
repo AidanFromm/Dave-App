@@ -321,7 +321,7 @@ ${selectedOrders.map((order) => {
       )}
 
       {/* Desktop Table */}
-      <div className="hidden md:block rounded-xl bg-card border border-border/50 overflow-hidden">
+      <div className="hidden lg:block rounded-xl bg-card border border-border/50 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
@@ -392,8 +392,8 @@ ${selectedOrders.map((order) => {
         </div>
       </div>
 
-      {/* Mobile Cards */}
-      <div className="md:hidden space-y-2">
+      {/* Mobile/iPad Cards */}
+      <div className="lg:hidden space-y-2">
         {filtered.length === 0 ? (
           <div className="flex flex-col items-center py-16">
             <div className="flex h-14 w-14 items-center justify-center rounded-full bg-primary/10 mb-4">

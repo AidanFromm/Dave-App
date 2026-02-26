@@ -77,7 +77,7 @@ export default function SettingsPage() {
           Notifications
         </h2>
         <p className="mt-1 text-sm text-muted-foreground">
-          Choose what updates you'd like to receive
+          Choose what updates you&apos;d like to receive
         </p>
         <div className="mt-4 space-y-4">
           <div className="flex items-center justify-between">

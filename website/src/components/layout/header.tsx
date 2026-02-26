@@ -10,8 +10,6 @@ import {
   Menu,
   LogOut,
   Shield,
-  Search,
-  X,
   Instagram,
 } from "lucide-react";
 import { useState, useEffect } from "react";
