@@ -1,15 +1,6 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-
-const recentIPs = new Map<string, number>();
-
-// Clean up old entries every 10 minutes
-setInterval(() => {
-  const now = Date.now();
-  for (const [ip, time] of recentIPs) {
-    if (now - time > 5 * 60 * 1000) recentIPs.delete(ip);
-  }
-}, 10 * 60 * 1000);
+import { createClient } from "@supabase/supabase-js";
 
 function getDeviceType(ua: string): string {
   if (/tablet|ipad/i.test(ua)) return "tablet";
@@ -31,42 +22,42 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+  const ip =
+    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
     request.headers.get("x-real-ip") ||
     "unknown";
 
-  // Rate limit: once per IP per page per 5 minutes
-  const rateKey = `${ip}:${pathname}`;
-  const lastSeen = recentIPs.get(rateKey);
-  if (lastSeen && Date.now() - lastSeen < 5 * 60 * 1000) {
-    return NextResponse.next();
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (supabaseUrl && serviceKey) {
+    const supabase = createClient(supabaseUrl, serviceKey);
+
+    // Fire and forget — don't await, don't block the response
+    supabase
+      .from("visitors")
+      .insert({
+        ip,
+        city: request.headers.get("x-vercel-ip-city") || null,
+        country: request.headers.get("x-vercel-ip-country") || null,
+        region: request.headers.get("x-vercel-ip-country-region") || null,
+        latitude:
+          parseFloat(request.headers.get("x-vercel-ip-latitude") || "") || null,
+        longitude:
+          parseFloat(request.headers.get("x-vercel-ip-longitude") || "") ||
+          null,
+        page_path: pathname,
+        user_agent: request.headers.get("user-agent") || null,
+        device_type: getDeviceType(request.headers.get("user-agent") || ""),
+        referrer: request.headers.get("referer") || null,
+      })
+      .then(() => {})
+      .catch(() => {});
   }
-  recentIPs.set(rateKey, Date.now());
-
-  const visitorData = {
-    ip,
-    city: request.headers.get("x-vercel-ip-city") || null,
-    country: request.headers.get("x-vercel-ip-country") || null,
-    region: request.headers.get("x-vercel-ip-country-region") || null,
-    latitude: parseFloat(request.headers.get("x-vercel-ip-latitude") || "") || null,
-    longitude: parseFloat(request.headers.get("x-vercel-ip-longitude") || "") || null,
-    page_path: pathname,
-    user_agent: request.headers.get("user-agent") || null,
-    device_type: getDeviceType(request.headers.get("user-agent") || ""),
-    referrer: request.headers.get("referer") || null,
-  };
-
-  // Fire and forget
-  const url = new URL("/api/visitors/log", request.url);
-  fetch(url.toString(), {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(visitorData),
-  }).catch(() => {});
 
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|api|admin).*)"],
 };
