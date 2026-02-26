@@ -119,6 +119,11 @@ export function ProductCard({ product, availableSizes }: ProductCardProps) {
               -{discount}%
             </span>
           )}
+          {product.inventory_location === "warehouse" && (
+            <span className="bg-[#002244]/80 text-white text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-md shadow-sm backdrop-blur-sm">
+              Ships Direct
+            </span>
+          )}
         </div>
 
         {/* Wishlist button -- top right */}

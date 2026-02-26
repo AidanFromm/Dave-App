@@ -37,6 +37,8 @@ interface CartStore {
   getShippingCost: () => number;
   getTotal: () => number;
   getItemCount: () => number;
+  hasWarehouseItems: () => boolean;
+  hasStoreItems: () => boolean;
   toOrderItems: () => OrderItem[];
 }
 
@@ -148,6 +150,14 @@ export const useCartStore = create<CartStore>()(
         return get().items.reduce((sum, item) => sum + item.quantity, 0);
       },
 
+      hasWarehouseItems: () => {
+        return get().items.some((item) => item.product.inventory_location === "warehouse");
+      },
+
+      hasStoreItems: () => {
+        return get().items.some((item) => item.product.inventory_location !== "warehouse");
+      },
+
       toOrderItems: () => {
         return get().items.map((item) => {
           const price = item.variant_price ?? item.product.price;
@@ -161,6 +171,7 @@ export const useCartStore = create<CartStore>()(
             quantity: item.quantity,
             price,
             total: price * item.quantity,
+            inventory_location: item.product.inventory_location ?? "store",
           };
         });
       },

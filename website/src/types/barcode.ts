@@ -94,6 +94,7 @@ export interface ScanFormData {
 
   // Metadata
   productType: "sneaker" | "pokemon" | "pokemon_sealed";
+  inventoryLocation?: "store" | "warehouse";
 
   // Pokemon grading (optional)
   grading?: PokemonGradingData;

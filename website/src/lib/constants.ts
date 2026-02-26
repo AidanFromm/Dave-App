@@ -1,5 +1,5 @@
 // Business logic constants — must match iOS app
-export const TAX_RATE = 0.07; // 7% Florida sales tax
+export const TAX_RATE = 0.075; // 7.5% Florida sales tax (Hillsborough County)
 export const STANDARD_SHIPPING = 10.0;
 export const FREE_SHIPPING_THRESHOLD = 150.0;
 export const NEW_DROP_DAYS = 5;

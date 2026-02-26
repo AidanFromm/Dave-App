@@ -68,6 +68,7 @@ export interface Product {
   tags: string[];
   created_at: string;
   updated_at: string;
+  inventory_location?: 'store' | 'warehouse';
   has_variants?: boolean;
   variants?: ProductVariant[];
 }

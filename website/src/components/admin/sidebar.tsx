@@ -18,6 +18,8 @@ import {
   Truck,
   HelpCircle,
   Store,
+  MessageSquare,
+  Globe,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -35,9 +37,17 @@ const NAV_SECTIONS = [
     label: "Store",
     items: [
       { href: "/admin/scan", label: "Scan In", icon: ScanBarcode },
+      { href: "/admin/pos", label: "POS", icon: Store },
       { href: "/admin/drops", label: "Daily Deals", icon: Flame },
       { href: "/admin/discounts", label: "Discount Codes", icon: Tag },
       { href: "/admin/shipping", label: "Shipping", icon: Truck },
+      { href: "/admin/tickets", label: "Tickets", icon: MessageSquare },
+    ],
+  },
+  {
+    label: "Analytics",
+    items: [
+      { href: "/admin/visitors", label: "Visitors", icon: Globe },
     ],
   },
   {

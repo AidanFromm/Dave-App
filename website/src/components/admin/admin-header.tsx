@@ -12,13 +12,14 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { User, LogOut, Store, Sun, Moon, Monitor, Bell } from "lucide-react";
+import { User, LogOut, Store, Sun, Moon, Monitor, Bell, MessageSquare } from "lucide-react";
 import { useTheme } from "next-themes";
 
 export function AdminHeader() {
   const { user, signOut } = useAuth();
   const { setTheme } = useTheme();
   const [notifCount, setNotifCount] = useState(0);
+  const [ticketCount, setTicketCount] = useState(0);
 
   const fetchNotifCount = useCallback(async () => {
     try {
@@ -26,7 +27,7 @@ export function AdminHeader() {
       const weekAgo = new Date();
       weekAgo.setDate(weekAgo.getDate() - 7);
 
-      const [ordersRes, stockRes] = await Promise.all([
+      const [ordersRes, stockRes, ticketsRes] = await Promise.all([
         supabase
           .from("orders")
           .select("id", { count: "exact", head: true })
@@ -37,8 +38,13 @@ export function AdminHeader() {
           .select("id", { count: "exact", head: true })
           .eq("is_active", true)
           .lte("quantity", 5),
+        supabase
+          .from("tickets")
+          .select("id", { count: "exact", head: true })
+          .in("status", ["open", "in_progress"]),
       ]);
 
+      setTicketCount(ticketsRes.count ?? 0);
       setNotifCount((ordersRes.count ?? 0) + (stockRes.count ?? 0));
     } catch {
       // Fail silently
@@ -69,6 +75,17 @@ export function AdminHeader() {
           <Link href="/">
             <Store className="h-3.5 w-3.5" />
             <span className="hidden sm:inline">View Store</span>
+          </Link>
+        </Button>
+
+        <Button variant="ghost" size="icon" asChild className="relative h-9 w-9 text-muted-foreground hover:text-foreground">
+          <Link href="/admin/tickets">
+            <MessageSquare className="h-4 w-4" />
+            {ticketCount > 0 && (
+              <span className="absolute -top-0.5 -right-0.5 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white">
+                {ticketCount > 99 ? "99+" : ticketCount}
+              </span>
+            )}
           </Link>
         </Button>
 

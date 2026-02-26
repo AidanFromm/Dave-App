@@ -162,6 +162,7 @@ export async function addScannedProductToInventory(data: ScanFormData): Promise<
       is_drop: false,
       category_id: categoryId,
       tags,
+      inventory_location: data.inventoryLocation || "store",
     })
     .select("id")
     .single();

@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useEffect, useRef } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ScanOut } from "@/components/admin/scan-out";
 import { BarcodeScannerInput } from "@/components/admin/barcode-scanner-input";
 import { ScanResultCard } from "@/components/admin/scan-result-card";
 import { ScanForm } from "@/components/admin/scan-form";
@@ -36,6 +37,8 @@ import {
   ChevronDown,
   Upload,
   ImageOff,
+  Building2,
+  Warehouse,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -151,6 +154,7 @@ function ProductImage({
 // ─── Component ───────────────────────────────────────────────
 
 export default function ScanPage() {
+  const [topTab, setTopTab] = useState<"in" | "out">("in");
   const [phase, setPhase] = useState<ScanPhase>("scanning");
   const [scanState, setScanState] = useState<ScanState>("idle");
   const [items, setItems] = useState<ScannedItem[]>([]);
@@ -167,8 +171,19 @@ export default function ScanPage() {
   const [submitProgress, setSubmitProgress] = useState({ current: 0, total: 0 });
   const [sellerName, setSellerName] = useState("");
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("none");
+  const [inventoryLocation, setInventoryLocation] = useState<"store" | "warehouse">(() => {
+    if (typeof window !== "undefined") {
+      return (localStorage.getItem("dave-scan-location") as "store" | "warehouse") || "store";
+    }
+    return "store";
+  });
 
   const { playTone, setEnabled: setSoundEnabledHook } = useScanSound();
+
+  // Persist inventory location toggle
+  useEffect(() => {
+    localStorage.setItem("dave-scan-location", inventoryLocation);
+  }, [inventoryLocation]);
 
   // ─── Session Persistence ─────────────────────────────────
 
@@ -563,6 +578,7 @@ export default function ScanPage() {
           price: parseFloat(item.price),
           images: item.images,
           productType: "sneaker",
+          inventoryLocation: inventoryLocation,
         };
 
         const result = await addScannedProductToInventory(data);
@@ -650,6 +666,36 @@ export default function ScanPage() {
         </div>
       )}
 
+      {/* Top-level Scan In / Scan Out tabs */}
+      <div className="flex gap-2 mb-6">
+        {(["in", "out"] as const).map((t) => (
+          <button
+            key={t}
+            onClick={() => setTopTab(t)}
+            className={cn(
+              "flex-1 rounded-xl border-2 px-4 py-3 text-base font-bold transition-all",
+              topTab === t
+                ? t === "in"
+                  ? "border-[#002244] bg-[#002244] text-white"
+                  : "border-[#FB4F14] bg-[#FB4F14] text-white"
+                : "border-border bg-card text-muted-foreground hover:border-foreground/30"
+            )}
+          >
+            {t === "in" ? "Scan In" : "Scan Out"}
+          </button>
+        ))}
+      </div>
+
+      {topTab === "out" ? (
+        <div>
+          <h1 className="text-3xl font-bold mb-1">Scan Out</h1>
+          <p className="text-base text-muted-foreground mb-6">
+            Point of sale -- scan product, collect payment, print receipt
+          </p>
+          <ScanOut />
+        </div>
+      ) : (
+      <>
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -663,6 +709,39 @@ export default function ScanPage() {
         <Button variant="ghost" size="icon" onClick={toggleSound} className="h-9 w-9">
           {soundEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
         </Button>
+      </div>
+
+      {/* Inventory Location Toggle */}
+      <div className="flex items-center gap-2">
+        <span className="text-sm font-medium text-muted-foreground">Scanning to:</span>
+        <div className="inline-flex rounded-lg border border-border p-1 bg-muted/50">
+          <button
+            type="button"
+            onClick={() => setInventoryLocation("store")}
+            className={cn(
+              "flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition-all",
+              inventoryLocation === "store"
+                ? "bg-[#002244] text-white shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
+            )}
+          >
+            <Building2 className="h-4 w-4" />
+            Store
+          </button>
+          <button
+            type="button"
+            onClick={() => setInventoryLocation("warehouse")}
+            className={cn(
+              "flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition-all",
+              inventoryLocation === "warehouse"
+                ? "bg-[#002244] text-white shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
+            )}
+          >
+            <Warehouse className="h-4 w-4" />
+            Warehouse
+          </button>
+        </div>
       </div>
 
       <Tabs defaultValue="sneakers">
@@ -1253,13 +1332,15 @@ export default function ScanPage() {
       </Tabs>
 
       {/* StockX Search Modal */}
-      <StockXSearchModal
+      </>
+      )}
+      {topTab === "in" && <StockXSearchModal
         open={searchModalOpen}
         onClose={() => { setSearchModalOpen(false); setManualLookupMode(false); }}
         onSelect={handleStockXSelect}
         initialQuery={manualLookupMode ? "" : pendingBarcode}
         showSizeField={manualLookupMode}
-      />
+      />}
     </div>
   );
 }

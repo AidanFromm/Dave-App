@@ -11,6 +11,7 @@ import { GoogleAnalytics } from "@/components/analytics/GoogleAnalytics";
 import { MetaPixel } from "@/components/analytics/MetaPixel";
 import { CookieConsent } from "@/components/analytics/CookieConsent";
 import { CartSyncProvider } from "@/components/providers/cart-sync-provider";
+import { HelpButton } from "@/components/shop/help-button";
 import VersionCheck from "@/components/VersionCheck";
 import { PasswordGate } from "@/components/PasswordGate";
 
@@ -100,6 +101,7 @@ export default function RootLayout({
                 <FooterWrapper />
               </div>
               <CartDrawer />
+              <HelpButton />
               <CartSyncProvider />
             </ErrorBoundary>
             <ToastProvider />
