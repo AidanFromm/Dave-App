@@ -17,13 +17,14 @@ import { Pagination } from "@/components/ui/pagination";
 
 const ITEMS_PER_PAGE = 24;
 
-/* Clean category tabs - no overlap with sidebar */
-type CategoryTab = "all" | "sneakers" | "pokemon";
+/* Clean category tabs */
+type CategoryTab = "all" | "sneakers" | "pokemon" | "deals";
 
 const CATEGORY_TABS: { key: CategoryTab; label: string }[] = [
   { key: "all", label: "All" },
   { key: "sneakers", label: "Sneakers" },
   { key: "pokemon", label: "Pokemon" },
+  { key: "deals", label: "Daily Deals" },
 ];
 
 type SizeCategory = "mens" | "womens" | "gs" | "ps" | "td";
@@ -84,13 +85,11 @@ export function ShopPage({ initialProducts, categories }: ShopPageProps) {
   const [sizeFilter, setSizeFilter] = useState<string[]>([]);
   const [priceMin, setPriceMin] = useState("");
   const [priceMax, setPriceMax] = useState("");
-  const [brand, setBrand] = useState("");
-  const [showDealsOnly, setShowDealsOnly] = useState(false);
+  const [brandFilter, setBrandFilter] = useState("");
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const [sizeCategory, setSizeCategory] = useState<SizeCategory>("mens");
 
   const debouncedSearch = useDebounce(search, 300);
-  const debouncedBrand = useDebounce(brand, 300);
 
   /* Fetch daily deals */
   useEffect(() => {
@@ -119,15 +118,22 @@ export function ShopPage({ initialProducts, categories }: ShopPageProps) {
 
   const dealProductIds = useMemo(() => new Set(dropProducts.map((p) => p.id)), [dropProducts]);
 
-  const hasActiveFilters = conditionFilter.length > 0 || sizeFilter.length > 0 || priceMin || priceMax || brand || showDealsOnly;
+  const allBrands = useMemo(() => {
+    const brands = new Set<string>();
+    for (const p of initialProducts) {
+      if (p.brand) brands.add(p.brand);
+    }
+    return Array.from(brands).sort();
+  }, [initialProducts]);
+
+  const hasActiveFilters = conditionFilter.length > 0 || sizeFilter.length > 0 || priceMin || priceMax || brandFilter;
 
   const activeFilterCount = [
     conditionFilter.length,
     sizeFilter.length,
     priceMin ? 1 : 0,
     priceMax ? 1 : 0,
-    brand ? 1 : 0,
-    showDealsOnly ? 1 : 0,
+    brandFilter ? 1 : 0,
   ].reduce((a, b) => a + b, 0);
 
   const clearFilters = () => {
@@ -135,8 +141,7 @@ export function ShopPage({ initialProducts, categories }: ShopPageProps) {
     setSizeFilter([]);
     setPriceMin("");
     setPriceMax("");
-    setBrand("");
-    setShowDealsOnly(false);
+    setBrandFilter("");
   };
 
   const toggleArray = (arr: string[], value: string, setter: (v: string[]) => void) => {
@@ -167,17 +172,13 @@ export function ShopPage({ initialProducts, categories }: ShopPageProps) {
       if (pokemonCategoryId) {
         products = products.filter((p) => p.category_id === pokemonCategoryId);
       }
-    }
-
-    // Daily deals toggle
-    if (showDealsOnly) {
+    } else if (tab === "deals") {
       products = products.filter((p) => dealProductIds.has(p.id));
     }
 
     // Brand
-    if (debouncedBrand) {
-      const b = debouncedBrand.toLowerCase();
-      products = products.filter((p) => p.brand?.toLowerCase().includes(b));
+    if (brandFilter) {
+      products = products.filter((p) => p.brand === brandFilter);
     }
 
     // Condition
@@ -239,14 +240,14 @@ export function ShopPage({ initialProducts, categories }: ShopPageProps) {
     }
 
     return { products, sizesMap };
-  }, [initialProducts, tab, sort, debouncedSearch, debouncedBrand, pokemonCategoryId, conditionFilter, sizeFilter, priceMin, priceMax, showDealsOnly, dealProductIds]);
+  }, [initialProducts, tab, sort, debouncedSearch, brandFilter, pokemonCategoryId, conditionFilter, sizeFilter, priceMin, priceMax, dealProductIds]);
 
   const filteredProducts = filterResult.products;
   const sizesByName = filterResult.sizesMap;
 
   // Reset page on filter change
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  useMemo(() => { setCurrentPage(1); }, [tab, sort, debouncedSearch, debouncedBrand, conditionFilter, sizeFilter, priceMin, priceMax, showDealsOnly]);
+  useMemo(() => { setCurrentPage(1); }, [tab, sort, debouncedSearch, brandFilter, conditionFilter, sizeFilter, priceMin, priceMax]);
 
   const totalPages = Math.max(1, Math.ceil(filteredProducts.length / ITEMS_PER_PAGE));
   const safePage = Math.min(currentPage, totalPages);
@@ -255,24 +256,6 @@ export function ShopPage({ initialProducts, categories }: ShopPageProps) {
   /* Sidebar filter content */
   const FilterContent = () => (
     <div className="space-y-0">
-      {/* Daily Deals Toggle */}
-      {dropProducts.length > 0 && (
-        <FilterSection title="Deals">
-          <label className="flex items-center gap-2.5 text-sm cursor-pointer group/label">
-            <Checkbox
-              checked={showDealsOnly}
-              onCheckedChange={() => setShowDealsOnly(!showDealsOnly)}
-            />
-            <span className="text-neutral-600 group-hover/label:text-neutral-900 transition-colors">
-              Daily Deals Only
-              <span className="ml-1.5 text-[10px] font-semibold text-[#FB4F14]">
-                {dropProducts.length}
-              </span>
-            </span>
-          </label>
-        </FilterSection>
-      )}
-
       {/* Condition (only for sneakers) */}
       {tab !== "pokemon" && (
         <FilterSection title="Condition">
@@ -290,14 +273,18 @@ export function ShopPage({ initialProducts, categories }: ShopPageProps) {
         </FilterSection>
       )}
 
-      {/* Brand */}
+      {/* Brand dropdown */}
       <FilterSection title="Brand">
-        <Input
-          placeholder="Search brand..."
-          value={brand}
-          onChange={(e) => setBrand(e.target.value)}
-          className="h-9 text-sm bg-neutral-50 border-neutral-200 rounded-lg focus-visible:ring-[#FB4F14]/30"
-        />
+        <select
+          value={brandFilter}
+          onChange={(e) => setBrandFilter(e.target.value)}
+          className="w-full h-9 text-sm bg-neutral-50 border border-neutral-200 rounded-lg px-3 text-neutral-700 focus:outline-none focus:ring-2 focus:ring-[#FB4F14]/20 appearance-none cursor-pointer"
+        >
+          <option value="">All Brands</option>
+          {allBrands.map((b) => (
+            <option key={b} value={b}>{b}</option>
+          ))}
+        </select>
       </FilterSection>
 
       {/* Price Range */}
