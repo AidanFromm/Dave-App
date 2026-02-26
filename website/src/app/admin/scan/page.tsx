@@ -153,9 +153,25 @@ function ProductImage({
 // ─── Component ───────────────────────────────────────────────
 
 export default function ScanPage() {
-  const [phase, setPhase] = useState<ScanPhase>("scanning");
+  // Restore session synchronously from localStorage to prevent race condition
+  // where the save effect would wipe localStorage before the restore effect runs
+  const [restoredSession] = useState<SavedSession | null>(() => {
+    if (typeof window === "undefined") return null;
+    try {
+      const saved = localStorage.getItem(SESSION_KEY);
+      if (saved) {
+        const parsed: SavedSession = JSON.parse(saved);
+        if (parsed.items && parsed.items.length > 0) return parsed;
+      }
+    } catch {
+      localStorage.removeItem(SESSION_KEY);
+    }
+    return null;
+  });
+
+  const [phase, setPhase] = useState<ScanPhase>(restoredSession?.phase ?? "scanning");
   const [scanState, setScanState] = useState<ScanState>("idle");
-  const [items, setItems] = useState<ScannedItem[]>([]);
+  const [items, setItems] = useState<ScannedItem[]>(restoredSession?.items ?? []);
   const [scanHistory, setScanHistory] = useState<ScanHistoryEntry[]>([]);
   const [searchModalOpen, setSearchModalOpen] = useState(false);
   const [manualLookupMode, setManualLookupMode] = useState(false);
@@ -167,8 +183,8 @@ export default function ScanPage() {
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [submitProgress, setSubmitProgress] = useState({ current: 0, total: 0 });
-  const [sellerName, setSellerName] = useState("");
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("none");
+  const [sellerName, setSellerName] = useState(restoredSession?.sellerName ?? "");
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(restoredSession?.paymentMethod ?? "none");
   const [inventoryLocation, setInventoryLocation] = useState<"store" | "warehouse">(() => {
     if (typeof window !== "undefined") {
       return (localStorage.getItem("dave-scan-location") as "store" | "warehouse") || "store";
@@ -185,27 +201,18 @@ export default function ScanPage() {
 
   // ─── Session Persistence ─────────────────────────────────
 
-  // Auto-restore saved session on mount (no dialog — just resume seamlessly)
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem(SESSION_KEY);
-      if (saved) {
-        const parsed: SavedSession = JSON.parse(saved);
-        if (parsed.items && parsed.items.length > 0) {
-          // Auto-resume: restore items silently so employees never lose work
-          setItems(parsed.items);
-          setPhase(parsed.phase);
-          if (parsed.sellerName) setSellerName(parsed.sellerName);
-          if (parsed.paymentMethod) setPaymentMethod(parsed.paymentMethod);
-        }
-      }
-    } catch {
-      localStorage.removeItem(SESSION_KEY);
-    }
-  }, []);
+  // Session restored synchronously in useState initializers above — no useEffect needed
 
   // Save session whenever items change
+  // Use a mounted ref to skip the first render — prevents wiping localStorage
+  // before synchronous restore has a chance to hydrate (SSR edge case)
+  const hasMountedRef = useRef(false);
   useEffect(() => {
+    if (!hasMountedRef.current) {
+      hasMountedRef.current = true;
+      // Skip first render — state was already initialized from localStorage
+      return;
+    }
     if (items.length > 0) {
       const session: SavedSession = {
         items,
