@@ -89,7 +89,7 @@ export function CustomerTable({ customers }: CustomerTableProps) {
       </div>
 
       {/* Desktop Table */}
-      <div className="mt-4 hidden md:block overflow-x-auto">
+      <div className="mt-4 hidden lg:block overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-border text-left">
@@ -148,8 +148,8 @@ export function CustomerTable({ customers }: CustomerTableProps) {
         </table>
       </div>
 
-      {/* Mobile Cards */}
-      <div className="mt-4 md:hidden space-y-2">
+      {/* Mobile/iPad Cards */}
+      <div className="mt-4 lg:hidden space-y-2">
         {filtered.length === 0 ? (
           <div className="py-8 text-center text-muted-foreground">No customers found.</div>
         ) : (
@@ -157,7 +157,7 @@ export function CustomerTable({ customers }: CustomerTableProps) {
             <Link
               key={customer.id}
               href={`/admin/customers/${customer.id}`}
-              className="block rounded-xl border border-border p-4 hover:bg-accent/50 transition-colors"
+              className="block rounded-xl border border-border p-4 min-h-[72px] hover:bg-accent/50 transition-colors"
             >
               <div className="flex items-center justify-between">
                 <span className="font-medium text-primary text-sm">

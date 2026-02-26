@@ -149,13 +149,13 @@ export default function AnalyticsPage() {
 
       {/* 2. Key Metrics Row */}
       {loading ? (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
           {Array.from({ length: 5 }).map((_, i) => (
             <CardSkeleton key={i} />
           ))}
         </div>
       ) : s ? (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
           <MetricCard title="Revenue" value={formatCurrency(s.totalRevenue)} change={s.revenueChange} />
           <MetricCard title="Orders" value={String(s.totalOrders)} change={s.ordersChange} />
           <MetricCard title="Avg Order Value" value={formatCurrency(s.avgOrderValue)} change={s.aovChange} />
@@ -204,7 +204,7 @@ export default function AnalyticsPage() {
       )}
 
       {/* 4. Two-Column: Orders by Channel + Revenue by Category */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {loading ? (
           <>
             <ChartSkeleton height={280} />
@@ -286,7 +286,7 @@ export default function AnalyticsPage() {
       )}
 
       {/* 6. Two-Column: Sales by Day of Week + Sales by Hour */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {loading ? (
           <>
             <ChartSkeleton height={280} />

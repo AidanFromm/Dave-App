@@ -360,23 +360,23 @@ export default function VisitorsPage() {
         {stats && (
           <div className="grid grid-cols-3 border-t border-white/10">
             <div className="p-4 text-center border-r border-white/10">
-              <p className="text-2xl font-bold text-white">{stats.totalToday}</p>
-              <p className="text-[11px] text-white/50 uppercase tracking-wide">Today</p>
+              <p className="text-2xl md:text-3xl font-bold text-white">{stats.totalToday}</p>
+              <p className="text-xs text-white/50 uppercase tracking-wide">Today</p>
             </div>
             <div className="p-4 text-center border-r border-white/10">
-              <p className="text-2xl font-bold text-white">{stats.uniqueIPs}</p>
-              <p className="text-[11px] text-white/50 uppercase tracking-wide">Unique IPs</p>
+              <p className="text-2xl md:text-3xl font-bold text-white">{stats.uniqueIPs}</p>
+              <p className="text-xs text-white/50 uppercase tracking-wide">Unique IPs</p>
             </div>
             <div className="p-4 text-center">
-              <p className="text-2xl font-bold text-white">{stats.totalAllTime.toLocaleString()}</p>
-              <p className="text-[11px] text-white/50 uppercase tracking-wide">All Time</p>
+              <p className="text-2xl md:text-3xl font-bold text-white">{stats.totalAllTime.toLocaleString()}</p>
+              <p className="text-xs text-white/50 uppercase tracking-wide">All Time</p>
             </div>
           </div>
         )}
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {loading || !stats ? (
           Array.from({ length: 4 }).map((_, i) => (
             <div key={i} className="rounded-xl bg-card shadow-card p-4">

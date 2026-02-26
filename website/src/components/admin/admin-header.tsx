@@ -65,9 +65,9 @@ export function AdminHeader() {
   }, [fetchNotifCount]);
 
   return (
-    <header className="flex h-16 items-center justify-between border-b border-surface-800 bg-surface-900 px-4 md:px-6">
-      {/* Mobile logo — hidden on desktop (sidebar has it) */}
-      <div className="hidden md:block" />
+    <header className="flex h-16 items-center justify-between border-b border-surface-800 bg-surface-900 px-4 lg:px-6">
+      {/* Mobile/iPad logo — hidden on desktop (sidebar has it) */}
+      <div className="hidden lg:block" />
 
       {/* Right side */}
       <div className="ml-auto flex items-center gap-2">
@@ -131,7 +131,7 @@ export function AdminHeader() {
           <DropdownMenuContent align="end" className="w-52 bg-surface-900 border-surface-800">
             <div className="px-3 py-2">
               <p className="text-sm font-medium">{user?.email}</p>
-              <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Administrator</p>
+              <p className="text-xs text-muted-foreground uppercase tracking-wider">Administrator</p>
             </div>
             <DropdownMenuSeparator className="bg-surface-800" />
             <DropdownMenuItem onClick={signOut} className="text-destructive">

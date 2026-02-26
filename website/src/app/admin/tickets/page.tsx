@@ -132,7 +132,7 @@ export default function TicketsPage() {
             key={tab.value}
             onClick={() => setFilter(tab.value)}
             className={cn(
-              "rounded-md px-3 py-1.5 text-xs font-medium transition-colors",
+              "rounded-md px-4 py-2.5 text-sm font-medium transition-colors min-h-[44px]",
               filter === tab.value
                 ? "bg-primary text-white"
                 : "text-muted-foreground hover:text-foreground"
@@ -148,7 +148,7 @@ export default function TicketsPage() {
         ))}
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-[1fr_1fr]">
+      <div className="grid gap-6 md:grid-cols-[1fr_1fr]">
         {/* Ticket list */}
         <div className="space-y-2">
           {loading ? (
@@ -166,7 +166,7 @@ export default function TicketsPage() {
                 key={ticket.id}
                 onClick={() => openTicket(ticket.id)}
                 className={cn(
-                  "w-full text-left rounded-lg border border-surface-800 bg-surface-900 p-4 transition-colors hover:border-primary/30",
+                  "w-full text-left rounded-lg border border-surface-800 bg-surface-900 p-4 min-h-[72px] transition-colors hover:border-primary/30",
                   selectedId === ticket.id && "border-primary/50 bg-primary/5"
                 )}
               >
