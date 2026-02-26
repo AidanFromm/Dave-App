@@ -287,6 +287,7 @@ export async function POST(request: Request) {
         shipping_address: shippingAddress || null,
         delivery_method: isPickup ? "pickup" : "shipping",
         pickup_status: isPickup ? "pending" : null,
+        pickup_code: pickupCode,
         customer_phone: phone || null,
         created_at: now,
         updated_at: now,
@@ -355,6 +356,49 @@ export async function POST(request: Request) {
         }
       }
       
+      // Send confirmation email for gift card orders (with pickup code if applicable)
+      if (sanitizedEmail) {
+        try {
+          const resendKey = process.env.RESEND_API_KEY;
+          if (resendKey) {
+            const itemsList = formattedItems.map(i => 
+              `<tr><td style="padding:8px;border-bottom:1px solid #333;">${i.name}${i.size ? ` (${i.size})` : ''}</td><td style="padding:8px;border-bottom:1px solid #333;text-align:right;">$${i.price.toFixed(2)} x ${i.quantity}</td></tr>`
+            ).join('');
+            
+            const pickupSection = isPickup && pickupCode 
+              ? `<div style="margin:16px 0;padding:16px;background:#1a1a1a;border:2px solid #FB4F14;border-radius:8px;text-align:center;">
+                  <p style="margin:0;color:#999;font-size:12px;text-transform:uppercase;letter-spacing:1px;">Your Pickup Code</p>
+                  <p style="margin:8px 0 0;color:#FB4F14;font-size:32px;font-weight:bold;letter-spacing:6px;">${pickupCode}</p>
+                  <p style="margin:8px 0 0;color:#999;font-size:12px;">Show this code when picking up your order</p>
+                </div>`
+              : '';
+
+            await fetch('https://api.resend.com/emails', {
+              method: 'POST',
+              headers: { 'Authorization': `Bearer ${resendKey}`, 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                from: 'Secured Tampa <orders@securedtampa.com>',
+                to: sanitizedEmail,
+                subject: `Order Confirmed - ${orderNumber}`,
+                html: `<div style="font-family:sans-serif;max-width:600px;margin:0 auto;background:#111;color:#fff;padding:24px;border-radius:12px;">
+                  <h1 style="color:#FB4F14;margin:0 0 16px;">Order Confirmed</h1>
+                  <p style="color:#ccc;margin:0 0 16px;">Thank you for your order! Here are the details:</p>
+                  <p style="color:#fff;font-size:18px;font-weight:bold;margin:0 0 16px;">Order #${orderNumber}</p>
+                  ${pickupSection}
+                  <table style="width:100%;border-collapse:collapse;margin:16px 0;">${itemsList}</table>
+                  <div style="border-top:1px solid #333;padding-top:12px;margin-top:12px;">
+                    <p style="color:#ccc;margin:4px 0;">Total: <strong style="color:#fff;">$${(subtotal + tax + shippingCost - discountAmount - giftCardAmount).toFixed(2)}</strong></p>
+                  </div>
+                  <p style="color:#666;font-size:12px;margin-top:24px;">Secured Tampa LLC — Tampa, FL</p>
+                </div>`
+              })
+            });
+          }
+        } catch (emailErr) {
+          console.error("Failed to send gift card order confirmation:", emailErr);
+        }
+      }
+
       // Return success - client will redirect to confirmation
       return NextResponse.json({
         success: true,

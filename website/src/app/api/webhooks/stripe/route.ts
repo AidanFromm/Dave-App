@@ -273,6 +273,7 @@ export async function POST(request: Request) {
       shipping_address: shipping,
       delivery_method: deliveryMethodMeta || (fulfillmentType === "pickup" ? "pickup" : "shipping"),
       pickup_status: isPickup ? "pending" : null,
+      pickup_code: pickupCode,
       customer_phone: phoneMeta || null,
       created_at: now,
       updated_at: now,
