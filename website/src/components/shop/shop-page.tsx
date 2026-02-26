@@ -22,9 +22,9 @@ type CategoryTab = "all" | "sneakers" | "pokemon" | "deals";
 
 const CATEGORY_TABS: { key: CategoryTab; label: string }[] = [
   { key: "all", label: "All" },
+  { key: "deals", label: "Daily Deals" },
   { key: "sneakers", label: "Sneakers" },
   { key: "pokemon", label: "Pokemon" },
-  { key: "deals", label: "Daily Deals" },
 ];
 
 type SizeCategory = "mens" | "womens" | "gs" | "ps" | "td";
@@ -176,7 +176,8 @@ export function ShopPage({ initialProducts, categories }: ShopPageProps) {
         products = products.filter((p) => p.category_id === pokemonCategoryId);
       }
     } else if (tab === "deals") {
-      products = products.filter((p) => dealProductIds.has(p.id));
+      // Drop products are excluded from initialProducts, use dropProducts directly
+      products = [...dropProducts];
     }
 
     // Brand
@@ -430,13 +431,23 @@ export function ShopPage({ initialProducts, categories }: ShopPageProps) {
               key={t.key}
               onClick={() => setTab(t.key)}
               className={cn(
-                "px-5 py-2.5 rounded-full text-sm font-semibold transition-all",
+                "px-5 py-2.5 rounded-full text-sm font-semibold transition-all flex items-center gap-1.5",
                 tab === t.key
                   ? "bg-[#002244] text-white"
                   : "text-neutral-400 hover:text-neutral-700 hover:bg-neutral-100"
               )}
             >
               {t.label}
+              {t.key === "deals" && dropProducts.length > 0 && (
+                <span className={cn(
+                  "inline-flex items-center justify-center h-5 min-w-[20px] px-1 rounded-full text-[10px] font-bold",
+                  tab === "deals"
+                    ? "bg-[#FB4F14] text-white"
+                    : "bg-[#FB4F14] text-white"
+                )}>
+                  {dropProducts.length}
+                </span>
+              )}
             </button>
           ))}
         </div>
@@ -473,13 +484,18 @@ export function ShopPage({ initialProducts, categories }: ShopPageProps) {
               key={t.key}
               onClick={() => setTab(t.key)}
               className={cn(
-                "px-4 py-2 rounded-full text-sm font-semibold whitespace-nowrap transition-all shrink-0",
+                "px-4 py-2 rounded-full text-sm font-semibold whitespace-nowrap transition-all shrink-0 flex items-center gap-1.5",
                 tab === t.key
                   ? "bg-[#002244] text-white"
                   : "bg-neutral-100 text-neutral-400"
               )}
             >
               {t.label}
+              {t.key === "deals" && dropProducts.length > 0 && (
+                <span className="inline-flex items-center justify-center h-4 min-w-[16px] px-1 rounded-full bg-[#FB4F14] text-white text-[9px] font-bold">
+                  {dropProducts.length}
+                </span>
+              )}
             </button>
           ))}
         </div>
