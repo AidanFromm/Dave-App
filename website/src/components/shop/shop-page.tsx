@@ -310,7 +310,7 @@ export function ShopPage({ initialProducts, categories }: ShopPageProps) {
       )}
 
       {/* Brand dropdown (sneakers only) */}
-      {tab !== "pokemon" && (
+      {tab !== "pokemon" && tab !== "deals" && (
         <FilterSection title="Brand">
           <select
             value={brandFilter}
