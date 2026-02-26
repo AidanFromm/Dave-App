@@ -421,16 +421,16 @@ export function ShopPage({ initialProducts, categories }: ShopPageProps) {
 
   return (
     <div className="mx-auto max-w-[1400px] px-4 py-8 sm:px-6 lg:px-8">
-      {/* Header bar: Category tabs + Search + Sort — one clean row */}
-      <div className="flex items-center gap-6 pb-6 border-b border-neutral-200/60 mb-6">
+      {/* Header bar: Category tabs + Search + Sort — evenly distributed */}
+      <div className="hidden md:grid grid-cols-[1fr_auto_auto] items-center gap-4 pb-6 border-b border-neutral-200/60 mb-6">
         {/* Category tabs */}
-        <div className="hidden md:flex items-center gap-1">
+        <div className="flex items-center gap-1">
           {CATEGORY_TABS.map((t) => (
             <button
               key={t.key}
               onClick={() => setTab(t.key)}
               className={cn(
-                "px-5 py-2 rounded-full text-sm font-semibold transition-all",
+                "px-5 py-2.5 rounded-full text-sm font-semibold transition-all",
                 tab === t.key
                   ? "bg-[#002244] text-white"
                   : "text-neutral-400 hover:text-neutral-700 hover:bg-neutral-100"
@@ -441,11 +441,9 @@ export function ShopPage({ initialProducts, categories }: ShopPageProps) {
           ))}
         </div>
 
-        <div className="flex-1" />
-
         {/* Search */}
-        <div className="relative w-full md:w-72">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-300" />
+        <div className="relative w-72">
+          <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-300" />
           <Input
             type="text"
             placeholder="Search..."
@@ -455,7 +453,7 @@ export function ShopPage({ initialProducts, categories }: ShopPageProps) {
           />
           {search && (
             <button
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600"
+              className="absolute right-3.5 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600"
               onClick={() => setSearch("")}
             >
               <X className="h-3.5 w-3.5" />
@@ -464,9 +462,7 @@ export function ShopPage({ initialProducts, categories }: ShopPageProps) {
         </div>
 
         {/* Sort */}
-        <div className="hidden md:block">
-          <SortSelect value={sort} onChange={setSort} />
-        </div>
+        <SortSelect value={sort} onChange={setSort} />
       </div>
 
       {/* Mobile: Category tabs + Sort/Filter */}
