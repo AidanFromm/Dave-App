@@ -195,7 +195,7 @@ export default function AdminShippingPage() {
       ) : (
         <>
         {/* Desktop Table */}
-        <div className="hidden md:block rounded-lg border border-border bg-card overflow-hidden">
+        <div className="hidden lg:block rounded-lg border border-border bg-card overflow-hidden">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-border bg-muted/30">
@@ -303,8 +303,8 @@ export default function AdminShippingPage() {
           </table>
         </div>
 
-        {/* Mobile Cards */}
-        <div className="md:hidden space-y-2">
+        {/* Mobile/iPad Cards */}
+        <div className="lg:hidden space-y-2">
           {orders.map((order) => {
             const addr = order.shipping_address;
             return (

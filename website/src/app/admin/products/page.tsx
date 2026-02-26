@@ -299,7 +299,7 @@ export default function AdminProductsPage() {
       </div>
 
       {/* Desktop Table */}
-      <div className="hidden md:block rounded-lg border overflow-hidden">
+      <div className="hidden lg:block rounded-lg border overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
@@ -476,8 +476,8 @@ export default function AdminProductsPage() {
         </div>
       </div>
 
-      {/* Mobile Cards */}
-      <div className="md:hidden space-y-3">
+      {/* Mobile/iPad Cards */}
+      <div className="lg:hidden space-y-3">
         {filtered.length === 0 ? (
           <div className="flex flex-col items-center py-16">
             <div className="flex h-14 w-14 items-center justify-center rounded-full bg-primary/10 mb-4">
@@ -501,7 +501,7 @@ export default function AdminProductsPage() {
             <Link
               key={product.name}
               href={`/admin/products/detail?name=${encodeURIComponent(product.name)}`}
-              className="flex items-center gap-3 rounded-lg border p-3 hover:bg-muted/30 transition-colors"
+              className="flex items-center gap-3 rounded-lg border p-4 min-h-[72px] hover:bg-muted/30 transition-colors"
             >
               {product.image ? (
                 <Image

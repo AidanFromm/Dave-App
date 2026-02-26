@@ -258,7 +258,7 @@ ${selectedOrders.map((order) => {
             <button
               key={s}
               onClick={() => setStatusFilter(s)}
-              className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+              className={`rounded-full px-4 py-2 text-sm font-medium transition-colors min-h-[44px] ${
                 statusFilter === s
                   ? "bg-primary text-primary-foreground"
                   : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
