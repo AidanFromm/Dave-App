@@ -68,63 +68,114 @@ function getDeviceIcon(device: string | null) {
 function VisitorGlobe({ locations }: { locations: Array<{ latitude: number; longitude: number }> }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const scaleRef = useRef(1);
-  const targetScaleRef = useRef(1);
+  const pointerInteracting = useRef<number | null>(null);
+  const pointerInteractionMovement = useRef(0);
   const phiRef = useRef(0);
-  const globeRef = useRef<ReturnType<typeof createGlobe> | null>(null);
+  const scaleRef = useRef(1.1);
+  const targetScaleRef = useRef(1.1);
+  const focusRef = useRef<[number, number] | undefined>(undefined);
 
   const zoom = (direction: "in" | "out" | "reset") => {
-    if (direction === "in") targetScaleRef.current = Math.min(targetScaleRef.current + 0.3, 3);
-    else if (direction === "out") targetScaleRef.current = Math.max(targetScaleRef.current - 0.3, 0.5);
-    else targetScaleRef.current = 1;
+    if (direction === "in") targetScaleRef.current = Math.min(targetScaleRef.current + 0.25, 3);
+    else if (direction === "out") targetScaleRef.current = Math.max(targetScaleRef.current - 0.25, 0.6);
+    else targetScaleRef.current = 1.1;
   };
 
   useEffect(() => {
     if (!canvasRef.current) return;
 
     let width = 0;
-
     const onResize = () => {
-      if (containerRef.current) {
-        width = containerRef.current.offsetWidth;
-      }
+      if (containerRef.current) width = containerRef.current.offsetWidth;
     };
     window.addEventListener("resize", onResize);
     onResize();
+
+    // Pulsing marker sizes for animation
+    let markerFrame = 0;
 
     const globe = createGlobe(canvasRef.current, {
       devicePixelRatio: 2,
       width: width * 2,
       height: width * 2,
       phi: 0,
-      theta: 0.25,
+      theta: 0.3,
       dark: 1,
-      diffuse: 3,
-      mapSamples: 40000,
-      mapBrightness: 2.5,
-      baseColor: [0.05, 0.2, 0.4],
-      markerColor: [0.98, 0.31, 0.08],
-      glowColor: [0.1, 0.3, 0.5],
+      diffuse: 1.2,
+      mapSamples: 60000,
+      mapBrightness: 6,
+      // Google Earth-like realistic colors
+      baseColor: [0.1, 0.4, 0.2],      // Green landmass
+      markerColor: [1, 0.31, 0.05],     // Bright orange markers (#FB4F14)
+      glowColor: [0.15, 0.4, 0.7],      // Blue atmospheric glow
       markers: locations.map((v) => ({
         location: [v.latitude, v.longitude] as [number, number],
-        size: 0.07,
+        size: 0.08,
       })),
-      scale: 1,
       onRender: (state) => {
-        // Smooth zoom interpolation
-        scaleRef.current += (targetScaleRef.current - scaleRef.current) * 0.1;
-        state.phi = phiRef.current;
-        phiRef.current += 0.003;
+        // Smooth auto-rotation (stops when dragging)
+        if (!pointerInteracting.current) {
+          phiRef.current += 0.002;
+        }
+        state.phi = phiRef.current + pointerInteractionMovement.current;
         state.width = width * 2;
         state.height = width * 2;
-        (state as any).scale = scaleRef.current;
+
+        // Smooth zoom
+        scaleRef.current += (targetScaleRef.current - scaleRef.current) * 0.08;
+
+        // Pulsing markers
+        markerFrame++;
+        const pulse = 0.08 + Math.sin(markerFrame * 0.03) * 0.03;
+        state.markers = locations.map((v) => ({
+          location: [v.latitude, v.longitude] as [number, number],
+          size: pulse,
+        }));
       },
     });
-    globeRef.current = globe;
+
+    // Drag to rotate
+    const canvas = canvasRef.current;
+    const onPointerDown = (e: PointerEvent) => {
+      pointerInteracting.current = e.clientX - pointerInteractionMovement.current * 200;
+      canvas.style.cursor = "grabbing";
+    };
+    const onPointerUp = () => {
+      pointerInteracting.current = null;
+      canvas.style.cursor = "grab";
+    };
+    const onPointerOut = () => {
+      pointerInteracting.current = null;
+      canvas.style.cursor = "grab";
+    };
+    const onPointerMove = (e: PointerEvent) => {
+      if (pointerInteracting.current !== null) {
+        const delta = e.clientX - pointerInteracting.current;
+        pointerInteractionMovement.current = delta / 200;
+        phiRef.current = 0; // Reset auto-rotation base when dragging
+      }
+    };
+    const onWheel = (e: WheelEvent) => {
+      e.preventDefault();
+      if (e.deltaY < 0) zoom("in");
+      else zoom("out");
+    };
+
+    canvas.addEventListener("pointerdown", onPointerDown);
+    canvas.addEventListener("pointerup", onPointerUp);
+    canvas.addEventListener("pointerout", onPointerOut);
+    canvas.addEventListener("pointermove", onPointerMove);
+    canvas.addEventListener("wheel", onWheel, { passive: false });
+    canvas.style.cursor = "grab";
 
     return () => {
       globe.destroy();
       window.removeEventListener("resize", onResize);
+      canvas.removeEventListener("pointerdown", onPointerDown);
+      canvas.removeEventListener("pointerup", onPointerUp);
+      canvas.removeEventListener("pointerout", onPointerOut);
+      canvas.removeEventListener("pointermove", onPointerMove);
+      canvas.removeEventListener("wheel", onWheel);
     };
   }, [locations]);
 
@@ -140,26 +191,35 @@ function VisitorGlobe({ locations }: { locations: Array<{ latitude: number; long
       <div className="absolute bottom-4 right-4 flex flex-col gap-1.5">
         <button
           onClick={() => zoom("in")}
-          className="flex h-9 w-9 items-center justify-center rounded-lg bg-white/10 text-white backdrop-blur-sm hover:bg-white/20 transition-colors"
+          className="flex h-9 w-9 items-center justify-center rounded-lg bg-white/10 text-white backdrop-blur-sm hover:bg-white/20 transition-colors border border-white/10"
           title="Zoom In"
         >
           <ZoomIn className="h-4 w-4" />
         </button>
         <button
           onClick={() => zoom("out")}
-          className="flex h-9 w-9 items-center justify-center rounded-lg bg-white/10 text-white backdrop-blur-sm hover:bg-white/20 transition-colors"
+          className="flex h-9 w-9 items-center justify-center rounded-lg bg-white/10 text-white backdrop-blur-sm hover:bg-white/20 transition-colors border border-white/10"
           title="Zoom Out"
         >
           <ZoomOut className="h-4 w-4" />
         </button>
         <button
           onClick={() => zoom("reset")}
-          className="flex h-9 w-9 items-center justify-center rounded-lg bg-white/10 text-white backdrop-blur-sm hover:bg-white/20 transition-colors"
+          className="flex h-9 w-9 items-center justify-center rounded-lg bg-white/10 text-white backdrop-blur-sm hover:bg-white/20 transition-colors border border-white/10"
           title="Reset"
         >
           <RotateCcw className="h-4 w-4" />
         </button>
       </div>
+      {/* Location count overlay */}
+      {locations.length > 0 && (
+        <div className="absolute top-4 left-4 flex items-center gap-2 rounded-lg bg-black/40 backdrop-blur-sm px-3 py-1.5 border border-white/10">
+          <div className="h-2 w-2 rounded-full bg-[#FB4F14] animate-pulse" />
+          <span className="text-xs font-medium text-white/80">
+            {locations.length} live
+          </span>
+        </div>
+      )}
     </div>
   );
 }
@@ -273,7 +333,7 @@ export default function VisitorsPage() {
       </div>
 
       {/* Globe Section */}
-      <div className="rounded-2xl shadow-card overflow-hidden border border-surface-800" style={{ background: "radial-gradient(ellipse at 50% 0%, #0a2a4a 0%, #001428 50%, #000a14 100%)" }}>
+      <div className="rounded-2xl shadow-card overflow-hidden border border-surface-800" style={{ background: "radial-gradient(ellipse at 50% 30%, #071e33 0%, #020c17 40%, #000000 100%)" }}>
         <div className="pt-6 pb-2 px-6">
           <div className="flex items-center justify-center gap-2">
             <GlobeIcon className="h-4 w-4 text-[#FB4F14]" />
