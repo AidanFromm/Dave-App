@@ -1,11 +1,23 @@
 "use client";
 
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import createGlobe from "cobe";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Search, ZoomIn, ZoomOut, RotateCcw, Monitor, Smartphone, Tablet, Globe as GlobeIcon, MapPin, Clock, Eye } from "lucide-react";
+import { Search, ZoomIn, ZoomOut, RotateCcw, Monitor, Smartphone, Tablet, Globe as GlobeIcon, MapPin, Clock, Eye, Users, List, RefreshCw } from "lucide-react";
 
 type FilterPeriod = "1" | "7" | "30";
+type ViewMode = "activity" | "accounts";
+
+interface IPAccount {
+  ip: string;
+  city: string | null;
+  country: string | null;
+  device_type: string | null;
+  visits: number;
+  first_seen: string;
+  last_seen: string;
+  pages: string[];
+}
 
 interface Visitor {
   id: string;
@@ -161,6 +173,7 @@ export default function VisitorsPage() {
   const [page, setPage] = useState(0);
   const [total, setTotal] = useState(0);
   const [countrySearch, setCountrySearch] = useState("");
+  const [viewMode, setViewMode] = useState<ViewMode>("accounts");
   const searchTimeout = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   const fetchVisitors = useCallback(async (days: string, pg: number, country: string) => {
@@ -198,6 +211,38 @@ export default function VisitorsPage() {
       setPage(0);
     }, 300);
   };
+
+  // Group visitors by IP for accounts view
+  const ipAccounts = useMemo<IPAccount[]>(() => {
+    const map = new Map<string, IPAccount>();
+    for (const v of visitors) {
+      const key = v.ip || "unknown";
+      const existing = map.get(key);
+      if (existing) {
+        existing.visits++;
+        if (v.created_at > existing.last_seen) {
+          existing.last_seen = v.created_at;
+          existing.city = v.city || existing.city;
+          existing.country = v.country || existing.country;
+          existing.device_type = v.device_type || existing.device_type;
+        }
+        if (v.created_at < existing.first_seen) existing.first_seen = v.created_at;
+        if (v.page_path && !existing.pages.includes(v.page_path)) existing.pages.push(v.page_path);
+      } else {
+        map.set(key, {
+          ip: key,
+          city: v.city,
+          country: v.country,
+          device_type: v.device_type,
+          visits: 1,
+          first_seen: v.created_at,
+          last_seen: v.created_at,
+          pages: v.page_path ? [v.page_path] : [],
+        });
+      }
+    }
+    return Array.from(map.values()).sort((a, b) => new Date(b.last_seen).getTime() - new Date(a.last_seen).getTime());
+  }, [visitors]);
 
   const totalPages = Math.ceil(total / 50);
   const isTableLoading = loading || tableLoading;
@@ -321,10 +366,35 @@ export default function VisitorsPage() {
         )}
       </div>
 
-      {/* Visitor Log Table */}
+      {/* Visitor Table */}
       <div className="rounded-xl bg-card shadow-card overflow-hidden border border-surface-800">
+        {/* Table Header with View Toggle */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-surface-800">
-          <h2 className="text-sm font-semibold">Recent Visitors</h2>
+          <div className="flex items-center gap-2">
+            <div className="flex gap-0.5 rounded-lg bg-surface-800 p-0.5">
+              <button
+                onClick={() => setViewMode("accounts")}
+                className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
+                  viewMode === "accounts" ? "bg-primary text-white" : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                <Users className="h-3.5 w-3.5" />
+                IP Accounts
+              </button>
+              <button
+                onClick={() => setViewMode("activity")}
+                className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
+                  viewMode === "activity" ? "bg-primary text-white" : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                <List className="h-3.5 w-3.5" />
+                Activity Log
+              </button>
+            </div>
+            {viewMode === "accounts" && !isTableLoading && (
+              <span className="text-xs text-muted-foreground">{ipAccounts.length} unique IP{ipAccounts.length !== 1 ? "s" : ""}</span>
+            )}
+          </div>
           <div className="relative max-w-xs">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <input
@@ -338,70 +408,160 @@ export default function VisitorsPage() {
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-surface-800 text-left text-muted-foreground">
-                <th className="px-4 py-3 font-medium">IP Address</th>
-                <th className="px-4 py-3 font-medium">Location</th>
-                <th className="px-4 py-3 font-medium">Page</th>
-                <th className="px-4 py-3 font-medium">Device</th>
-                <th className="px-4 py-3 font-medium text-right">Time</th>
-              </tr>
-            </thead>
-            <tbody>
-              {isTableLoading ? (
-                Array.from({ length: 10 }).map((_, i) => (
-                  <tr key={i} className="border-b border-surface-800/50">
-                    {Array.from({ length: 5 }).map((_, j) => (
-                      <td key={j} className="px-4 py-3">
-                        <Skeleton className="h-4 w-20" />
-                      </td>
-                    ))}
-                  </tr>
-                ))
-              ) : visitors.length === 0 ? (
-                <tr>
-                  <td colSpan={5} className="px-4 py-16 text-center">
-                    <GlobeIcon className="h-10 w-10 mx-auto mb-3 text-muted-foreground/30" />
-                    <p className="text-muted-foreground font-medium">No visitors recorded yet</p>
-                    <p className="text-xs text-muted-foreground/60 mt-1">Visitors will appear here as they browse the store</p>
-                  </td>
+          {viewMode === "accounts" ? (
+            /* ─── IP Accounts View ─── */
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-surface-800 text-left text-muted-foreground">
+                  <th className="px-4 py-3 font-medium">IP Address</th>
+                  <th className="px-4 py-3 font-medium">Location</th>
+                  <th className="px-4 py-3 font-medium">Device</th>
+                  <th className="px-4 py-3 font-medium text-center">Visits</th>
+                  <th className="px-4 py-3 font-medium text-center">Pages</th>
+                  <th className="px-4 py-3 font-medium text-right">First Seen</th>
+                  <th className="px-4 py-3 font-medium text-right">
+                    <div className="flex items-center justify-end gap-1.5">
+                      <RefreshCw className="h-3 w-3" />
+                      Last Updated
+                    </div>
+                  </th>
                 </tr>
-              ) : (
-                visitors.map((v) => (
-                  <tr key={v.id} className="border-b border-surface-800/50 hover:bg-surface-800/30 transition-colors">
-                    <td className="px-4 py-3">
-                      <span className="font-mono text-xs bg-surface-800 px-2 py-1 rounded">{v.ip || "Unknown"}</span>
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-2">
-                        <span className="text-base">{getCountryFlag(v.country)}</span>
-                        <div>
-                          <p className="text-sm font-medium">{v.city || "Unknown"}</p>
-                          <p className="text-xs text-muted-foreground">{v.country || "Unknown"}</p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className="font-mono text-xs max-w-[200px] truncate block">{v.page_path || "/"}</span>
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-1.5 text-muted-foreground">
-                        {getDeviceIcon(v.device_type)}
-                        <span className="capitalize text-xs">{v.device_type || "Desktop"}</span>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      <div className="flex items-center justify-end gap-1.5 text-muted-foreground">
-                        <Clock className="h-3 w-3" />
-                        <span className="text-xs whitespace-nowrap">{timeAgo(v.created_at)}</span>
-                      </div>
+              </thead>
+              <tbody>
+                {isTableLoading ? (
+                  Array.from({ length: 10 }).map((_, i) => (
+                    <tr key={i} className="border-b border-surface-800/50">
+                      {Array.from({ length: 7 }).map((_, j) => (
+                        <td key={j} className="px-4 py-3"><Skeleton className="h-4 w-20" /></td>
+                      ))}
+                    </tr>
+                  ))
+                ) : ipAccounts.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} className="px-4 py-16 text-center">
+                      <GlobeIcon className="h-10 w-10 mx-auto mb-3 text-muted-foreground/30" />
+                      <p className="text-muted-foreground font-medium">No visitors recorded yet</p>
                     </td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+                ) : (
+                  ipAccounts.map((acc) => {
+                    const isRecent = Date.now() - new Date(acc.last_seen).getTime() < 5 * 60 * 1000;
+                    return (
+                      <tr key={acc.ip} className="border-b border-surface-800/50 hover:bg-surface-800/30 transition-colors">
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-2">
+                            {isRecent && <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse flex-shrink-0" title="Active now" />}
+                            <span className="font-mono text-xs bg-surface-800 px-2 py-1 rounded">{acc.ip}</span>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-2">
+                            <span className="text-base">{getCountryFlag(acc.country)}</span>
+                            <div>
+                              <p className="text-sm font-medium">{acc.city || "Unknown"}</p>
+                              <p className="text-xs text-muted-foreground">{acc.country || "Unknown"}</p>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-1.5 text-muted-foreground">
+                            {getDeviceIcon(acc.device_type)}
+                            <span className="capitalize text-xs">{acc.device_type || "Desktop"}</span>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 text-center">
+                          <span className={`inline-flex items-center justify-center min-w-[28px] px-1.5 py-0.5 rounded-full text-xs font-bold ${
+                            acc.visits >= 10 ? "bg-primary/20 text-primary" :
+                            acc.visits >= 5 ? "bg-blue-500/20 text-blue-400" :
+                            "bg-surface-800 text-muted-foreground"
+                          }`}>
+                            {acc.visits}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-center">
+                          <span className="text-xs text-muted-foreground">{acc.pages.length}</span>
+                        </td>
+                        <td className="px-4 py-3 text-right">
+                          <span className="text-xs text-muted-foreground whitespace-nowrap">{timeAgo(acc.first_seen)}</span>
+                        </td>
+                        <td className="px-4 py-3 text-right">
+                          <div className="flex items-center justify-end gap-1.5">
+                            <Clock className="h-3 w-3 text-muted-foreground" />
+                            <span className={`text-xs whitespace-nowrap ${isRecent ? "text-green-400 font-medium" : "text-muted-foreground"}`}>
+                              {timeAgo(acc.last_seen)}
+                            </span>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+          ) : (
+            /* ─── Activity Log View ─── */
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-surface-800 text-left text-muted-foreground">
+                  <th className="px-4 py-3 font-medium">IP Address</th>
+                  <th className="px-4 py-3 font-medium">Location</th>
+                  <th className="px-4 py-3 font-medium">Page</th>
+                  <th className="px-4 py-3 font-medium">Device</th>
+                  <th className="px-4 py-3 font-medium text-right">Time</th>
+                </tr>
+              </thead>
+              <tbody>
+                {isTableLoading ? (
+                  Array.from({ length: 10 }).map((_, i) => (
+                    <tr key={i} className="border-b border-surface-800/50">
+                      {Array.from({ length: 5 }).map((_, j) => (
+                        <td key={j} className="px-4 py-3"><Skeleton className="h-4 w-20" /></td>
+                      ))}
+                    </tr>
+                  ))
+                ) : visitors.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} className="px-4 py-16 text-center">
+                      <GlobeIcon className="h-10 w-10 mx-auto mb-3 text-muted-foreground/30" />
+                      <p className="text-muted-foreground font-medium">No visitors recorded yet</p>
+                    </td>
+                  </tr>
+                ) : (
+                  visitors.map((v) => (
+                    <tr key={v.id} className="border-b border-surface-800/50 hover:bg-surface-800/30 transition-colors">
+                      <td className="px-4 py-3">
+                        <span className="font-mono text-xs bg-surface-800 px-2 py-1 rounded">{v.ip || "Unknown"}</span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-2">
+                          <span className="text-base">{getCountryFlag(v.country)}</span>
+                          <div>
+                            <p className="text-sm font-medium">{v.city || "Unknown"}</p>
+                            <p className="text-xs text-muted-foreground">{v.country || "Unknown"}</p>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className="font-mono text-xs max-w-[200px] truncate block">{v.page_path || "/"}</span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-1.5 text-muted-foreground">
+                          {getDeviceIcon(v.device_type)}
+                          <span className="capitalize text-xs">{v.device_type || "Desktop"}</span>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 text-right">
+                        <div className="flex items-center justify-end gap-1.5 text-muted-foreground">
+                          <Clock className="h-3 w-3" />
+                          <span className="text-xs whitespace-nowrap">{timeAgo(v.created_at)}</span>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          )}
         </div>
 
         {/* Pagination */}
