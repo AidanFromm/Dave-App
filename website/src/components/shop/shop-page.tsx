@@ -86,6 +86,7 @@ export function ShopPage({ initialProducts, categories }: ShopPageProps) {
   const [priceMin, setPriceMin] = useState("");
   const [priceMax, setPriceMax] = useState("");
   const [brandFilter, setBrandFilter] = useState("");
+  const [pokemonTypeFilter, setPokemonTypeFilter] = useState<string[]>([]);
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const [sizeCategory, setSizeCategory] = useState<SizeCategory>("mens");
 
@@ -126,11 +127,12 @@ export function ShopPage({ initialProducts, categories }: ShopPageProps) {
     return Array.from(brands).sort();
   }, [initialProducts]);
 
-  const hasActiveFilters = conditionFilter.length > 0 || sizeFilter.length > 0 || priceMin || priceMax || brandFilter;
+  const hasActiveFilters = conditionFilter.length > 0 || sizeFilter.length > 0 || priceMin || priceMax || brandFilter || pokemonTypeFilter.length > 0;
 
   const activeFilterCount = [
     conditionFilter.length,
     sizeFilter.length,
+    pokemonTypeFilter.length,
     priceMin ? 1 : 0,
     priceMax ? 1 : 0,
     brandFilter ? 1 : 0,
@@ -139,6 +141,7 @@ export function ShopPage({ initialProducts, categories }: ShopPageProps) {
   const clearFilters = () => {
     setConditionFilter([]);
     setSizeFilter([]);
+    setPokemonTypeFilter([]);
     setPriceMin("");
     setPriceMax("");
     setBrandFilter("");
@@ -179,6 +182,18 @@ export function ShopPage({ initialProducts, categories }: ShopPageProps) {
     // Brand
     if (brandFilter) {
       products = products.filter((p) => p.brand === brandFilter);
+    }
+
+    // Pokemon type
+    if (pokemonTypeFilter.length > 0) {
+      products = products.filter((p) => {
+        const tags = p.tags?.map((t) => t.toLowerCase()) || [];
+        const name = p.name.toLowerCase();
+        if (pokemonTypeFilter.includes("sealed") && (tags.includes("sealed") || name.includes("booster") || name.includes("elite trainer") || name.includes("etb") || name.includes("box"))) return true;
+        if (pokemonTypeFilter.includes("graded") && (tags.includes("graded") || tags.includes("slab") || name.includes("psa") || name.includes("bgs") || name.includes("cgc") || name.includes("graded") || name.includes("slab"))) return true;
+        if (pokemonTypeFilter.includes("raw") && !tags.includes("graded") && !tags.includes("slab") && !tags.includes("sealed") && !name.includes("booster") && !name.includes("elite trainer") && !name.includes("etb")) return true;
+        return false;
+      });
     }
 
     // Condition
@@ -240,14 +255,14 @@ export function ShopPage({ initialProducts, categories }: ShopPageProps) {
     }
 
     return { products, sizesMap };
-  }, [initialProducts, tab, sort, debouncedSearch, brandFilter, pokemonCategoryId, conditionFilter, sizeFilter, priceMin, priceMax, dealProductIds]);
+  }, [initialProducts, tab, sort, debouncedSearch, brandFilter, pokemonCategoryId, conditionFilter, sizeFilter, priceMin, priceMax, dealProductIds, pokemonTypeFilter]);
 
   const filteredProducts = filterResult.products;
   const sizesByName = filterResult.sizesMap;
 
   // Reset page on filter change
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  useMemo(() => { setCurrentPage(1); }, [tab, sort, debouncedSearch, brandFilter, conditionFilter, sizeFilter, priceMin, priceMax]);
+  useMemo(() => { setCurrentPage(1); }, [tab, sort, debouncedSearch, brandFilter, conditionFilter, sizeFilter, priceMin, priceMax, pokemonTypeFilter]);
 
   const totalPages = Math.max(1, Math.ceil(filteredProducts.length / ITEMS_PER_PAGE));
   const safePage = Math.min(currentPage, totalPages);
@@ -256,8 +271,29 @@ export function ShopPage({ initialProducts, categories }: ShopPageProps) {
   /* Sidebar filter content */
   const FilterContent = () => (
     <div className="space-y-0">
-      {/* Condition (only for sneakers) */}
-      {tab !== "pokemon" && (
+      {/* Pokemon Type (only on Pokemon tab) */}
+      {tab === "pokemon" && (
+        <FilterSection title="Type">
+          <div className="space-y-2.5">
+            {[
+              { value: "sealed", label: "Sealed Product" },
+              { value: "raw", label: "Raw Cards" },
+              { value: "graded", label: "Slabs / Graded" },
+            ].map((opt) => (
+              <label key={opt.value} className="flex items-center gap-2.5 text-sm cursor-pointer group/label">
+                <Checkbox
+                  checked={pokemonTypeFilter.includes(opt.value)}
+                  onCheckedChange={() => toggleArray(pokemonTypeFilter, opt.value, setPokemonTypeFilter)}
+                />
+                <span className="text-neutral-600 group-hover/label:text-neutral-900 transition-colors">{opt.label}</span>
+              </label>
+            ))}
+          </div>
+        </FilterSection>
+      )}
+
+      {/* Condition (sneakers only) */}
+      {tab !== "pokemon" && tab !== "deals" && (
         <FilterSection title="Condition">
           <div className="space-y-2.5">
             {[{ value: "new", label: "New" }, { value: "used", label: "Preowned" }].map((opt) => (
@@ -273,19 +309,21 @@ export function ShopPage({ initialProducts, categories }: ShopPageProps) {
         </FilterSection>
       )}
 
-      {/* Brand dropdown */}
-      <FilterSection title="Brand">
-        <select
-          value={brandFilter}
-          onChange={(e) => setBrandFilter(e.target.value)}
-          className="w-full h-9 text-sm bg-neutral-50 border border-neutral-200 rounded-lg px-3 text-neutral-700 focus:outline-none focus:ring-2 focus:ring-[#FB4F14]/20 appearance-none cursor-pointer"
-        >
-          <option value="">All Brands</option>
-          {allBrands.map((b) => (
-            <option key={b} value={b}>{b}</option>
-          ))}
-        </select>
-      </FilterSection>
+      {/* Brand dropdown (sneakers only) */}
+      {tab !== "pokemon" && (
+        <FilterSection title="Brand">
+          <select
+            value={brandFilter}
+            onChange={(e) => setBrandFilter(e.target.value)}
+            className="w-full h-9 text-sm bg-neutral-50 border border-neutral-200 rounded-lg px-3 text-neutral-700 focus:outline-none focus:ring-2 focus:ring-[#FB4F14]/20 appearance-none cursor-pointer"
+          >
+            <option value="">All Brands</option>
+            {allBrands.map((b) => (
+              <option key={b} value={b}>{b}</option>
+            ))}
+          </select>
+        </FilterSection>
+      )}
 
       {/* Price Range */}
       <FilterSection title="Price">
@@ -314,8 +352,8 @@ export function ShopPage({ initialProducts, categories }: ShopPageProps) {
         </div>
       </FilterSection>
 
-      {/* Size (sneakers only) */}
-      {tab !== "pokemon" && (
+      {/* Size (sneakers only, not deals) */}
+      {tab !== "pokemon" && tab !== "deals" && (
         <FilterSection title="Size" defaultOpen={false}>
           <div className="flex flex-wrap gap-1 mb-3">
             {(Object.keys(SIZE_CATEGORIES) as SizeCategory[]).map((cat) => (
