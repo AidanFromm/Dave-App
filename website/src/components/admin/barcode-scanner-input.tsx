@@ -159,13 +159,19 @@ export function BarcodeScannerInput({
       const timeSinceLastKey = now - lastKeyTimeRef.current;
       lastKeyTimeRef.current = now;
 
+      // Only flag as rapid (barcode scanner) if keystrokes are <50ms apart
       if (timeSinceLastKey < 50 && newValue.length > 1) {
         isRapidInputRef.current = true;
+      } else if (timeSinceLastKey >= 50) {
+        // Human typing speed — reset rapid flag
+        isRapidInputRef.current = false;
       }
 
       const trimmed = newValue.trim();
       const isUpcLength = /^\d{12,13}$/.test(trimmed);
 
+      // Auto-submit ONLY for barcode scanner (rapid input) or UPC patterns
+      // Human typing must press Enter to submit
       if (isRapidInputRef.current || isUpcLength) {
         if (autoSubmitRef.current) clearTimeout(autoSubmitRef.current);
         const delay = isUpcLength ? 150 : 300;
@@ -175,6 +181,12 @@ export function BarcodeScannerInput({
           }
           isRapidInputRef.current = false;
         }, delay);
+      } else {
+        // Not rapid and not UPC — cancel any pending auto-submit
+        if (autoSubmitRef.current) {
+          clearTimeout(autoSubmitRef.current);
+          autoSubmitRef.current = null;
+        }
       }
     },
     [handleSubmit]

@@ -14,6 +14,7 @@ import { CartSyncProvider } from "@/components/providers/cart-sync-provider";
 import { HelpButton } from "@/components/shop/help-button";
 import VersionCheck from "@/components/VersionCheck";
 import { PasswordGate } from "@/components/PasswordGate";
+import { VisitorTracker } from "@/components/analytics/VisitorTracker";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -109,6 +110,7 @@ export default function RootLayout({
             <MetaPixel />
             <CookieConsent />
             <VersionCheck />
+            <VisitorTracker />
           </PasswordGate>
         </ThemeProvider>
       </body>
