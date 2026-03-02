@@ -76,7 +76,12 @@ export function ProductCard({ product, availableSizes }: ProductCardProps) {
               alt={product.name}
               fill
               sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
-              className="transition-transform duration-500 ease-out group-hover:scale-105 object-contain p-4 sm:p-5"
+              className={cn(
+                "transition-transform duration-500 ease-out group-hover:scale-105",
+                product.condition === "new"
+                  ? "object-contain p-4 sm:p-5"
+                  : "object-cover"
+              )}
             />
           </div>
         ) : (
