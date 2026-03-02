@@ -11,17 +11,23 @@ interface ImageUploadProps {
 }
 
 export function ImageUpload({ images, onChange, maxImages = 6 }: ImageUploadProps) {
-  const [uploadingSlot, setUploadingSlot] = useState<number | null>(null);
+  const [uploadingCount, setUploadingCount] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const uploadFile = useCallback(
-    async (file: File) => {
-      const slotIndex = images.length;
-      setUploadingSlot(slotIndex);
+  const uploadFiles = useCallback(
+    async (files: FileList | File[]) => {
+      const fileArray = Array.from(files);
+      const remaining = maxImages - images.length;
+      if (remaining <= 0) {
+        toast.error(`Maximum ${maxImages} images allowed`);
+        return;
+      }
+      const toUpload = fileArray.slice(0, remaining);
+      setUploadingCount(toUpload.length);
 
       try {
         const formData = new FormData();
-        formData.append("images", file);
+        toUpload.forEach((f) => formData.append("images", f));
 
         const res = await fetch("/api/upload/image", {
           method: "POST",
@@ -39,10 +45,10 @@ export function ImageUpload({ images, onChange, maxImages = 6 }: ImageUploadProp
       } catch {
         toast.error("Upload failed");
       } finally {
-        setUploadingSlot(null);
+        setUploadingCount(0);
       }
     },
-    [images, onChange]
+    [images, onChange, maxImages]
   );
 
   const removeImage = (index: number) => {
@@ -57,10 +63,10 @@ export function ImageUpload({ images, onChange, maxImages = 6 }: ImageUploadProp
     fileInputRef.current?.click();
   };
 
-  // Build slots: existing images + uploading placeholder + add button
+  // Build slots: existing images + uploading placeholders + add button
   const slots: ("image" | "uploading" | "add")[] = [];
   images.forEach(() => slots.push("image"));
-  if (uploadingSlot !== null) slots.push("uploading");
+  for (let u = 0; u < uploadingCount; u++) slots.push("uploading");
   if (slots.length < maxImages) slots.push("add");
 
   return (
@@ -97,7 +103,7 @@ export function ImageUpload({ images, onChange, maxImages = 6 }: ImageUploadProp
           if (type === "uploading") {
             return (
               <div
-                key="uploading"
+                key={`uploading-${i}`}
                 className="flex aspect-square items-center justify-center rounded-lg border-2 border-dashed border-border bg-muted/10"
               >
                 <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
@@ -126,11 +132,11 @@ export function ImageUpload({ images, onChange, maxImages = 6 }: ImageUploadProp
         ref={fileInputRef}
         type="file"
         accept="image/jpeg,image/png,image/webp"
+        multiple
         className="hidden"
         onChange={(e) => {
-          const file = e.target.files?.[0];
-          if (file) {
-            uploadFile(file);
+          if (e.target.files?.length) {
+            uploadFiles(e.target.files);
             e.target.value = "";
           }
         }}
