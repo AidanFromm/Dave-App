@@ -258,6 +258,19 @@ export default function VisitorsPage() {
       .finally(() => setLoading(false));
   }, [filter, fetchVisitors, countrySearch]);
 
+  // Auto-refresh every 30 seconds for live data
+  useEffect(() => {
+    const interval = setInterval(() => {
+      Promise.all([
+        fetch("/api/admin/visitors/stats").then((r) => r.json()),
+        fetchVisitors(filter, page, countrySearch),
+      ]).then(([statsData]) => {
+        setStats(statsData);
+      });
+    }, 30000);
+    return () => clearInterval(interval);
+  }, [filter, page, countrySearch, fetchVisitors]);
+
   const handlePageChange = (newPage: number) => {
     setPage(newPage);
     setTableLoading(true);

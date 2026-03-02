@@ -18,8 +18,8 @@ export function VisitorTracker() {
     // Don't track admin pages
     if (pathname?.startsWith("/admin")) return;
 
-    // Only fire once per session
-    const key = "visitor_tracked";
+    // Track once per page path per session
+    const key = `visitor_tracked_${pathname}`;
     if (typeof sessionStorage !== "undefined" && sessionStorage.getItem(key)) return;
 
     const track = async () => {
