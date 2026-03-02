@@ -33,6 +33,7 @@ import { formatCurrency }  from "@/lib/utils";
 import { CONDITION_LABELS, type ProductCondition } from "@/types/product";
 import { toast } from "sonner";
 import { ArrowLeft, Plus, Pencil, Package } from "lucide-react";
+import { ImageUpload } from "@/components/admin/image-upload";
 
 interface EditForm {
   price: string;
@@ -40,6 +41,7 @@ interface EditForm {
   quantity: string;
   condition: ProductCondition;
   size: string;
+  images: string[];
 }
 
 interface AddForm {
@@ -69,7 +71,7 @@ function ProductDetailPage() {
   // Edit state
   const [editingVariant, setEditingVariant] = useState<ProductVariant | null>(null);
   const [editForm, setEditForm] = useState<EditForm>({
-    price: "", cost: "", quantity: "", condition: "new", size: "",
+    price: "", cost: "", quantity: "", condition: "new", size: "", images: [],
   });
   const [saving, setSaving] = useState(false);
 
@@ -113,6 +115,7 @@ function ProductDetailPage() {
       quantity: String(variant.quantity),
       condition: variant.condition,
       size: variant.size ?? "",
+      images: variant.images ?? [],
     });
   };
 
@@ -126,6 +129,7 @@ function ProductDetailPage() {
         quantity: parseInt(editForm.quantity, 10),
         condition: editForm.condition,
         size: editForm.size || undefined,
+        images: editForm.images,
       });
       toast.success("Variant updated");
       setEditingVariant(null);
@@ -365,6 +369,18 @@ function ProductDetailPage() {
               <div>
                 <Label>Sell Price</Label>
                 <Input type="number" step="0.01" min={0} value={editForm.price} onChange={(e) => setEditForm({ ...editForm, price: e.target.value })} />
+              </div>
+            </div>
+
+            {/* Product Images */}
+            <div>
+              <Label>Product Images</Label>
+              <div className="mt-2">
+                <ImageUpload
+                  images={editForm.images}
+                  onChange={(imgs) => setEditForm({ ...editForm, images: imgs })}
+                  maxImages={6}
+                />
               </div>
             </div>
           </div>

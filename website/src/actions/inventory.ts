@@ -286,6 +286,7 @@ export async function updateProductVariant(
     quantity?: number;
     condition?: ProductCondition;
     size?: string;
+    images?: string[];
   }
 ) {
   const supabase = await createClient();
