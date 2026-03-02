@@ -4,12 +4,22 @@ import { useEffect, useState, useCallback, useMemo } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Product } from "@/types/product";
-import { getInventoryList } from "@/actions/admin";
+import { getInventoryList, deleteProductsByName } from "@/actions/admin";
 import { getInventoryStats, type InventoryStats } from "@/actions/inventory";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { formatCurrency } from "@/lib/utils";
 import { toast } from "sonner";
 import {
@@ -21,6 +31,8 @@ import {
   ArrowUpDown,
   ArrowUp,
   ArrowDown,
+  Pencil,
+  Trash2,
 } from "lucide-react";
 
 type CategoryFilter = "all" | "sneaker" | "pokemon";
@@ -41,15 +53,12 @@ interface GroupedRow {
 type SortField = "name" | "totalQuantity" | "totalValue";
 type SortDir = "asc" | "desc";
 
-// Only match pokemon via explicit tag or very specific multi-word keywords
-// Single words like "obsidian", "scarlet", "violet", "sword", "shield" match sneaker names
 const POKEMON_KEYWORDS_STRICT = [
   "pokemon", "pokémon", "pikachu", "charizard", "mewtwo",
   "booster box", "booster pack", "elite trainer box", "trainer box",
   "vmax", "vstar", "ex box",
 ];
 
-// These only match if product also has other pokemon signals
 const POKEMON_KEYWORDS_LOOSE = [
   "etb", "paldea", "obsidian flames", "scarlet & violet", "scarlet and violet",
   "prismatic evolutions", "surging sparks", "twilight masquerade",
@@ -62,20 +71,9 @@ const POKEMON_KEYWORDS_LOOSE = [
 function isPokemonProduct(name: string, tags: string[]): boolean {
   const lowerName = name.toLowerCase();
   const lowerTags = tags.map((t) => t.toLowerCase());
-
-  // Explicit pokemon tag is definitive
   if (lowerTags.includes("pokemon")) return true;
-
-  // Check strict keywords (unique to pokemon, won't match sneakers)
-  if (POKEMON_KEYWORDS_STRICT.some((kw) => lowerName.includes(kw) || lowerTags.some((t) => t.includes(kw)))) {
-    return true;
-  }
-
-  // Loose keywords only match by name (multi-word, more specific)
-  if (POKEMON_KEYWORDS_LOOSE.some((kw) => lowerName.includes(kw))) {
-    return true;
-  }
-
+  if (POKEMON_KEYWORDS_STRICT.some((kw) => lowerName.includes(kw) || lowerTags.some((t) => t.includes(kw)))) return true;
+  if (POKEMON_KEYWORDS_LOOSE.some((kw) => lowerName.includes(kw))) return true;
   return false;
 }
 
@@ -90,36 +88,16 @@ function classifyProductClient(product: Product): "sneaker" | "pokemon" | "other
   const tags = product.tags ?? [];
   const lowerTags = tags.map((t) => t.toLowerCase());
   const lowerName = product.name.toLowerCase();
-
-  // Explicit pokemon tag always wins
   if (lowerTags.includes("pokemon")) return "pokemon";
-
-  // Sneaker brand in name or brand field = sneaker (takes priority over ambiguous pokemon keywords)
   const lowerBrand = (product.brand || "").toLowerCase();
-  if (SNEAKER_BRANDS.some((brand) => lowerName.includes(brand) || lowerBrand.includes(brand))) {
-    return "sneaker";
-  }
-
-  // If product has sneaker-like attributes, classify as sneaker first
+  if (SNEAKER_BRANDS.some((brand) => lowerName.includes(brand) || lowerBrand.includes(brand))) return "sneaker";
   if (
     lowerTags.includes("sneaker") || lowerTags.includes("sneakers") ||
     lowerTags.includes("shoe") || lowerTags.includes("shoes") ||
     product.condition?.startsWith("used_")
-  ) {
-    return "sneaker";
-  }
-
+  ) return "sneaker";
   if (isPokemonProduct(product.name, tags)) return "pokemon";
-
-  if (
-    lowerTags.includes("sneaker") ||
-    lowerTags.includes("sneakers") ||
-    lowerTags.includes("shoe") ||
-    lowerTags.includes("shoes")
-  )
-    return "sneaker";
-
-  return "sneaker"; // default same as server
+  return "sneaker";
 }
 
 const PRIMARY_TABS: { value: CategoryFilter; label: string }[] = [
@@ -144,6 +122,8 @@ export default function InventoryPage() {
   const [conditionFilter, setConditionFilter] = useState<ConditionFilter>("all");
   const [sortField, setSortField] = useState<SortField>("name");
   const [sortDir, setSortDir] = useState<SortDir>("asc");
+  const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const fetchData = useCallback(async () => {
     try {
@@ -169,6 +149,21 @@ export default function InventoryPage() {
     setRefreshing(true);
     fetchData();
   }, [fetchData]);
+
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    try {
+      const result = await deleteProductsByName(deleteTarget);
+      toast.success(`Deleted ${result.count} product${result.count !== 1 ? "s" : ""}`);
+      setDeleteTarget(null);
+      fetchData();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Delete failed");
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   const grouped: GroupedRow[] = useMemo(() => {
     const groups = new Map<string, Product[]>();
@@ -216,48 +211,28 @@ export default function InventoryPage() {
 
   const filtered = useMemo(() => {
     let list = grouped;
-
-    // Category filter
-    if (activeFilter === "sneaker") {
-      list = list.filter((r) => r.category === "sneaker");
-    } else if (activeFilter === "pokemon") {
-      list = list.filter((r) => r.category === "pokemon");
-    }
-
-    // Condition sub-filter (only when a specific category is selected)
+    if (activeFilter === "sneaker") list = list.filter((r) => r.category === "sneaker");
+    else if (activeFilter === "pokemon") list = list.filter((r) => r.category === "pokemon");
     if (activeFilter !== "all" && conditionFilter !== "all") {
       list = list.filter((r) => r.conditions.has(conditionFilter));
     }
-
-    // Search
     if (search.trim()) {
       const q = search.toLowerCase();
       list = list.filter((r) => r.name.toLowerCase().includes(q));
     }
-
     return [...list].sort((a, b) => {
       let cmp = 0;
       switch (sortField) {
-        case "name":
-          cmp = a.name.localeCompare(b.name);
-          break;
-        case "totalQuantity":
-          cmp = a.totalQuantity - b.totalQuantity;
-          break;
-        case "totalValue":
-          cmp = a.totalValue - b.totalValue;
-          break;
+        case "name": cmp = a.name.localeCompare(b.name); break;
+        case "totalQuantity": cmp = a.totalQuantity - b.totalQuantity; break;
+        case "totalValue": cmp = a.totalValue - b.totalValue; break;
       }
       return sortDir === "asc" ? cmp : -cmp;
     });
   }, [grouped, search, activeFilter, conditionFilter, sortField, sortDir]);
 
   const filterCounts = useMemo(() => {
-    const counts: Record<CategoryFilter, number> = {
-      all: grouped.length,
-      sneaker: 0,
-      pokemon: 0,
-    };
+    const counts: Record<CategoryFilter, number> = { all: grouped.length, sneaker: 0, pokemon: 0 };
     grouped.forEach((r) => {
       if (r.category === "sneaker") counts.sneaker++;
       if (r.category === "pokemon") counts.pokemon++;
@@ -267,24 +242,40 @@ export default function InventoryPage() {
 
   const handleSort = (field: SortField) => {
     if (sortField === field) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
-    else {
-      setSortField(field);
-      setSortDir("asc");
-    }
+    else { setSortField(field); setSortDir("asc"); }
   };
 
   const SortIcon = ({ field }: { field: SortField }) => {
-    if (sortField !== field)
-      return <ArrowUpDown className="ml-1 h-3 w-3 opacity-40" />;
-    return sortDir === "asc" ? (
-      <ArrowUp className="ml-1 h-3 w-3" />
-    ) : (
-      <ArrowDown className="ml-1 h-3 w-3" />
-    );
+    if (sortField !== field) return <ArrowUpDown className="ml-1 h-3 w-3 opacity-40" />;
+    return sortDir === "asc" ? <ArrowUp className="ml-1 h-3 w-3" /> : <ArrowDown className="ml-1 h-3 w-3" />;
   };
+
+  const editHref = (name: string) => `/admin/products/detail?name=${encodeURIComponent(name)}`;
 
   return (
     <div className="space-y-8">
+      {/* Delete confirmation dialog */}
+      <AlertDialog open={!!deleteTarget} onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Product</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete all variants of &quot;{deleteTarget}&quot;. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDelete}
+              disabled={deleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleting ? "Deleting..." : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -293,15 +284,8 @@ export default function InventoryPage() {
             Manage product stock levels and inventory
           </p>
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={handleRefresh}
-          disabled={refreshing}
-        >
-          <RefreshCw
-            className={`mr-2 h-4 w-4 ${refreshing ? "animate-spin" : ""}`}
-          />
+        <Button variant="outline" size="sm" onClick={handleRefresh} disabled={refreshing}>
+          <RefreshCw className={`mr-2 h-4 w-4 ${refreshing ? "animate-spin" : ""}`} />
           Refresh
         </Button>
       </div>
@@ -311,38 +295,24 @@ export default function InventoryPage() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Unique Products
-              </CardTitle>
+              <CardTitle className="text-sm font-medium text-muted-foreground">Unique Products</CardTitle>
               <Layers className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
-            <CardContent>
-              <p className="text-2xl font-bold">{stats.totalProducts}</p>
-            </CardContent>
+            <CardContent><p className="text-2xl font-bold">{stats.totalProducts}</p></CardContent>
           </Card>
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Total Units
-              </CardTitle>
+              <CardTitle className="text-sm font-medium text-muted-foreground">Total Units</CardTitle>
               <Package className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
-            <CardContent>
-              <p className="text-2xl font-bold">{stats.totalUnits}</p>
-            </CardContent>
+            <CardContent><p className="text-2xl font-bold">{stats.totalUnits}</p></CardContent>
           </Card>
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Inventory Value
-              </CardTitle>
+              <CardTitle className="text-sm font-medium text-muted-foreground">Inventory Value</CardTitle>
               <DollarSign className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
-            <CardContent>
-              <p className="text-2xl font-bold">
-                {formatCurrency(stats.totalValue)}
-              </p>
-            </CardContent>
+            <CardContent><p className="text-2xl font-bold">{formatCurrency(stats.totalValue)}</p></CardContent>
           </Card>
         </div>
       )}
@@ -366,36 +336,23 @@ export default function InventoryPage() {
                 {PRIMARY_TABS.map((tab) => (
                   <button
                     key={tab.value}
-                    onClick={() => {
-                      setActiveFilter(tab.value);
-                      setConditionFilter("all");
-                    }}
+                    onClick={() => { setActiveFilter(tab.value); setConditionFilter("all"); }}
                     aria-label={`Filter by ${tab.label}`}
                     aria-pressed={activeFilter === tab.value}
-                    className={`
-                      px-3 py-1.5 text-sm font-medium rounded-md transition-all
-                      ${
-                        activeFilter === tab.value
-                          ? "bg-background text-foreground shadow-sm"
-                          : "text-muted-foreground hover:text-foreground"
-                      }
-                    `}
+                    className={`px-3 py-1.5 text-sm font-medium rounded-md transition-all ${
+                      activeFilter === tab.value
+                        ? "bg-background text-foreground shadow-sm"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
                   >
                     {tab.label}
-                    <span className="ml-1.5 text-xs opacity-60">
-                      {filterCounts[tab.value]}
-                    </span>
+                    <span className="ml-1.5 text-xs opacity-60">{filterCounts[tab.value]}</span>
                   </button>
                 ))}
               </div>
               <div className="relative max-w-sm flex-1">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search products..."
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  className="pl-9"
-                />
+                <Input placeholder="Search products..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
               </div>
             </div>
             {activeFilter !== "all" && (
@@ -406,14 +363,11 @@ export default function InventoryPage() {
                     onClick={() => setConditionFilter(tab.value)}
                     aria-label={`Filter by condition: ${tab.label}`}
                     aria-pressed={conditionFilter === tab.value}
-                    className={`
-                      px-2.5 py-1 text-xs font-medium rounded-full transition-all
-                      ${
-                        conditionFilter === tab.value
-                          ? "bg-background text-foreground shadow-sm"
-                          : "text-muted-foreground hover:text-foreground"
-                      }
-                    `}
+                    className={`px-2.5 py-1 text-xs font-medium rounded-full transition-all ${
+                      conditionFilter === tab.value
+                        ? "bg-background text-foreground shadow-sm"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
                   >
                     {tab.label}
                   </button>
@@ -428,112 +382,88 @@ export default function InventoryPage() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b bg-muted/50">
-                    <th className="px-5 py-4 text-left font-medium text-muted-foreground w-[100px]">
-                      Image
-                    </th>
+                    <th className="px-5 py-4 text-left font-medium text-muted-foreground w-[100px]">Image</th>
                     <th className="px-5 py-4 text-left font-medium text-muted-foreground">
-                      <button
-                        onClick={() => handleSort("name")}
-                        className="flex items-center hover:text-foreground transition-colors"
-                      >
+                      <button onClick={() => handleSort("name")} className="flex items-center hover:text-foreground transition-colors">
                         Product <SortIcon field="name" />
                       </button>
                     </th>
+                    <th className="px-5 py-4 text-left font-medium text-muted-foreground">Variants</th>
                     <th className="px-5 py-4 text-left font-medium text-muted-foreground">
-                      Variants
-                    </th>
-                    <th className="px-5 py-4 text-left font-medium text-muted-foreground">
-                      <button
-                        onClick={() => handleSort("totalQuantity")}
-                        className="flex items-center hover:text-foreground transition-colors"
-                      >
+                      <button onClick={() => handleSort("totalQuantity")} className="flex items-center hover:text-foreground transition-colors">
                         Total Qty <SortIcon field="totalQuantity" />
                       </button>
                     </th>
+                    <th className="px-5 py-4 text-left font-medium text-muted-foreground">Avg Cost</th>
+                    <th className="px-5 py-4 text-left font-medium text-muted-foreground">Sell Price</th>
                     <th className="px-5 py-4 text-left font-medium text-muted-foreground">
-                      Avg Cost
-                    </th>
-                    <th className="px-5 py-4 text-left font-medium text-muted-foreground">
-                      Sell Price
-                    </th>
-                    <th className="px-5 py-4 text-left font-medium text-muted-foreground">
-                      <button
-                        onClick={() => handleSort("totalValue")}
-                        className="flex items-center hover:text-foreground transition-colors"
-                      >
+                      <button onClick={() => handleSort("totalValue")} className="flex items-center hover:text-foreground transition-colors">
                         Value <SortIcon field="totalValue" />
                       </button>
                     </th>
+                    <th className="px-5 py-4 text-right font-medium text-muted-foreground w-[100px]">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {filtered.length === 0 ? (
                     <tr>
-                      <td
-                        colSpan={7}
-                        className="px-5 py-16 text-center text-muted-foreground"
-                      >
+                      <td colSpan={8} className="px-5 py-16 text-center text-muted-foreground">
                         <Package className="mx-auto h-8 w-8 mb-3 opacity-40" />
                         <p className="text-sm">No products found</p>
                       </td>
                     </tr>
                   ) : (
                     filtered.map((row) => (
-                      <Link
-                        key={row.name}
-                        href={`/admin/products/detail?name=${encodeURIComponent(row.name)}`}
-                        className="contents"
-                      >
-                        <tr className="border-b last:border-b-0 hover:bg-muted/20 transition-colors cursor-pointer">
-                          <td className="px-5 py-4 align-middle">
+                      <tr key={row.name} className="border-b last:border-b-0 hover:bg-muted/20 transition-colors">
+                        <td className="px-5 py-4 align-middle">
+                          <Link href={editHref(row.name)}>
                             {row.image ? (
                               <div className="w-[76px] h-[76px] rounded-xl bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 flex items-center justify-center p-2 shadow-sm border border-gray-100 dark:border-gray-700">
-                                <Image
-                                  src={row.image}
-                                  alt={row.name}
-                                  width={76}
-                                  height={76}
-                                  className="rounded-md object-contain w-full h-full mix-blend-multiply dark:mix-blend-normal"
-                                />
+                                <Image src={row.image} alt={row.name} width={76} height={76} className="rounded-md object-contain w-full h-full mix-blend-multiply dark:mix-blend-normal" />
                               </div>
                             ) : (
                               <div className="w-[76px] h-[76px] rounded-xl bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 flex items-center justify-center border border-gray-100 dark:border-gray-700">
                                 <Package className="h-6 w-6 text-muted-foreground/50" />
                               </div>
                             )}
-                          </td>
-                          <td className="px-5 py-4 align-middle">
-                            <span className="font-medium text-sm leading-tight">
-                              {row.name}
-                            </span>
-                          </td>
-                          <td className="px-5 py-4 align-middle text-muted-foreground">
-                            {row.variantCount}
-                          </td>
-                          <td className="px-5 py-4 align-middle">
-                            <span
-                              className={
-                                row.totalQuantity === 0
-                                  ? "text-destructive font-semibold"
-                                  : "font-medium"
-                              }
+                          </Link>
+                        </td>
+                        <td className="px-5 py-4 align-middle">
+                          <Link href={editHref(row.name)} className="font-medium text-sm leading-tight hover:underline">
+                            {row.name}
+                          </Link>
+                        </td>
+                        <td className="px-5 py-4 align-middle text-muted-foreground">{row.variantCount}</td>
+                        <td className="px-5 py-4 align-middle">
+                          <span className={row.totalQuantity === 0 ? "text-destructive font-semibold" : "font-medium"}>
+                            {row.totalQuantity}
+                          </span>
+                        </td>
+                        <td className="px-5 py-4 align-middle text-muted-foreground">
+                          {row.averageCost > 0 ? formatCurrency(row.averageCost) : "--"}
+                        </td>
+                        <td className="px-5 py-4 align-middle">{formatCurrency(row.sellPrice)}</td>
+                        <td className="px-5 py-4 align-middle font-medium">{formatCurrency(row.totalValue)}</td>
+                        <td className="px-5 py-4 align-middle">
+                          <div className="flex items-center justify-end gap-1">
+                            <Button variant="ghost" size="icon" className="h-8 w-8" asChild>
+                              <Link href={editHref(row.name)}>
+                                <Pencil className="h-4 w-4" />
+                                <span className="sr-only">Edit {row.name}</span>
+                              </Link>
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                              onClick={() => setDeleteTarget(row.name)}
                             >
-                              {row.totalQuantity}
-                            </span>
-                          </td>
-                          <td className="px-5 py-4 align-middle text-muted-foreground">
-                            {row.averageCost > 0
-                              ? formatCurrency(row.averageCost)
-                              : "--"}
-                          </td>
-                          <td className="px-5 py-4 align-middle">
-                            {formatCurrency(row.sellPrice)}
-                          </td>
-                          <td className="px-5 py-4 align-middle font-medium">
-                            {formatCurrency(row.totalValue)}
-                          </td>
-                        </tr>
-                      </Link>
+                              <Trash2 className="h-4 w-4" />
+                              <span className="sr-only">Delete {row.name}</span>
+                            </Button>
+                          </div>
+                        </td>
+                      </tr>
                     ))
                   )}
                 </tbody>
@@ -550,27 +480,22 @@ export default function InventoryPage() {
               </div>
             ) : (
               filtered.map((row) => (
-                <Link
+                <div
                   key={row.name}
-                  href={`/admin/products/detail?name=${encodeURIComponent(row.name)}`}
-                  className="flex items-center gap-3 rounded-xl border border-border/50 bg-card p-3 hover:bg-muted/20 transition-colors"
+                  className="flex items-center gap-3 rounded-xl border border-border/50 bg-card p-3"
                 >
-                  {row.image ? (
-                    <div className="w-14 h-14 rounded-lg bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 flex items-center justify-center p-1 border border-gray-100 dark:border-gray-700 flex-shrink-0">
-                      <Image
-                        src={row.image}
-                        alt={row.name}
-                        width={56}
-                        height={56}
-                        className="rounded object-contain w-full h-full mix-blend-multiply dark:mix-blend-normal"
-                      />
-                    </div>
-                  ) : (
-                    <div className="w-14 h-14 rounded-lg bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 flex items-center justify-center border border-gray-100 dark:border-gray-700 flex-shrink-0">
-                      <Package className="h-5 w-5 text-muted-foreground/50" />
-                    </div>
-                  )}
-                  <div className="flex-1 min-w-0">
+                  <Link href={editHref(row.name)} className="flex-shrink-0">
+                    {row.image ? (
+                      <div className="w-14 h-14 rounded-lg bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 flex items-center justify-center p-1 border border-gray-100 dark:border-gray-700">
+                        <Image src={row.image} alt={row.name} width={56} height={56} className="rounded object-contain w-full h-full mix-blend-multiply dark:mix-blend-normal" />
+                      </div>
+                    ) : (
+                      <div className="w-14 h-14 rounded-lg bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 flex items-center justify-center border border-gray-100 dark:border-gray-700">
+                        <Package className="h-5 w-5 text-muted-foreground/50" />
+                      </div>
+                    )}
+                  </Link>
+                  <Link href={editHref(row.name)} className="flex-1 min-w-0">
                     <p className="text-sm font-medium line-clamp-1">{row.name}</p>
                     <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
                       <span>{row.variantCount} variant{row.variantCount !== 1 ? "s" : ""}</span>
@@ -586,8 +511,23 @@ export default function InventoryPage() {
                       </span>
                       <span className="text-sm font-medium">{formatCurrency(row.totalValue)}</span>
                     </div>
+                  </Link>
+                  <div className="flex flex-col gap-1 flex-shrink-0">
+                    <Button variant="ghost" size="icon" className="h-9 w-9" asChild>
+                      <Link href={editHref(row.name)}>
+                        <Pencil className="h-4 w-4" />
+                      </Link>
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-9 w-9 text-destructive hover:text-destructive hover:bg-destructive/10"
+                      onClick={() => setDeleteTarget(row.name)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
                   </div>
-                </Link>
+                </div>
               ))
             )}
           </div>

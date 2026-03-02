@@ -333,3 +333,25 @@ export async function deleteProduct(productId: string) {
 
   return { success: true };
 }
+
+export async function deleteProductsByName(productName: string) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Unauthorized");
+
+  const { data: matches } = await supabase
+    .from("products")
+    .select("id")
+    .ilike("name", productName);
+
+  if (!matches || matches.length === 0) throw new Error("No products found");
+
+  const { error } = await supabase
+    .from("products")
+    .delete()
+    .in("id", matches.map((m) => m.id));
+
+  if (error) throw new Error(error.message);
+
+  return { success: true, count: matches.length };
+}
