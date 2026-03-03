@@ -19,43 +19,34 @@ export function VisitorTracker() {
     if (pathname?.startsWith("/admin")) return;
 
     // Track once per page path per session
-    const key = `visitor_tracked_${pathname}`;
-    if (typeof sessionStorage !== "undefined" && sessionStorage.getItem(key)) return;
+    const key = `vt_${pathname}`;
+    try {
+      if (sessionStorage.getItem(key)) return;
+    } catch {
+      // sessionStorage not available
+    }
 
     const track = async () => {
       try {
-        // Get IP
-        const ipRes = await fetch("https://api.ipify.org?format=json");
-        const { ip } = await ipRes.json();
-
-        // Get geo data
-        const geoRes = await fetch(`https://ipapi.co/${ip}/json/`);
-        const geo = await geoRes.json();
-
         await fetch("/api/visitors/log", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            ip,
-            city: geo.city || null,
-            country: geo.country_name || null,
-            region: geo.region || null,
-            latitude: geo.latitude || null,
-            longitude: geo.longitude || null,
             page_path: pathname || "/",
-            user_agent: navigator.userAgent,
             device_type: getDeviceType(),
             referrer: document.referrer || null,
+            screen_width: window.screen.width,
           }),
         });
-
-        sessionStorage.setItem(key, "1");
+        try { sessionStorage.setItem(key, "1"); } catch {}
       } catch {
-        // Fire and forget — don't break the site
+        // Fire and forget
       }
     };
 
-    track();
+    // Small delay so it doesn't block initial render
+    const t = setTimeout(track, 1000);
+    return () => clearTimeout(t);
   }, [pathname]);
 
   return null;
