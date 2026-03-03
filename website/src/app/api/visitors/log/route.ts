@@ -39,7 +39,6 @@ export async function POST(request: NextRequest) {
       page_path: body.page_path || "/",
       user_agent: request.headers.get("user-agent") || null,
       device_type: deviceType,
-      referrer: body.referrer || request.headers.get("referer") || null,
     });
 
     if (error) {
