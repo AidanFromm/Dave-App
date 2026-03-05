@@ -20,6 +20,7 @@ import {
   Store,
   MessageSquare,
   Globe,
+  Radio,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -37,6 +38,7 @@ const NAV_SECTIONS = [
     label: "Store",
     items: [
       { href: "/admin/scan", label: "Scan In", icon: ScanBarcode },
+      { href: "/admin/scanner", label: "Live Scanner", icon: Radio },
       { href: "/admin/pos", label: "Point of Sale", icon: Store },
       { href: "/admin/drops", label: "Daily Deals", icon: Flame },
       { href: "/admin/discounts", label: "Discount Codes", icon: Tag },
