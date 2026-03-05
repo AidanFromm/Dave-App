@@ -15,7 +15,7 @@ import { useDebounce } from "@/hooks/use-debounce";
 import { cn } from "@/lib/utils";
 import { Pagination } from "@/components/ui/pagination";
 
-const ITEMS_PER_PAGE = 24;
+const ITEMS_PER_PAGE = 60;
 
 /* Clean category tabs */
 type CategoryTab = "all" | "sneakers" | "pokemon" | "deals";
