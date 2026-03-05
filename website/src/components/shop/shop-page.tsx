@@ -293,6 +293,27 @@ export function ShopPage({ initialProducts, categories }: ShopPageProps) {
         </FilterSection>
       )}
 
+      {/* Quick Price Filter */}
+      <FilterSection title="Quick Filter">
+        <button
+          onClick={() => {
+            if (priceMax === "100" && !priceMin) {
+              setPriceMax("");
+            } else {
+              setPriceMin("");
+              setPriceMax("100");
+            }
+          }}
+          className={`w-full h-10 text-sm font-medium rounded-lg border transition-all duration-200 ${
+            priceMax === "100" && !priceMin
+              ? "bg-neutral-900 text-white border-neutral-900 shadow-sm"
+              : "bg-neutral-50 text-neutral-700 border-neutral-200 hover:border-neutral-300 hover:bg-neutral-100"
+          }`}
+        >
+          Under $100
+        </button>
+      </FilterSection>
+
       {/* Condition (sneakers only) */}
       {tab !== "pokemon" && tab !== "deals" && (
         <FilterSection title="Condition">
