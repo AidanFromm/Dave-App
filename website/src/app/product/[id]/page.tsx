@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { getProduct, getProductSizeVariants, getRelatedProducts, getCategoryForProduct } from "@/actions/products";
 import { getVariantsForProduct } from "@/actions/variants";
 import { ProductDetailClient } from "./product-detail-client";
+import { ProductJsonLd, BreadcrumbJsonLd } from "@/components/seo/json-ld";
 import { formatCurrency } from "@/types/product";
 
 interface Props {
@@ -14,16 +15,29 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const product = await getProduct(id);
   if (!product) return { title: "Product Not Found" };
 
+  const description =
+    product.description ??
+    `Shop ${product.name}${product.brand ? ` by ${product.brand}` : ""} — ${formatCurrency(product.price)} at Secured Tampa. ${product.condition === "new" ? "Brand new" : "Authenticated"} with free shipping.`;
+
   return {
     title: product.name,
-    description:
-      product.description ??
-      `${product.name} — ${formatCurrency(product.price)} at Secured Tampa`,
+    description,
+    alternates: {
+      canonical: `https://securedtampa.com/product/${id}`,
+    },
     openGraph: {
+      title: `${product.name} | Secured Tampa`,
+      description,
+      url: `https://securedtampa.com/product/${id}`,
+      images: product.images?.[0]
+        ? [{ url: product.images[0], width: 600, height: 600, alt: product.name }]
+        : [],
+      type: "website",
+    },
+    twitter: {
+      card: "summary_large_image",
       title: product.name,
-      description:
-        product.description ??
-        `${product.name} — ${formatCurrency(product.price)}`,
+      description,
       images: product.images?.[0] ? [product.images[0]] : [],
     },
   };
@@ -56,12 +70,24 @@ export default async function ProductPage({ params }: Props) {
   ]);
 
   return (
-    <ProductDetailClient
-      product={product}
-      sizeVariants={sizeVariants}
-      dbVariants={dbVariants}
-      category={category}
-      relatedProducts={relatedProducts}
-    />
+    <>
+      <ProductJsonLd product={product} />
+      <BreadcrumbJsonLd
+        items={[
+          { name: "Home", url: "https://securedtampa.com" },
+          ...(category
+            ? [{ name: category.name, url: `https://securedtampa.com/?category=${category.id}` }]
+            : []),
+          { name: product.name, url: `https://securedtampa.com/product/${product.id}` },
+        ]}
+      />
+      <ProductDetailClient
+        product={product}
+        sizeVariants={sizeVariants}
+        dbVariants={dbVariants}
+        category={category}
+        relatedProducts={relatedProducts}
+      />
+    </>
   );
 }
