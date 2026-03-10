@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { STOCKX_AUTH_URL, STOCKX_REDIRECT_URI, STOCKX_AUDIENCE } from "@/lib/constants";
 
-const STOCKX_CLIENT_ID = process.env.STOCKX_CLIENT_ID || "CQN5rKVX2haC1VWcRH1uAAFiWsQuHv7h";
+const STOCKX_CLIENT_ID = process.env.STOCKX_CLIENT_ID!;
 
 export async function GET() {
   const state = crypto.randomUUID();

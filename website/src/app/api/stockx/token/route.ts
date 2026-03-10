@@ -3,8 +3,8 @@ import { cookies } from "next/headers";
 import { STOCKX_TOKEN_URL, STOCKX_REDIRECT_URI } from "@/lib/constants";
 import { saveStockXTokens } from "@/lib/stockx";
 
-const STOCKX_CLIENT_ID = process.env.STOCKX_CLIENT_ID || "CQN5rKVX2haC1VWcRH1uAAFiWsQuHv7h";
-const STOCKX_CLIENT_SECRET = process.env.STOCKX_CLIENT_SECRET || "aw7KR2ZbGlY43sG84yf11UDYfAVGAgkYhad317ll-fU32lm-O75jmYaimw-oVpO4";
+const STOCKX_CLIENT_ID = process.env.STOCKX_CLIENT_ID!;
+const STOCKX_CLIENT_SECRET = process.env.STOCKX_CLIENT_SECRET!;
 
 export async function POST(request: Request) {
   const body = await request.json();

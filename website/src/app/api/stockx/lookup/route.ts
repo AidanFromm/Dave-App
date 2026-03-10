@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-const STOCKX_API_KEY = process.env.STOCKX_API_KEY || "SQijlNY3Vl1QtyztWOb2R5cKdzyTvi272fpepFH6";
+const STOCKX_API_KEY = process.env.STOCKX_API_KEY!;
 
 // Lookup a product by barcode/UPC via StockX
 export async function GET(request: Request) {
