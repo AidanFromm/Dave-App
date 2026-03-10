@@ -1,7 +1,11 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { requireAdmin } from "@/lib/admin-auth";
 
 export async function GET(request: Request) {
+  const auth = await requireAdmin();
+  if (auth.error) return auth.error;
+
   const { searchParams } = new URL(request.url);
   const days = parseInt(searchParams.get("days") || "1", 10);
   const page = parseInt(searchParams.get("page") || "0", 10);
