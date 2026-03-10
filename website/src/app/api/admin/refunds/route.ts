@@ -5,10 +5,11 @@ import { requireAdmin } from "@/lib/admin-auth";
 import { Resend } from "resend";
 import { refundEmail } from "@/lib/email-templates";
 
-const resend = new Resend(
-  process.env.RESEND_API_KEY!
-);
 const FROM = "Secured Tampa <orders@securedtampa.com>";
+
+function getResend() {
+  return new Resend(process.env.RESEND_API_KEY!);
+}
 
 export async function POST(request: Request) {
   try {
@@ -113,7 +114,7 @@ export async function POST(request: Request) {
           isFullRefund,
           reason: reason || undefined,
         });
-        await resend.emails.send({
+        await getResend().emails.send({
           from: FROM,
           to: order.customer_email,
           subject: emailContent.subject,
