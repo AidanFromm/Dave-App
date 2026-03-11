@@ -43,9 +43,11 @@ export function ProductCard({ product, availableSizes }: ProductCardProps) {
     : product.quantity <= 0;
   const [isHovered, setIsHovered] = useState(false);
 
-  const isPokemon = product.brand?.toLowerCase() === "pokemon tcg" || 
+  const isPokemon = product.brand?.toLowerCase() === "pokemon tcg" ||
     product.name.toLowerCase().includes("pokemon") ||
     product.tags?.some((t) => t.toLowerCase().includes("pokemon"));
+  const isPSA = product.tags?.some((t) => t.toLowerCase() === "psa");
+  const psaGrade = product.tags?.find((t) => /^psa-\d+/i.test(t))?.replace("psa-", "") ?? null;
   const isUsed = product.condition !== "new";
 
   const handleQuickAdd = (e: React.MouseEvent) => {
@@ -124,6 +126,16 @@ export function ProductCard({ product, availableSizes }: ProductCardProps) {
           {product.inventory_location === "warehouse" && (
             <span className="bg-[#002244]/80 text-white text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-md shadow-sm backdrop-blur-sm">
               Ships Direct
+            </span>
+          )}
+          {isPSA && psaGrade && (
+            <span className={cn(
+              "text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-md shadow-sm",
+              psaGrade === "10"
+                ? "bg-red-700 text-white"
+                : "bg-blue-700 text-white"
+            )}>
+              PSA {psaGrade}
             </span>
           )}
         </div>

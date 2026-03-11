@@ -78,6 +78,10 @@ export function ProductDetailClient({ product: initialProduct, sizeVariants = []
   const isPokemon = product.brand?.toLowerCase() === "pokemon tcg" ||
     product.name.toLowerCase().includes("pokemon") ||
     product.tags?.some((t) => t.toLowerCase().includes("pokemon"));
+  const isPSA = product.tags?.some((t) => t.toLowerCase() === "psa");
+  const psaGrade = product.tags?.find((t) => /^psa-\d+/i.test(t))?.replace("psa-", "") ?? null;
+  const psaCertMatch = product.description?.match(/cert\s*#?\s*(\d{6,})/i);
+  const psaCertNumber = psaCertMatch?.[1] ?? null;
   const discount = discountPercentage(product);
   const newDrop = isNewDrop(product);
   const stockStatus = getStockStatus(product);
@@ -252,7 +256,36 @@ export function ProductDetailClient({ product: initialProduct, sizeVariants = []
                 SOLD OUT
               </span>
             )}
+            {isPSA && psaGrade && (
+              <span className={cn(
+                "inline-flex items-center gap-1 text-xs font-bold uppercase px-2.5 py-1 rounded",
+                psaGrade === "10"
+                  ? "bg-red-700 text-white"
+                  : "bg-blue-700 text-white"
+              )}>
+                <Shield className="h-3 w-3" />
+                PSA {psaGrade}
+              </span>
+            )}
           </motion.div>
+
+          {/* PSA Certification Info */}
+          {isPSA && psaCertNumber && (
+            <motion.div variants={fadeIn} className="mt-3 flex items-center gap-3 rounded-lg bg-amber-500/10 border border-amber-500/20 px-4 py-2.5">
+              <Shield className="h-5 w-5 text-amber-500 shrink-0" />
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-semibold text-amber-600 dark:text-amber-400">PSA Certified — Cert #{psaCertNumber}</p>
+              </div>
+              <a
+                href={`https://www.psacard.com/cert/${psaCertNumber}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs font-bold text-primary hover:underline shrink-0"
+              >
+                Verify on PSA →
+              </a>
+            </motion.div>
+          )}
 
           {/* Price */}
           <motion.div variants={fadeIn} className="mt-5 flex items-baseline gap-3">
