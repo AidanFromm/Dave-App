@@ -21,6 +21,7 @@ import {
   MessageSquare,
   Globe,
   Radio,
+  Shield,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -37,6 +38,7 @@ const NAV_SECTIONS = [
   {
     label: "Store",
     items: [
+      { href: "/admin/pokemon", label: "Pokemon / PSA", icon: Shield },
       { href: "/admin/scan", label: "Scan In", icon: ScanBarcode },
       { href: "/admin/scanner", label: "Live Scanner", icon: Radio },
       { href: "/admin/pos", label: "Point of Sale", icon: Store },
