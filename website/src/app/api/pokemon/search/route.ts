@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 const POKEMON_TCG_API = "https://api.pokemontcg.io/v2/cards";
 const API_KEY = process.env.POKEMON_TCG_API_KEY || "";
 
-async function fetchWithRetry(url: string, headers: Record<string, string>, retries = 2): Promise<Response> {
+async function fetchWithRetry(url: string, headers: Record<string, string>, retries = 3): Promise<Response> {
   for (let i = 0; i <= retries; i++) {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 25000);
@@ -11,6 +11,12 @@ async function fetchWithRetry(url: string, headers: Record<string, string>, retr
       const res = await fetch(url, { headers, signal: controller.signal });
       clearTimeout(timeout);
       if (res.ok) return res;
+      if (res.status === 429) {
+        // Rate limited — wait and retry
+        const delay = Math.min(2000 * (i + 1), 8000);
+        await new Promise(r => setTimeout(r, delay));
+        continue;
+      }
       if (i === retries) return res;
     } catch {
       clearTimeout(timeout);
