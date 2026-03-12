@@ -105,6 +105,7 @@ function PSALookupTab() {
   const [matchedCards, setMatchedCards] = useState<PokemonCard[]>([]);
   const [selectedCard, setSelectedCard] = useState<PokemonCard | null>(null);
   const [price, setPrice] = useState("");
+  const [cost, setCost] = useState("");
   const [adding, setAdding] = useState(false);
   const [slabDataUrl, setSlabDataUrl] = useState<string>("");
   const [error, setError] = useState("");
@@ -241,6 +242,7 @@ function PSALookupTab() {
         brand: "Pokemon TCG",
         condition: "new",
         price: parseFloat(price),
+        cost: cost ? parseFloat(cost) : null,
         quantity: 1,
         images,
         tags,
@@ -262,6 +264,7 @@ function PSALookupTab() {
       setCardImage("");
       setCardImageLarge("");
       setPrice("");
+      setCost("");
       setSlabDataUrl("");
     } catch (err) {
       toast.error(
@@ -402,8 +405,28 @@ function PSALookupTab() {
                   <ShoppingBag className="h-5 w-5 text-primary" />
                   Add to Inventory
                 </h3>
-                <div className="flex gap-3 items-end">
-                  <div className="flex-1 max-w-[200px]">
+                <div className="flex flex-wrap gap-3 items-end">
+                  <div className="w-[160px]">
+                    <Label htmlFor="cost" className="text-sm mb-1.5 block">
+                      Cost
+                    </Label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+                        $
+                      </span>
+                      <Input
+                        id="cost"
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        placeholder="0.00"
+                        value={cost}
+                        onChange={(e) => setCost(e.target.value)}
+                        className="pl-7"
+                      />
+                    </div>
+                  </div>
+                  <div className="w-[160px]">
                     <Label htmlFor="price" className="text-sm mb-1.5 block">
                       Selling Price
                     </Label>
@@ -532,6 +555,7 @@ function PSALookupTab() {
 
 interface SealedFormState {
   name: string;
+  cost: string;
   price: string;
   quantity: string;
   image: string;
@@ -544,6 +568,7 @@ function SealedProductsTab() {
   const [selectedCard, setSelectedCard] = useState<PokemonCard | null>(null);
   const [form, setForm] = useState<SealedFormState>({
     name: "",
+    cost: "",
     price: "",
     quantity: "1",
     image: "",
@@ -612,6 +637,7 @@ function SealedProductsTab() {
         description: `${productName}\nSealed Pokemon TCG product.`,
         brand: "Pokemon TCG",
         condition: "new",
+        cost: form.cost ? parseFloat(form.cost) : null,
         price: parseFloat(form.price),
         quantity: parseInt(form.quantity) || 1,
         images,
@@ -627,7 +653,7 @@ function SealedProductsTab() {
       if (result.error) throw new Error(result.error);
 
       toast.success(`Published: ${productName}`);
-      setForm({ name: "", price: "", quantity: "1", image: "" });
+      setForm({ name: "", cost: "", price: "", quantity: "1", image: "" });
       setSelectedCard(null);
     } catch (err) {
       toast.error(
@@ -756,7 +782,20 @@ function SealedProductsTab() {
                   placeholder="Product name"
                 />
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <Label className="text-sm mb-1 block">Cost ($)</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={form.cost}
+                    onChange={(e) =>
+                      setForm((f) => ({ ...f, cost: e.target.value }))
+                    }
+                    placeholder="0.00"
+                  />
+                </div>
                 <div>
                   <Label className="text-sm mb-1 block">Price ($)</Label>
                   <Input
