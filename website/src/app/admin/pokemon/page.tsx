@@ -145,12 +145,18 @@ function PSALookupTab() {
         .trim();
       if (searchName) {
         try {
+          // Pass PSA variety/set info so search can rank the best match
+          const params = new URLSearchParams({ q: searchName });
+          if (cd.variety) params.set("set", cd.variety);
+
           const tcgRes = await fetch(
-            `/api/pokemon/search?q=${encodeURIComponent(searchName)}`
+            `/api/pokemon/search?${params.toString()}`
           );
           if (tcgRes.ok) {
             const tcgData = await tcgRes.json();
-            const cards = tcgData.cards as PokemonCard[];
+            const cards = (tcgData.cards as PokemonCard[]).filter(
+              (c) => c.imageSmall || c.imageLarge
+            );
             setMatchedCards(cards);
 
             if (cards.length > 0) {

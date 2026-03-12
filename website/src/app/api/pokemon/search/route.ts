@@ -30,6 +30,7 @@ interface CardResult {
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const query = searchParams.get("q");
+  const setHint = searchParams.get("set") || ""; // e.g. "FUSION STRIKE-SECRET"
 
   if (!query) {
     return NextResponse.json({ error: "Query required" }, { status: 400 });
@@ -39,7 +40,7 @@ export async function GET(request: Request) {
 
   try {
     // Strategy 1: CardLedger Supabase (instant, free, has 120K+ cards)
-    const clCards = await searchCardLedger(trimmed);
+    const clCards = await searchCardLedger(trimmed, setHint);
     if (clCards && clCards.length > 0) {
       return NextResponse.json({
         cards: clCards,
@@ -75,10 +76,10 @@ export async function GET(request: Request) {
   }
 }
 
-async function searchCardLedger(query: string): Promise<CardResult[] | null> {
+async function searchCardLedger(query: string, setHint: string = ""): Promise<CardResult[] | null> {
   try {
-    // Search by name using Supabase text search
-    const url = `${CARDLEDGER_URL}/rest/v1/products?game=eq.pokemon&name=ilike.*${encodeURIComponent(query)}*&select=id,name,set_name,image_url,market_price,card_number,rarity,category&order=market_price.desc.nullslast&limit=20`;
+    // Search by name — fetch extra results so we can filter/rank
+    const url = `${CARDLEDGER_URL}/rest/v1/products?game=eq.pokemon&image_url=not.is.null&name=ilike.*${encodeURIComponent(query)}*&select=id,name,set_name,image_url,market_price,card_number,rarity,category&limit=50`;
 
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 5000);
@@ -98,17 +99,35 @@ async function searchCardLedger(query: string): Promise<CardResult[] | null> {
     const data = await res.json();
     if (!Array.isArray(data) || data.length === 0) return null;
 
-    // Sort: cards WITH images first, then by price
+    // Parse set hint keywords from PSA variety (e.g. "FUSION STRIKE-SECRET" → ["fusion", "strike"])
+    const setKeywords = setHint
+      .toLowerCase()
+      .replace(/[^a-z0-9\s]/g, " ")
+      .split(/\s+/)
+      .filter((w) => w.length > 2 && !["the", "secret", "holo", "rare"].includes(w));
+
+    // Score and sort: set match > has image > price
     data.sort((a: Record<string, unknown>, b: Record<string, unknown>) => {
-      const aHasImg = a.image_url ? 1 : 0;
-      const bHasImg = b.image_url ? 1 : 0;
-      if (bHasImg !== aHasImg) return bHasImg - aHasImg;
+      const aSet = ((a.set_name as string) || "").toLowerCase();
+      const bSet = ((b.set_name as string) || "").toLowerCase();
+      
+      // Count how many set keywords match
+      const aSetMatch = setKeywords.filter((kw) => aSet.includes(kw)).length;
+      const bSetMatch = setKeywords.filter((kw) => bSet.includes(kw)).length;
+      if (bSetMatch !== aSetMatch) return bSetMatch - aSetMatch;
+
+      // Prefer English sets (no Japanese/Chinese/Korean chars in set name)
+      const aEnglish = /^[a-z0-9\s\-_.#()'&!]+$/i.test(aSet) ? 1 : 0;
+      const bEnglish = /^[a-z0-9\s\-_.#()'&!]+$/i.test(bSet) ? 1 : 0;
+      if (bEnglish !== aEnglish) return bEnglish - aEnglish;
+
       return ((b.market_price as number) || 0) - ((a.market_price as number) || 0);
     });
 
-    // Map to CardResult format
+    // Only return cards with images, limit to 20
     return data
-      .filter((p: Record<string, unknown>) => p.name)
+      .filter((p: Record<string, unknown>) => p.name && p.image_url)
+      .slice(0, 20)
       .map((p: Record<string, unknown>) => {
         const imageUrl = (p.image_url as string) || "";
         // Upgrade TCGdex low to high quality if possible
