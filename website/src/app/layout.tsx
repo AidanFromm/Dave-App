@@ -109,7 +109,7 @@ export default function RootLayout({
             <GoogleAnalytics />
             <MetaPixel />
             <CookieConsent />
-            <VersionCheck />
+            {/* <VersionCheck /> — disabled: causes full-page reloads every 30s during active development */}
             <VisitorTracker />
           </PasswordGate>
         </ThemeProvider>
