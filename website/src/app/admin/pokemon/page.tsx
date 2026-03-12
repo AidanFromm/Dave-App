@@ -456,6 +456,7 @@ function PSALookupTab() {
                     cardImageUrl={cardImageLarge}
                     category={certData.category}
                     variety={certData.variety}
+                    cardNumber={certData.cardNumber}
                     onImageGenerated={setSlabDataUrl}
                   />
                 </div>

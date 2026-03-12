@@ -12,54 +12,19 @@ interface PSASlabProps {
   cardImageUrl: string;
   category?: string;
   variety?: string;
+  cardNumber?: string;
   onImageGenerated?: (dataUrl: string) => void;
 }
 
-interface GradeConfig {
-  gradeText: string;
-  labelBg: string;
-  labelAccent: string;
-  labelTextColor: string;
-  isGem: boolean;
-}
-
-function getGradeConfig(grade: string): GradeConfig {
+function getGradeText(grade: string): string {
   const g = parseInt(grade, 10);
-  if (g === 10) {
-    return {
-      gradeText: "GEM-MT 10",
-      labelBg: "#8B0000",
-      labelAccent: "#FFD700",
-      labelTextColor: "#FFFFFF",
-      isGem: true,
-    };
-  }
-  if (g === 9) {
-    return {
-      gradeText: "MINT 9",
-      labelBg: "#1a3a5c",
-      labelAccent: "#4A90D9",
-      labelTextColor: "#FFFFFF",
-      isGem: false,
-    };
-  }
-  if (g === 8) {
-    return {
-      gradeText: "NM-MT 8",
-      labelBg: "#1a3a5c",
-      labelAccent: "#4A90D9",
-      labelTextColor: "#FFFFFF",
-      isGem: false,
-    };
-  }
-  // Default for other grades
-  return {
-    gradeText: `${grade}`,
-    labelBg: "#1a3a5c",
-    labelAccent: "#4A90D9",
-    labelTextColor: "#FFFFFF",
-    isGem: false,
-  };
+  if (g === 10) return "GEM MT";
+  if (g === 9) return "MINT";
+  if (g === 8) return "NM-MT";
+  if (g === 7) return "NM";
+  if (g === 6) return "EX-MT";
+  if (g === 5) return "EX";
+  return grade;
 }
 
 function drawRoundedRect(
@@ -91,6 +56,7 @@ export function PSASlabTemplate({
   cardImageUrl,
   category,
   variety,
+  cardNumber,
   onImageGenerated,
 }: PSASlabProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -104,212 +70,186 @@ export function PSASlabTemplate({
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    // Slab dimensions (portrait oriented, like real PSA case)
     const W = 600;
     const H = 880;
     canvas.width = W;
     canvas.height = H;
 
-    const config = getGradeConfig(grade);
-
-    // === OUTER CASE (clear plastic shell) ===
-    // Background - transparent-ish grey for the case
     ctx.clearRect(0, 0, W, H);
 
-    // Drop shadow behind the slab
-    ctx.shadowColor = "rgba(0,0,0,0.35)";
-    ctx.shadowBlur = 30;
-    ctx.shadowOffsetX = 8;
-    ctx.shadowOffsetY = 12;
+    // === OUTER SLAB SHELL ===
+    // Drop shadow
+    ctx.shadowColor = "rgba(0,0,0,0.2)";
+    ctx.shadowBlur = 20;
+    ctx.shadowOffsetX = 4;
+    ctx.shadowOffsetY = 6;
 
-    // Main case body
-    drawRoundedRect(ctx, 0, 0, W, H, 20);
-    const caseBg = ctx.createLinearGradient(0, 0, W, H);
-    caseBg.addColorStop(0, "#e8e8e8");
-    caseBg.addColorStop(0.3, "#d4d4d4");
-    caseBg.addColorStop(0.5, "#e0e0e0");
-    caseBg.addColorStop(0.7, "#c8c8c8");
-    caseBg.addColorStop(1, "#d0d0d0");
-    ctx.fillStyle = caseBg;
+    // Outer case — light gray, big rounded corners
+    drawRoundedRect(ctx, 0, 0, W, H, 28);
+    ctx.fillStyle = "#e8e8e8";
     ctx.fill();
 
-    // Reset shadow
     ctx.shadowColor = "transparent";
     ctx.shadowBlur = 0;
     ctx.shadowOffsetX = 0;
     ctx.shadowOffsetY = 0;
 
-    // Case border (plastic edge)
-    drawRoundedRect(ctx, 0, 0, W, H, 20);
-    const borderGrad = ctx.createLinearGradient(0, 0, W, 0);
-    borderGrad.addColorStop(0, "#b0b0b0");
-    borderGrad.addColorStop(0.5, "#e0e0e0");
-    borderGrad.addColorStop(1, "#a0a0a0");
-    ctx.strokeStyle = borderGrad;
-    ctx.lineWidth = 3;
-    ctx.stroke();
-
-    // Inner plastic rim
-    drawRoundedRect(ctx, 8, 8, W - 16, H - 16, 16);
-    ctx.strokeStyle = "rgba(255,255,255,0.5)";
-    ctx.lineWidth = 1.5;
-    ctx.stroke();
-
-    // === PSA LABEL AREA (top section) ===
-    const labelX = 24;
-    const labelY = 20;
-    const labelW = W - 48;
-    const labelH = 200;
-
-    // Label background
-    drawRoundedRect(ctx, labelX, labelY, labelW, labelH, 10);
-    const labelGrad = ctx.createLinearGradient(labelX, labelY, labelX, labelY + labelH);
-    labelGrad.addColorStop(0, config.labelBg);
-    labelGrad.addColorStop(1, config.isGem ? "#5c0000" : "#0f2840");
-    ctx.fillStyle = labelGrad;
-    ctx.fill();
-
-    // Label border
-    drawRoundedRect(ctx, labelX, labelY, labelW, labelH, 10);
-    ctx.strokeStyle = config.isGem ? "#FFD700" : "#6ba3d6";
+    // Outer border
+    drawRoundedRect(ctx, 0, 0, W, H, 28);
+    ctx.strokeStyle = "#c0c0c0";
     ctx.lineWidth = 2;
     ctx.stroke();
 
-    // Inner glow line on label
-    drawRoundedRect(ctx, labelX + 3, labelY + 3, labelW - 6, labelH - 6, 8);
-    ctx.strokeStyle = config.isGem
-      ? "rgba(255,215,0,0.3)"
-      : "rgba(100,160,220,0.2)";
-    ctx.lineWidth = 1;
+    // === TOP LABEL AREA (white background with red border) ===
+    const labelX = 32;
+    const labelY = 24;
+    const labelW = W - 64;
+    const labelH = 100;
+
+    // White label background
+    drawRoundedRect(ctx, labelX, labelY, labelW, labelH, 6);
+    ctx.fillStyle = "#FFFFFF";
+    ctx.fill();
+
+    // Red border around label
+    drawRoundedRect(ctx, labelX, labelY, labelW, labelH, 6);
+    ctx.strokeStyle = "#D42027";
+    ctx.lineWidth = 3;
     ctx.stroke();
 
-    // === PSA LOGO ===
-    // Draw "PSA" text as the logo
+    // === LABEL CONTENT ===
+    const isFirstEdition = variety?.toUpperCase().includes("1ST EDITION");
+    const displayName = cardName.length > 30 ? cardName.substring(0, 27) + "..." : cardName;
+
+    // Left side — card name / year / set info
     ctx.textAlign = "left";
     ctx.textBaseline = "top";
 
-    // PSA shield-like background
-    const logoX = labelX + 20;
-    const logoY = labelY + 15;
-
-    // "PSA" text
-    ctx.font = "bold 42px 'Arial Black', Arial, sans-serif";
-    ctx.fillStyle = "#FFFFFF";
-    ctx.fillText("PSA", logoX, logoY);
-
-    // Subtitle under PSA
-    ctx.font = "bold 8px Arial, sans-serif";
-    ctx.fillStyle = config.isGem ? "#FFD700" : "#8ab8e0";
-    ctx.letterSpacing = "2px";
-    ctx.fillText("PROFESSIONAL SPORTS AUTHENTICATOR", logoX, logoY + 46);
-    ctx.letterSpacing = "0px";
-
-    // === GRADE DISPLAY (right side of label) ===
-    const gradeX = labelX + labelW - 130;
-    const gradeY = labelY + 12;
-    const gradeW = 115;
-    const gradeH = 70;
-
-    // Grade box background
-    drawRoundedRect(ctx, gradeX, gradeY, gradeW, gradeH, 8);
-    if (config.isGem) {
-      const gemGrad = ctx.createLinearGradient(gradeX, gradeY, gradeX + gradeW, gradeY + gradeH);
-      gemGrad.addColorStop(0, "#FFD700");
-      gemGrad.addColorStop(0.5, "#FFF8DC");
-      gemGrad.addColorStop(1, "#FFD700");
-      ctx.fillStyle = gemGrad;
-    } else {
-      ctx.fillStyle = "rgba(255,255,255,0.15)";
-    }
-    ctx.fill();
-
-    drawRoundedRect(ctx, gradeX, gradeY, gradeW, gradeH, 8);
-    ctx.strokeStyle = config.isGem ? "#B8860B" : "rgba(255,255,255,0.3)";
-    ctx.lineWidth = 1.5;
-    ctx.stroke();
-
-    // Grade number
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    ctx.font = "bold 40px 'Arial Black', Arial, sans-serif";
-    ctx.fillStyle = config.isGem ? "#8B0000" : "#FFFFFF";
-    ctx.fillText(grade, gradeX + gradeW / 2, gradeY + gradeH / 2 + 2);
-
-    // === GRADE TEXT LINE ===
-    ctx.textAlign = "center";
-    ctx.font = "bold 18px Arial, sans-serif";
-    ctx.fillStyle = config.isGem ? "#FFD700" : "#8ab8e0";
-    ctx.fillText(config.gradeText, labelX + labelW / 2, labelY + 100);
-
-    // === CARD INFO LINES ===
-    // Year + Brand line
-    const infoLine1 = [year, category].filter(Boolean).join(" ");
-    ctx.font = "bold 13px Arial, sans-serif";
-    ctx.fillStyle = "#FFFFFF";
-    ctx.textAlign = "center";
-    ctx.fillText(infoLine1.toUpperCase(), labelX + labelW / 2, labelY + 126);
-
-    // Card name
+    // Line 1: "1ST EDITION" or year + category
     ctx.font = "bold 14px Arial, sans-serif";
-    ctx.fillStyle = "#FFFFFF";
-    const displayName = cardName.length > 40 ? cardName.substring(0, 37) + "..." : cardName;
-    ctx.fillText(displayName, labelX + labelW / 2, labelY + 146);
+    ctx.fillStyle = "#000000";
+    if (isFirstEdition) {
+      ctx.fillText("1ST EDITION", labelX + 14, labelY + 14);
+    } else {
+      const yearLine = [year, category].filter(Boolean).join(" ");
+      ctx.fillText(yearLine.toUpperCase(), labelX + 14, labelY + 14);
+    }
 
-    // Variety
+    // Line 2: Card name
+    ctx.font = "bold 13px Arial, sans-serif";
+    ctx.fillStyle = "#333333";
+    ctx.fillText(displayName.toUpperCase(), labelX + 14, labelY + 34);
+
+    // Line 3: Variety/set (smaller)
     if (variety) {
       ctx.font = "11px Arial, sans-serif";
-      ctx.fillStyle = "rgba(255,255,255,0.7)";
-      const displayVariety = variety.length > 50 ? variety.substring(0, 47) + "..." : variety;
-      ctx.fillText(displayVariety, labelX + labelW / 2, labelY + 164);
+      ctx.fillStyle = "#666666";
+      const displayVariety = variety.length > 35 ? variety.substring(0, 32) + "..." : variety;
+      ctx.fillText(displayVariety.toUpperCase(), labelX + 14, labelY + 52);
     }
 
-    // === CERT NUMBER + BARCODE ===
-    // Cert number
-    ctx.font = "bold 11px 'Courier New', monospace";
-    ctx.fillStyle = "rgba(255,255,255,0.8)";
-    ctx.textAlign = "center";
-    ctx.fillText(`Cert #${certNumber}`, labelX + labelW / 2, labelY + labelH - 16);
+    // Barcode (left bottom of label)
+    const barcodeX = labelX + 14;
+    const barcodeY = labelY + 70;
+    const barcodeW = 100;
+    const barcodeH = 18;
 
-    // Barcode simulation (thin lines)
-    const barcodeX = labelX + labelW / 2 - 80;
-    const barcodeY = labelY + labelH - 36;
-    const barcodeW = 160;
-    const barcodeH = 14;
-
-    ctx.fillStyle = "rgba(255,255,255,0.15)";
-    ctx.fillRect(barcodeX - 4, barcodeY - 2, barcodeW + 8, barcodeH + 4);
-
-    // Generate barcode bars from cert number
-    const barcodeData = certNumber.padEnd(20, "0");
-    const barWidth = barcodeW / (barcodeData.length * 3);
-    ctx.fillStyle = "#FFFFFF";
-    for (let i = 0; i < barcodeData.length * 3; i++) {
-      const charCode = barcodeData.charCodeAt(i % barcodeData.length);
-      if ((charCode + i) % 3 !== 0) {
-        ctx.fillRect(
-          barcodeX + i * barWidth,
-          barcodeY,
-          barWidth * 0.7,
-          barcodeH
-        );
+    // Draw barcode lines from cert number
+    const barcodeData = certNumber.padEnd(16, "0");
+    const barUnitW = barcodeW / (barcodeData.length * 2.5);
+    ctx.fillStyle = "#000000";
+    for (let i = 0; i < barcodeData.length * 2.5; i++) {
+      const charCode = barcodeData.charCodeAt(Math.floor(i % barcodeData.length));
+      if ((charCode + i) % 2 !== 0) {
+        ctx.fillRect(barcodeX + i * barUnitW, barcodeY, barUnitW * 0.6, barcodeH);
       }
     }
 
-    // === CARD IMAGE AREA ===
-    const cardAreaX = 36;
-    const cardAreaY = 236;
-    const cardAreaW = W - 72;
-    const cardAreaH = H - 270;
+    // === PSA LOGO (center of label) ===
+    const logoX = labelX + labelW / 2 - 20;
+    const logoY = labelY + 68;
 
-    // Card area background (white mat)
-    drawRoundedRect(ctx, cardAreaX, cardAreaY, cardAreaW, cardAreaH, 8);
+    // PSA text logo
+    ctx.textAlign = "center";
+    ctx.font = "bold italic 22px 'Arial Black', Arial, sans-serif";
+    ctx.fillStyle = "#D42027";
+    ctx.fillText("P", logoX, logoY);
+    ctx.fillStyle = "#1a56a0";
+    ctx.fillText("S", logoX + 16, logoY);
+    ctx.fillStyle = "#D42027";
+    ctx.fillText("A", logoX + 33, logoY);
+
+    // === RIGHT SIDE — Card number + Grade ===
+    ctx.textAlign = "right";
+    ctx.textBaseline = "top";
+
+    // Card number
+    if (cardNumber) {
+      ctx.font = "bold 14px Arial, sans-serif";
+      ctx.fillStyle = "#000000";
+      ctx.fillText(`#${cardNumber}`, labelX + labelW - 14, labelY + 14);
+    }
+
+    // Grade text (e.g. "GEM MT")
+    const gradeText = getGradeText(grade);
+    ctx.font = "bold 16px Arial, sans-serif";
+    ctx.fillStyle = "#000000";
+    ctx.fillText(gradeText, labelX + labelW - 14, labelY + 38);
+
+    // Grade number (large)
+    ctx.font = "bold 32px 'Arial Black', Arial, sans-serif";
+    ctx.fillStyle = "#000000";
+    ctx.fillText(grade, labelX + labelW - 14, labelY + 56);
+
+    // === CARD IMAGE AREA ===
+    const cardPadding = 40;
+    const cardAreaX = cardPadding;
+    const cardAreaY = labelY + labelH + 24;
+    const cardAreaW = W - cardPadding * 2;
+    const cardAreaH = H - cardAreaY - 32;
+
+    // Outer dark border (the thick dark gray frame)
+    const frameThick = 10;
+    drawRoundedRect(ctx, cardAreaX, cardAreaY, cardAreaW, cardAreaH, 10);
+    ctx.fillStyle = "#3a3a3a";
+    ctx.fill();
+
+    // Inner lighter border
+    drawRoundedRect(
+      ctx,
+      cardAreaX + frameThick,
+      cardAreaY + frameThick,
+      cardAreaW - frameThick * 2,
+      cardAreaH - frameThick * 2,
+      6
+    );
+    ctx.fillStyle = "#e0e0e0";
+    ctx.fill();
+
+    // White card area
+    const innerPad = frameThick + 6;
+    drawRoundedRect(
+      ctx,
+      cardAreaX + innerPad,
+      cardAreaY + innerPad,
+      cardAreaW - innerPad * 2,
+      cardAreaH - innerPad * 2,
+      4
+    );
     ctx.fillStyle = "#FFFFFF";
     ctx.fill();
 
-    // Subtle inner border
-    drawRoundedRect(ctx, cardAreaX + 2, cardAreaY + 2, cardAreaW - 4, cardAreaH - 4, 6);
-    ctx.strokeStyle = "#e0e0e0";
-    ctx.lineWidth = 1;
+    // Inner thin dark border
+    drawRoundedRect(
+      ctx,
+      cardAreaX + innerPad,
+      cardAreaY + innerPad,
+      cardAreaW - innerPad * 2,
+      cardAreaH - innerPad * 2,
+      4
+    );
+    ctx.strokeStyle = "#3a3a3a";
+    ctx.lineWidth = 2;
     ctx.stroke();
 
     // Load and draw card image
@@ -322,10 +262,9 @@ export function PSASlabTemplate({
         img.src = cardImageUrl;
       });
 
-      // Calculate fit dimensions (maintain aspect ratio)
-      const padding = 16;
-      const maxW = cardAreaW - padding * 2;
-      const maxH = cardAreaH - padding * 2;
+      const imgPad = innerPad + 8;
+      const maxW = cardAreaW - imgPad * 2;
+      const maxH = cardAreaH - imgPad * 2;
       const imgRatio = img.width / img.height;
       const areaRatio = maxW / maxH;
 
@@ -343,58 +282,41 @@ export function PSASlabTemplate({
 
       ctx.drawImage(img, drawX, drawY, drawW, drawH);
     } catch {
-      // Show placeholder if image fails
+      // Placeholder if image fails
       ctx.fillStyle = "#f5f5f5";
-      ctx.fillRect(cardAreaX + 10, cardAreaY + 10, cardAreaW - 20, cardAreaH - 20);
+      const phPad = innerPad + 4;
+      ctx.fillRect(
+        cardAreaX + phPad,
+        cardAreaY + phPad,
+        cardAreaW - phPad * 2,
+        cardAreaH - phPad * 2
+      );
       ctx.fillStyle = "#999";
       ctx.font = "14px Arial, sans-serif";
       ctx.textAlign = "center";
-      ctx.fillText("Card Image", cardAreaX + cardAreaW / 2, cardAreaY + cardAreaH / 2);
+      ctx.textBaseline = "middle";
+      ctx.fillText(
+        "Card Image",
+        cardAreaX + cardAreaW / 2,
+        cardAreaY + cardAreaH / 2
+      );
     }
 
-    // === PLASTIC SHINE EFFECTS ===
-    // Top-left shine
-    const shine1 = ctx.createLinearGradient(0, 0, W * 0.6, H * 0.4);
-    shine1.addColorStop(0, "rgba(255,255,255,0.18)");
-    shine1.addColorStop(0.3, "rgba(255,255,255,0.06)");
-    shine1.addColorStop(1, "rgba(255,255,255,0)");
-    drawRoundedRect(ctx, 0, 0, W, H, 20);
-    ctx.fillStyle = shine1;
+    // === SUBTLE PLASTIC SHINE ===
+    const shine = ctx.createLinearGradient(0, 0, W * 0.5, H * 0.3);
+    shine.addColorStop(0, "rgba(255,255,255,0.12)");
+    shine.addColorStop(0.4, "rgba(255,255,255,0.03)");
+    shine.addColorStop(1, "rgba(255,255,255,0)");
+    drawRoundedRect(ctx, 0, 0, W, H, 28);
+    ctx.fillStyle = shine;
     ctx.fill();
-
-    // Edge highlight (top)
-    const topShine = ctx.createLinearGradient(0, 0, 0, 40);
-    topShine.addColorStop(0, "rgba(255,255,255,0.25)");
-    topShine.addColorStop(1, "rgba(255,255,255,0)");
-    drawRoundedRect(ctx, 2, 2, W - 4, 40, 18);
-    ctx.fillStyle = topShine;
-    ctx.fill();
-
-    // Diagonal reflection line
-    ctx.save();
-    ctx.globalAlpha = 0.06;
-    ctx.beginPath();
-    ctx.moveTo(W * 0.3, 0);
-    ctx.lineTo(W * 0.35, 0);
-    ctx.lineTo(0, H * 0.5);
-    ctx.lineTo(0, H * 0.45);
-    ctx.closePath();
-    ctx.fillStyle = "#FFFFFF";
-    ctx.fill();
-    ctx.restore();
-
-    // Bottom case info
-    ctx.font = "9px Arial, sans-serif";
-    ctx.fillStyle = "#999";
-    ctx.textAlign = "center";
-    ctx.fillText("psacard.com", W / 2, H - 10);
 
     // Export
     const url = canvas.toDataURL("image/png", 1.0);
     setDataUrl(url);
     onImageGenerated?.(url);
     setLoading(false);
-  }, [cardName, year, grade, certNumber, cardImageUrl, category, variety, onImageGenerated]);
+  }, [cardName, year, grade, certNumber, cardImageUrl, category, variety, cardNumber, onImageGenerated]);
 
   useEffect(() => {
     setLoading(true);
