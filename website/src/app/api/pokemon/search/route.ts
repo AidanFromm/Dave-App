@@ -1,29 +1,22 @@
 import { NextResponse } from "next/server";
 
 const POKEMON_TCG_API = "https://api.pokemontcg.io/v2/cards";
+const SCRYDEX_API = "https://api.scrydex.com/v1/cards";
 const API_KEY = process.env.POKEMON_TCG_API_KEY || "";
+const SCRYDEX_KEY = process.env.SCRYDEX_API_KEY || "";
 
-async function fetchWithRetry(url: string, headers: Record<string, string>, retries = 3): Promise<Response> {
-  for (let i = 0; i <= retries; i++) {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 25000);
-    try {
-      const res = await fetch(url, { headers, signal: controller.signal });
-      clearTimeout(timeout);
-      if (res.ok) return res;
-      if (res.status === 429) {
-        // Rate limited — wait and retry
-        const delay = Math.min(2000 * (i + 1), 8000);
-        await new Promise(r => setTimeout(r, delay));
-        continue;
-      }
-      if (i === retries) return res;
-    } catch {
-      clearTimeout(timeout);
-      if (i === retries) throw new Error("All retries failed");
-    }
+async function tryFetch(url: string, headers: Record<string, string>, timeoutMs = 8000): Promise<Response | null> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const res = await fetch(url, { headers, signal: controller.signal });
+    clearTimeout(timeout);
+    if (res.ok) return res;
+    return null;
+  } catch {
+    clearTimeout(timeout);
+    return null;
   }
-  throw new Error("Unreachable");
 }
 
 export const maxDuration = 30;
@@ -40,73 +33,29 @@ export async function GET(request: Request) {
   try {
     const trimmed = query.trim();
 
-    // Build the search query for Pokemon TCG API
-    // If it looks like a number, search by number; otherwise search by name
-    let q: string;
-    if (/^\d+$/.test(trimmed)) {
-      q = `number:${trimmed}`;
-    } else {
-      q = `name:"${trimmed}*"`;
+    // Try Pokemon TCG API first
+    let cards = await searchPokemonTCG(trimmed, page);
+
+    // If Pokemon TCG API fails, try Scrydex as fallback
+    if (cards === null && SCRYDEX_KEY) {
+      cards = await searchScrydex(trimmed, page);
     }
 
-    const url = `${POKEMON_TCG_API}?q=${encodeURIComponent(q)}&page=${page}&pageSize=20&orderBy=-set.releaseDate`;
-
-    const headers: Record<string, string> = { Accept: "application/json" };
-    if (API_KEY) headers["X-Api-Key"] = API_KEY;
-
-    const res = await fetchWithRetry(url, headers);
-
-    if (!res.ok) {
-      return NextResponse.json(
-        { error: "Pokemon TCG API error" },
-        { status: res.status }
-      );
+    // If both fail, return empty
+    if (cards === null) {
+      return NextResponse.json({
+        cards: [],
+        page: parseInt(page, 10),
+        pageSize: 20,
+        totalCount: 0,
+      });
     }
-
-    const data = await res.json();
-    const rawCards = data.data ?? [];
-
-    const cards = rawCards.map((c: Record<string, unknown>) => {
-      const images = c.images as Record<string, string> | undefined;
-      const set = c.set as Record<string, unknown> | undefined;
-      const setImages = set?.images as Record<string, string> | undefined;
-      const tcgplayer = c.tcgplayer as Record<string, unknown> | undefined;
-      const prices = tcgplayer?.prices as Record<string, Record<string, number>> | undefined;
-
-      // Get best market price from tcgplayer prices
-      let marketPrice: number | null = null;
-      if (prices) {
-        for (const variant of Object.values(prices)) {
-          if (variant.market != null) {
-            marketPrice = variant.market;
-            break;
-          }
-        }
-      }
-
-      return {
-        id: c.id ?? "",
-        name: c.name ?? "",
-        number: c.number ?? "",
-        rarity: c.rarity ?? "",
-        supertype: c.supertype ?? "",
-        subtypes: (c.subtypes as string[]) ?? [],
-        imageSmall: images?.small ?? "",
-        imageLarge: images?.large ?? "",
-        setId: (set?.id as string) ?? "",
-        setName: (set?.name as string) ?? "",
-        setSeries: (set?.series as string) ?? "",
-        setSymbol: setImages?.symbol ?? "",
-        marketPrice,
-        tcgplayerUrl: (tcgplayer?.url as string) ?? null,
-      };
-    });
 
     return NextResponse.json({
       cards,
       page: parseInt(page, 10),
       pageSize: 20,
-      totalCount: data.totalCount ?? cards.length,
+      totalCount: cards.length,
     });
   } catch {
     return NextResponse.json(
@@ -114,4 +63,109 @@ export async function GET(request: Request) {
       { status: 500 }
     );
   }
+}
+
+interface CardResult {
+  id: string;
+  name: string;
+  number: string;
+  rarity: string;
+  supertype: string;
+  subtypes: string[];
+  imageSmall: string;
+  imageLarge: string;
+  setId: string;
+  setName: string;
+  setSeries: string;
+  setSymbol: string;
+  marketPrice: number | null;
+  tcgplayerUrl: string | null;
+}
+
+async function searchPokemonTCG(query: string, page: string): Promise<CardResult[] | null> {
+  let q: string;
+  if (/^\d+$/.test(query)) {
+    q = `number:${query}`;
+  } else {
+    q = `name:"${query}*"`;
+  }
+
+  const url = `${POKEMON_TCG_API}?q=${encodeURIComponent(q)}&page=${page}&pageSize=20&orderBy=-set.releaseDate`;
+  const headers: Record<string, string> = { Accept: "application/json" };
+  if (API_KEY) headers["X-Api-Key"] = API_KEY;
+
+  const res = await tryFetch(url, headers);
+  if (!res) return null;
+
+  const data = await res.json();
+  const rawCards = data.data ?? [];
+
+  return rawCards.map((c: Record<string, unknown>) => {
+    const images = c.images as Record<string, string> | undefined;
+    const set = c.set as Record<string, unknown> | undefined;
+    const setImages = set?.images as Record<string, string> | undefined;
+    const tcgplayer = c.tcgplayer as Record<string, unknown> | undefined;
+    const prices = tcgplayer?.prices as Record<string, Record<string, number>> | undefined;
+
+    let marketPrice: number | null = null;
+    if (prices) {
+      for (const variant of Object.values(prices)) {
+        if (variant.market != null) {
+          marketPrice = variant.market;
+          break;
+        }
+      }
+    }
+
+    return {
+      id: (c.id as string) ?? "",
+      name: (c.name as string) ?? "",
+      number: (c.number as string) ?? "",
+      rarity: (c.rarity as string) ?? "",
+      supertype: (c.supertype as string) ?? "",
+      subtypes: (c.subtypes as string[]) ?? [],
+      imageSmall: images?.small ?? "",
+      imageLarge: images?.large ?? "",
+      setId: (set?.id as string) ?? "",
+      setName: (set?.name as string) ?? "",
+      setSeries: (set?.series as string) ?? "",
+      setSymbol: setImages?.symbol ?? "",
+      marketPrice,
+      tcgplayerUrl: (tcgplayer?.url as string) ?? null,
+    };
+  });
+}
+
+async function searchScrydex(query: string, page: string): Promise<CardResult[] | null> {
+  const url = `${SCRYDEX_API}?name=${encodeURIComponent(query)}&game=pokemon&page=${page}&limit=20`;
+  const headers: Record<string, string> = {
+    Accept: "application/json",
+    "X-Api-Key": SCRYDEX_KEY,
+  };
+
+  const res = await tryFetch(url, headers, 10000);
+  if (!res) return null;
+
+  const data = await res.json();
+  const rawCards = data.data ?? data.cards ?? [];
+
+  return rawCards.map((c: Record<string, unknown>) => {
+    const images = c.images as Record<string, string> | undefined;
+    return {
+      id: (c.id as string) ?? "",
+      name: (c.name as string) ?? "",
+      number: (c.number as string) ?? "",
+      rarity: (c.rarity as string) ?? "",
+      supertype: (c.supertype as string) ?? "",
+      subtypes: (c.subtypes as string[]) ?? [],
+      imageSmall: images?.small ?? (c.image as string) ?? "",
+      imageLarge: images?.large ?? (c.image_large as string) ?? (c.image as string) ?? "",
+      setId: (c.set_id as string) ?? (c.setId as string) ?? "",
+      setName: (c.set_name as string) ?? (c.setName as string) ?? "",
+      setSeries: (c.series as string) ?? "",
+      setSymbol: "",
+      marketPrice: (c.price as number) ?? (c.market_price as number) ?? null,
+      tcgplayerUrl: null,
+    };
+  });
 }
