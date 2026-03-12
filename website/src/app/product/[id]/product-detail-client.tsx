@@ -161,8 +161,8 @@ export function ProductDetailClient({ product: initialProduct, sizeVariants = []
 
   const features = [
     { icon: <Shield className="h-4 w-4" />, text: "100% Authentic" },
-    { icon: <Truck className="h-4 w-4" />, text: "Free Over $150" },
-    { icon: <RotateCcw className="h-4 w-4" />, text: "Easy Returns" },
+    { icon: <Truck className="h-4 w-4" />, text: "Free Over $200" },
+    { icon: <RotateCcw className="h-4 w-4" />, text: "Authenticity Guaranteed" },
     { icon: <CreditCard className="h-4 w-4" />, text: "Secure Pay" },
   ];
 
@@ -515,19 +515,18 @@ export function ProductDetailClient({ product: initialProduct, sizeVariants = []
               )}
               {activeTab === "shipping" && (
                 <div className="space-y-3">
-                  <p>Orders are processed within <span className="font-medium text-foreground">1-2 business days</span>.</p>
-                  <p><span className="font-medium text-foreground">Free shipping</span> on orders over $150.</p>
-                  <p>Standard shipping (3-7 business days) via USPS or FedEx.</p>
-                  <p>Expedited and overnight options available at checkout.</p>
-                  <p>Local pickup available in <span className="font-medium text-foreground">Tampa, FL</span>.</p>
+                  <p>Orders are processed within <span className="font-medium text-foreground">1–2 business days</span>.</p>
+                  <p><span className="font-medium text-foreground">Free standard shipping</span> on orders over $200.</p>
+                  <p>Orders under $200 ship for a <span className="font-medium text-foreground">flat $10</span>.</p>
+                  <p>Standard shipping takes <span className="font-medium text-foreground">3–5 business days</span> via USPS or FedEx.</p>
+                  <p>Free local pickup available in <span className="font-medium text-foreground">Tampa, FL</span> — select &quot;Store Pickup&quot; at checkout.</p>
                 </div>
               )}
               {activeTab === "returns" && (
                 <div className="space-y-3">
-                  <p>Returns accepted within <span className="font-medium text-foreground">14 days</span> of delivery.</p>
-                  <p>Items must be in original condition — unworn, with tags and box.</p>
-                  <p>Used items are <span className="font-medium text-foreground">final sale</span> unless the condition was misrepresented.</p>
-                  <p>Contact <span className="font-medium text-foreground">securedtampa.llc@gmail.com</span> to initiate a return.</p>
+                  <p><span className="font-medium text-foreground">All sales are final.</span> We do not accept returns or exchanges.</p>
+                  <p>Every item is backed by our <span className="font-medium text-foreground">100% authenticity guarantee</span> — if an item is not authentic, you&apos;ll receive a full refund.</p>
+                  <p>If you believe you received an inauthentic item, contact <span className="font-medium text-foreground">securedtampa.llc@gmail.com</span> with photos.</p>
                 </div>
               )}
             </div>
