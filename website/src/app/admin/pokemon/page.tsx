@@ -137,12 +137,25 @@ function PSALookupTab() {
       setCertData(cd);
 
       // 2. Search Pokemon TCG API for card image
-      // PSA card names have prefixes like "FA/", "SR/", "RR/", "AA/" — strip them
+      // PSA card names sometimes have rarity prefixes like "FA/", "SR/" — strip them
+      // But keep names like "PIKACHU/GREY FELT HAT" where "/" is part of the card name
+      // Only strip if the part before "/" is a known 1-3 letter rarity code
       const rawName = cd.cardName || cd.subject || "";
-      const searchName = rawName
-        .replace(/^(FA|SR|RR|AA|HR|AR|SAR|CSR|CHR|SIR|TG|GG|SV|IR|UR|PR|R|U|C|H)\//i, "")
-        .replace(/\s+/g, " ")
-        .trim();
+      const knownPrefixes = new Set(["FA","SR","RR","AA","HR","AR","SAR","CSR","CHR","SIR","TG","GG","SV","IR","UR","PR"]);
+      let searchName = rawName;
+      const slashIdx = rawName.indexOf("/");
+      if (slashIdx > 0 && slashIdx <= 3) {
+        const prefix = rawName.slice(0, slashIdx).toUpperCase();
+        if (knownPrefixes.has(prefix)) {
+          searchName = rawName.slice(slashIdx + 1);
+        }
+      }
+      // For names with "/" that aren't prefixes (e.g. "PIKACHU/GREY FELT HAT"), search the full name
+      // Also try just the first part as the Pokemon name
+      const searchTerms = searchName.includes("/")
+        ? searchName.split("/")[0].trim()
+        : searchName;
+      searchName = searchTerms.replace(/\s+/g, " ").trim();
       if (searchName) {
         try {
           // Pass PSA variety/set info so search can rank the best match
