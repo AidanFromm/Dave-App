@@ -137,7 +137,12 @@ function PSALookupTab() {
       setCertData(cd);
 
       // 2. Search Pokemon TCG API for card image
-      const searchName = cd.cardName || cd.subject;
+      // PSA card names have prefixes like "FA/", "SR/", "RR/", "AA/" — strip them
+      const rawName = cd.cardName || cd.subject || "";
+      const searchName = rawName
+        .replace(/^(FA|SR|RR|AA|HR|AR|SAR|CSR|CHR|SIR|TG|GG|SV|IR|UR|PR|R|U|C|H)\//i, "")
+        .replace(/\s+/g, " ")
+        .trim();
       if (searchName) {
         try {
           const tcgRes = await fetch(
