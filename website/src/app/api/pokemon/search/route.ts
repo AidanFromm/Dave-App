@@ -86,7 +86,7 @@ async function searchCardLedger(
 ): Promise<CardResult[] | null> {
   try {
     // Search by name — fetch extra results so we can filter/rank
-    const url = `${CARDLEDGER_URL}/rest/v1/products?game=eq.pokemon&image_url=not.is.null&name=ilike.*${encodeURIComponent(query)}*&select=id,name,set_name,image_url,market_price,card_number,rarity,category,release_year&limit=80`;
+    const url = `${CARDLEDGER_URL}/rest/v1/products?game=eq.pokemon&image_url=not.is.null&name=ilike.*${encodeURIComponent(query)}*&select=id,name,set_name,image_url,market_price,card_number,rarity,category&limit=80`;
 
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 5000);
@@ -124,8 +124,8 @@ async function searchCardLedger(
       const bName = ((b.name as string) || "").toLowerCase();
       const aNum = ((a.card_number as string) || "").toLowerCase();
       const bNum = ((b.card_number as string) || "").toLowerCase();
-      const aYear = String((a.release_year as number) || "");
-      const bYear = String((b.release_year as number) || "");
+      const aYear = "";
+      const bYear = "";
 
       // EXACT card number match = huge boost (most reliable identifier)
       if (cardNumberHint) {
