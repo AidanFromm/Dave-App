@@ -151,12 +151,9 @@ function PSALookupTab() {
           searchName = rawName.slice(slashIdx + 1);
         }
       }
-      // For names with "/" that aren't prefixes (e.g. "PIKACHU/GREY FELT HAT"), search the full name
-      // Also try just the first part as the Pokemon name
-      const searchTerms = searchName.includes("/")
-        ? searchName.split("/")[0].trim()
-        : searchName;
-      searchName = searchTerms.replace(/\s+/g, " ").trim();
+      // For names with "/" that aren't prefixes (e.g. "PIKACHU/GREY FELT HAT"),
+      // replace "/" with space so it becomes a searchable name
+      searchName = searchName.replace(/\//g, " ").replace(/\s+/g, " ").trim();
       if (searchName) {
         try {
           // Pass ALL PSA data for precise matching

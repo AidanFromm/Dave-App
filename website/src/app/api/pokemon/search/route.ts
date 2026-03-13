@@ -122,8 +122,11 @@ async function searchCardLedger(
   cardNumberHint: string = ""
 ): Promise<CardResult[] | null> {
   try {
-    // Search by name — fetch extra results so we can filter/rank
-    const url = `${CARDLEDGER_URL}/rest/v1/products?game=eq.pokemon&image_url=not.is.null&name=ilike.*${encodeURIComponent(query)}*&select=id,name,set_name,image_url,market_price,card_number,rarity,category&limit=80`;
+    // Use first word as primary search (handles "PIKACHU GREY FELT HAT" → search "PIKACHU")
+    // Then scoring refines by card number, set, etc.
+    const firstWord = query.split(/\s+/)[0];
+    const searchTerm = query.length > 30 ? firstWord : query;
+    const url = `${CARDLEDGER_URL}/rest/v1/products?game=eq.pokemon&image_url=not.is.null&name=ilike.*${encodeURIComponent(searchTerm)}*&select=id,name,set_name,image_url,market_price,card_number,rarity,category&limit=80`;
 
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 5000);
@@ -177,13 +180,19 @@ async function searchCardLedger(
         if (bYear === yearHint) bScore += 50;
       }
 
-      // Exact name match (not just contains)
+      // Name matching — check how many query words appear in the name
       const queryLower = query.toLowerCase();
+      const queryWords = queryLower.split(/\s+/).filter(w => w.length > 2);
       if (aName === queryLower) aScore += 30;
       if (bName === queryLower) bScore += 30;
       // Name starts with query
       if (aName.startsWith(queryLower)) aScore += 15;
       if (bName.startsWith(queryLower)) bScore += 15;
+      // Count how many query words appear in card name (handles "PIKACHU GREY FELT HAT" matching "Pikachu with Grey Felt Hat")
+      const aWordMatch = queryWords.filter(w => aName.includes(w)).length;
+      const bWordMatch = queryWords.filter(w => bName.includes(w)).length;
+      aScore += aWordMatch * 10;
+      bScore += bWordMatch * 10;
 
       // Set keyword matches
       const aSetMatch = setKeywords.filter((kw) => aSet.includes(kw)).length;
