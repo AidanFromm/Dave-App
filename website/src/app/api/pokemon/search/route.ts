@@ -30,7 +30,9 @@ interface CardResult {
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const query = searchParams.get("q");
-  const setHint = searchParams.get("set") || ""; // e.g. "FUSION STRIKE-SECRET"
+  const setHint = searchParams.get("set") || "";
+  const yearHint = searchParams.get("year") || "";
+  const cardNumberHint = searchParams.get("number") || "";
 
   if (!query) {
     return NextResponse.json({ error: "Query required" }, { status: 400 });
@@ -40,7 +42,7 @@ export async function GET(request: Request) {
 
   try {
     // Strategy 1: CardLedger Supabase (instant, free, has 120K+ cards)
-    const clCards = await searchCardLedger(trimmed, setHint);
+    const clCards = await searchCardLedger(trimmed, setHint, yearHint, cardNumberHint);
     if (clCards && clCards.length > 0) {
       return NextResponse.json({
         cards: clCards,
@@ -51,7 +53,7 @@ export async function GET(request: Request) {
     }
 
     // Strategy 2: Pokemon TCG API (might be down)
-    const tcgCards = await searchPokemonTCG(trimmed);
+    const tcgCards = await searchPokemonTCG(trimmed, yearHint, cardNumberHint);
     if (tcgCards && tcgCards.length > 0) {
       return NextResponse.json({
         cards: tcgCards,
@@ -76,10 +78,15 @@ export async function GET(request: Request) {
   }
 }
 
-async function searchCardLedger(query: string, setHint: string = ""): Promise<CardResult[] | null> {
+async function searchCardLedger(
+  query: string,
+  setHint: string = "",
+  yearHint: string = "",
+  cardNumberHint: string = ""
+): Promise<CardResult[] | null> {
   try {
     // Search by name — fetch extra results so we can filter/rank
-    const url = `${CARDLEDGER_URL}/rest/v1/products?game=eq.pokemon&image_url=not.is.null&name=ilike.*${encodeURIComponent(query)}*&select=id,name,set_name,image_url,market_price,card_number,rarity,category&limit=50`;
+    const url = `${CARDLEDGER_URL}/rest/v1/products?game=eq.pokemon&image_url=not.is.null&name=ilike.*${encodeURIComponent(query)}*&select=id,name,set_name,image_url,market_price,card_number,rarity,category,release_year&limit=80`;
 
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 5000);
@@ -106,22 +113,78 @@ async function searchCardLedger(query: string, setHint: string = ""): Promise<Ca
       .split(/\s+/)
       .filter((w) => w.length > 2 && !["the", "secret", "holo", "rare"].includes(w));
 
-    // Score and sort: set match > has image > price
+    // Score and sort with much smarter matching
     data.sort((a: Record<string, unknown>, b: Record<string, unknown>) => {
+      let aScore = 0;
+      let bScore = 0;
+
       const aSet = ((a.set_name as string) || "").toLowerCase();
       const bSet = ((b.set_name as string) || "").toLowerCase();
-      
-      // Count how many set keywords match
+      const aName = ((a.name as string) || "").toLowerCase();
+      const bName = ((b.name as string) || "").toLowerCase();
+      const aNum = ((a.card_number as string) || "").toLowerCase();
+      const bNum = ((b.card_number as string) || "").toLowerCase();
+      const aYear = String((a.release_year as number) || "");
+      const bYear = String((b.release_year as number) || "");
+
+      // EXACT card number match = huge boost (most reliable identifier)
+      if (cardNumberHint) {
+        const numNorm = cardNumberHint.toLowerCase().replace(/^0+/, "");
+        if (aNum === numNorm || aNum.replace(/^0+/, "") === numNorm) aScore += 100;
+        if (bNum === numNorm || bNum.replace(/^0+/, "") === numNorm) bScore += 100;
+      }
+
+      // Year match = strong signal
+      if (yearHint) {
+        if (aYear === yearHint) aScore += 50;
+        if (bYear === yearHint) bScore += 50;
+      }
+
+      // Exact name match (not just contains)
+      const queryLower = query.toLowerCase();
+      if (aName === queryLower) aScore += 30;
+      if (bName === queryLower) bScore += 30;
+      // Name starts with query
+      if (aName.startsWith(queryLower)) aScore += 15;
+      if (bName.startsWith(queryLower)) bScore += 15;
+
+      // Set keyword matches
       const aSetMatch = setKeywords.filter((kw) => aSet.includes(kw)).length;
       const bSetMatch = setKeywords.filter((kw) => bSet.includes(kw)).length;
-      if (bSetMatch !== aSetMatch) return bSetMatch - aSetMatch;
+      aScore += aSetMatch * 20;
+      bScore += bSetMatch * 20;
 
-      // Prefer English sets (no Japanese/Chinese/Korean chars in set name)
-      const aEnglish = /^[a-z0-9\s\-_.#()'&!]+$/i.test(aSet) ? 1 : 0;
-      const bEnglish = /^[a-z0-9\s\-_.#()'&!]+$/i.test(bSet) ? 1 : 0;
-      if (bEnglish !== aEnglish) return bEnglish - aEnglish;
+      // Check for promo indicators in set hint
+      const isPromo = setHint.toLowerCase().includes("promo") || 
+                       setHint.toLowerCase().includes("m-p") || 
+                       setHint.toLowerCase().includes("mcdonald");
+      if (isPromo) {
+        if (aSet.includes("promo") || aSet.includes("mcdonald")) aScore += 40;
+        if (bSet.includes("promo") || bSet.includes("mcdonald")) bScore += 40;
+      }
 
-      return ((b.market_price as number) || 0) - ((a.market_price as number) || 0);
+      // Japanese card indicators
+      const isJapanese = setHint.toLowerCase().includes("japanese") ||
+                          setHint.toLowerCase().includes("japan");
+      if (isJapanese) {
+        if (aSet.includes("japanese") || aSet.includes("japan")) aScore += 30;
+        if (bSet.includes("japanese") || bSet.includes("japan")) bScore += 30;
+      }
+
+      // Prefer English sets by default (unless PSA says Japanese)
+      if (!isJapanese) {
+        const aEnglish = /^[a-z0-9\s\-_.#()'&!:]+$/i.test(aSet) ? 1 : 0;
+        const bEnglish = /^[a-z0-9\s\-_.#()'&!:]+$/i.test(bSet) ? 1 : 0;
+        aScore += aEnglish * 10;
+        bScore += bEnglish * 10;
+      }
+
+      // Tiebreaker: higher market price (usually more relevant/popular printings)
+      if (bScore === aScore) {
+        return ((b.market_price as number) || 0) - ((a.market_price as number) || 0);
+      }
+
+      return bScore - aScore;
     });
 
     // Only return cards with images, limit to 20
@@ -130,9 +193,8 @@ async function searchCardLedger(query: string, setHint: string = ""): Promise<Ca
       .slice(0, 20)
       .map((p: Record<string, unknown>) => {
         const imageUrl = (p.image_url as string) || "";
-        // Upgrade TCGdex low to high quality if possible
         const imageLarge = imageUrl.replace("/low.", "/high.");
-        
+
         return {
           id: (p.id as string) || "",
           name: (p.name as string) || "",
@@ -155,15 +217,18 @@ async function searchCardLedger(query: string, setHint: string = ""): Promise<Ca
   }
 }
 
-async function searchPokemonTCG(query: string): Promise<CardResult[] | null> {
+async function searchPokemonTCG(
+  query: string,
+  yearHint: string = "",
+  cardNumberHint: string = ""
+): Promise<CardResult[] | null> {
   try {
-    let q: string;
-    if (/^\d+$/.test(query)) {
-      q = `number:${query}`;
-    } else {
-      q = `name:"${query}*"`;
-    }
+    // Build a smarter query using all available info
+    const parts: string[] = [];
+    parts.push(`name:"${query}*"`);
+    if (cardNumberHint) parts.push(`number:"${cardNumberHint}"`);
 
+    const q = parts.join(" ");
     const url = `${POKEMON_TCG_API}?q=${encodeURIComponent(q)}&pageSize=20&orderBy=-set.releaseDate`;
     const headers: Record<string, string> = { Accept: "application/json" };
     if (API_KEY) headers["X-Api-Key"] = API_KEY;
@@ -177,7 +242,20 @@ async function searchPokemonTCG(query: string): Promise<CardResult[] | null> {
     if (!res.ok) return null;
 
     const data = await res.json();
-    const rawCards = data.data ?? [];
+    let rawCards = data.data ?? [];
+
+    // If we have a year hint, prioritize cards from that year
+    if (yearHint) {
+      rawCards.sort((a: Record<string, unknown>, b: Record<string, unknown>) => {
+        const aSet = a.set as Record<string, unknown> | undefined;
+        const bSet = b.set as Record<string, unknown> | undefined;
+        const aDate = (aSet?.releaseDate as string) || "";
+        const bDate = (bSet?.releaseDate as string) || "";
+        const aMatch = aDate.startsWith(yearHint) ? 1 : 0;
+        const bMatch = bDate.startsWith(yearHint) ? 1 : 0;
+        return bMatch - aMatch;
+      });
+    }
 
     return rawCards.map((c: Record<string, unknown>) => {
       const images = c.images as Record<string, string> | undefined;

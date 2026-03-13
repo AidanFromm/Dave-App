@@ -159,9 +159,11 @@ function PSALookupTab() {
       searchName = searchTerms.replace(/\s+/g, " ").trim();
       if (searchName) {
         try {
-          // Pass PSA variety/set info so search can rank the best match
+          // Pass ALL PSA data for precise matching
           const params = new URLSearchParams({ q: searchName });
           if (cd.variety) params.set("set", cd.variety);
+          if (cd.year) params.set("year", cd.year);
+          if (cd.cardNumber) params.set("number", cd.cardNumber);
 
           const tcgRes = await fetch(
             `/api/pokemon/search?${params.toString()}`
