@@ -43,6 +43,43 @@ export async function GET(request: Request) {
   try {
     // Strategy 1: CardLedger Supabase (instant, free, has 120K+ cards)
     const clCards = await searchCardLedger(trimmed, setHint, yearHint, cardNumberHint);
+    
+    // Check if CardLedger has an EXACT card number match
+    const hasExactNumberMatch = cardNumberHint && clCards?.some(
+      (c) => c.number === cardNumberHint || c.number.replace(/^0+/, "") === cardNumberHint.replace(/^0+/, "")
+    );
+
+    if (clCards && clCards.length > 0 && hasExactNumberMatch) {
+      return NextResponse.json({
+        cards: clCards,
+        page: 1,
+        pageSize: 20,
+        totalCount: clCards.length,
+      });
+    }
+
+    // Strategy 2: TCGdex (free, fast, has EVERY card with images)
+    const tcgdexCards = await searchTCGdex(trimmed, cardNumberHint);
+    if (tcgdexCards && tcgdexCards.length > 0) {
+      // Merge with CardLedger results for price data
+      const merged = tcgdexCards;
+      if (clCards) {
+        // Add any CardLedger cards not already in tcgdex results
+        for (const cl of clCards) {
+          if (!merged.some((m) => m.number === cl.number && m.setName === cl.setName)) {
+            merged.push(cl);
+          }
+        }
+      }
+      return NextResponse.json({
+        cards: merged,
+        page: 1,
+        pageSize: 20,
+        totalCount: merged.length,
+      });
+    }
+
+    // Strategy 3: Return CardLedger results even without exact match
     if (clCards && clCards.length > 0) {
       return NextResponse.json({
         cards: clCards,
@@ -52,7 +89,7 @@ export async function GET(request: Request) {
       });
     }
 
-    // Strategy 2: Pokemon TCG API (might be down)
+    // Strategy 4: Pokemon TCG API (often down, last resort)
     const tcgCards = await searchPokemonTCG(trimmed, yearHint, cardNumberHint);
     if (tcgCards && tcgCards.length > 0) {
       return NextResponse.json({
@@ -291,6 +328,91 @@ async function searchPokemonTCG(
         tcgplayerUrl: (tcgplayer?.url as string) ?? null,
       };
     });
+  } catch {
+    return null;
+  }
+}
+
+
+// TCGdex API — free, fast, has EVERY card with images
+async function searchTCGdex(
+  query: string,
+  cardNumberHint: string = ""
+): Promise<CardResult[] | null> {
+  try {
+    // Search by name first
+    const url = `https://api.tcgdex.net/v2/en/cards?name=${encodeURIComponent(query)}`;
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 5000);
+
+    const res = await fetch(url, {
+      headers: { Accept: "application/json" },
+      signal: controller.signal,
+    });
+    clearTimeout(timeout);
+
+    if (!res.ok) return null;
+
+    const data = await res.json();
+    if (!Array.isArray(data) || data.length === 0) return null;
+
+    // If we have a card number hint, find the exact match first
+    let sorted = [...data];
+    if (cardNumberHint) {
+      sorted.sort((a: Record<string, unknown>, b: Record<string, unknown>) => {
+        const aLocal = String(a.localId || "");
+        const bLocal = String(b.localId || "");
+        const aMatch = aLocal === cardNumberHint ? 100 : 0;
+        const bMatch = bLocal === cardNumberHint ? 100 : 0;
+        return bMatch - aMatch;
+      });
+    }
+
+    // Fetch full card data for top results (need image URLs)
+    const results: CardResult[] = [];
+    const topCards = sorted.slice(0, 12);
+
+    // Batch: fetch details for each card (TCGdex has individual card endpoints)
+    const fetches = topCards.map(async (card: Record<string, unknown>) => {
+      try {
+        const cardId = card.id as string;
+        const detailRes = await fetch(
+          `https://api.tcgdex.net/v2/en/cards/${cardId}`,
+          { signal: AbortSignal.timeout(3000) }
+        );
+        if (!detailRes.ok) return null;
+        const detail = await detailRes.json();
+        const imageBase = detail.image as string;
+        if (!imageBase) return null;
+
+        const setData = detail.set as Record<string, unknown> | undefined;
+        return {
+          id: cardId,
+          name: (detail.name as string) || "",
+          number: String(detail.localId || ""),
+          rarity: (detail.rarity as string) || "",
+          supertype: "Pokémon",
+          subtypes: [],
+          imageSmall: `${imageBase}/low.webp`,
+          imageLarge: `${imageBase}/high.webp`,
+          setId: (setData?.id as string) || "",
+          setName: (setData?.name as string) || "",
+          setSeries: "",
+          setSymbol: setData?.logo ? `${String(setData.logo)}/low.webp` : "",
+          marketPrice: null,
+          tcgplayerUrl: null,
+        };
+      } catch {
+        return null;
+      }
+    });
+
+    const resolved = await Promise.all(fetches);
+    for (const r of resolved) {
+      if (r) results.push(r);
+    }
+
+    return results.length > 0 ? results : null;
   } catch {
     return null;
   }
