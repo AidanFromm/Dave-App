@@ -138,8 +138,6 @@ async function sendOrderConfirmationEmail(params: {
     if (!res.ok) {
       const errBody = await res.text();
       console.error("Resend API error:", res.status, errBody);
-    } else {
-      // Email sent successfully
     }
   } catch (err) {
     console.error("Failed to send confirmation email:", err);
@@ -197,7 +195,6 @@ export async function POST(request: Request) {
       .single();
 
     if (existingOrder) {
-      // Duplicate webhook — already processed
       return NextResponse.json({ received: true, duplicate: true });
     }
 
@@ -253,7 +250,10 @@ export async function POST(request: Request) {
       size: item.size,
     }));
 
-    const { error: orderError } = await supabase.from("orders").insert({
+    // ============================================================
+    // CRITICAL: Order insert — return 500 on failure so Stripe retries
+    // ============================================================
+    const { data: newOrder, error: orderError } = await supabase.from("orders").insert({
       order_number: orderNumber,
       customer_id: customerId,
       customer_email: email || "unknown@checkout.com",
@@ -277,69 +277,70 @@ export async function POST(request: Request) {
       customer_phone: phoneMeta || null,
       created_at: now,
       updated_at: now,
-    });
+    }).select("id").single();
 
     if (orderError) {
-      console.error("Failed to create order:", orderError.message);
+      console.error("CRITICAL: Failed to create order for payment", paymentIntent.id, orderError.message);
+      // Return 500 so Stripe retries the webhook
       return NextResponse.json(
-        { error: "Order creation failed", detail: orderError.message },
+        { error: "Order creation failed", detail: orderError.message, paymentId: paymentIntent.id },
         { status: 500 }
       );
     }
 
+    // ============================================================
+    // Post-order operations — these are non-critical, log errors but don't fail the webhook
+    // ============================================================
+
     // Increment discount code uses
     if (discountCodeMeta) {
-      const { data: disc } = await supabase
-        .from("discounts")
-        .select("uses")
-        .eq("code", discountCodeMeta)
-        .single();
-      if (disc) {
-        await supabase
+      try {
+        const { data: disc } = await supabase
           .from("discounts")
-          .update({ uses: (disc.uses || 0) + 1 })
-          .eq("code", discountCodeMeta);
+          .select("uses")
+          .eq("code", discountCodeMeta)
+          .single();
+        if (disc) {
+          await supabase
+            .from("discounts")
+            .update({ uses: (disc.uses || 0) + 1 })
+            .eq("code", discountCodeMeta);
+        }
+      } catch (err) {
+        console.error("Failed to increment discount uses:", err);
       }
     }
 
     // Redeem gift card if used
     if (giftCardIdMeta && giftCardAmountStr) {
-      const giftCardAmount = parseFloat(giftCardAmountStr);
-      if (giftCardAmount > 0) {
-        // Get current balance
-        const { data: giftCard } = await supabase
-          .from("gift_cards")
-          .select("id, remaining_balance")
-          .eq("id", giftCardIdMeta)
-          .single();
-
-        if (giftCard) {
-          const newBalance = Math.max(0, Number(giftCard.remaining_balance) - giftCardAmount);
-          
-          // Update remaining balance
-          await supabase
+      try {
+        const giftCardAmount = parseFloat(giftCardAmountStr);
+        if (giftCardAmount > 0) {
+          const { data: giftCard } = await supabase
             .from("gift_cards")
-            .update({ remaining_balance: newBalance })
-            .eq("id", giftCardIdMeta);
-
-          // Get the order ID we just created
-          const { data: orderData } = await supabase
-            .from("orders")
-            .select("id")
-            .eq("order_number", orderNumber)
+            .select("id, remaining_balance")
+            .eq("id", giftCardIdMeta)
             .single();
 
-          // Record the transaction
-          await supabase.from("gift_card_transactions").insert({
-            gift_card_id: giftCardIdMeta,
-            order_id: orderData?.id || null,
-            amount: giftCardAmount,
-            type: "redemption",
-            note: `Redeemed for order ${orderNumber}`,
-          });
+          if (giftCard) {
+            const newBalance = Math.max(0, Number(giftCard.remaining_balance) - giftCardAmount);
 
-          // Gift card redeemed successfully
+            await supabase
+              .from("gift_cards")
+              .update({ remaining_balance: newBalance })
+              .eq("id", giftCardIdMeta);
+
+            await supabase.from("gift_card_transactions").insert({
+              gift_card_id: giftCardIdMeta,
+              order_id: newOrder?.id || null,
+              amount: giftCardAmount,
+              type: "redemption",
+              note: `Redeemed for order ${orderNumber}`,
+            });
+          }
         }
+      } catch (err) {
+        console.error("Failed to redeem gift card:", err);
       }
     }
 
@@ -347,121 +348,128 @@ export async function POST(request: Request) {
     for (const item of orderItems) {
       if (!item.id) continue;
 
-      // If variant_id exists, decrement variant stock
-      if (item.variant_id) {
-        const { data: variant, error: variantError } = await supabase
-          .from("product_variants")
-          .select("id, quantity, product_id")
-          .eq("id", item.variant_id)
+      try {
+        // If variant_id exists, decrement variant stock
+        if (item.variant_id) {
+          const { data: variant, error: variantError } = await supabase
+            .from("product_variants")
+            .select("id, quantity, product_id")
+            .eq("id", item.variant_id)
+            .single();
+
+          if (variantError || !variant) {
+            console.error(`Variant ${item.variant_id} not found for inventory update`);
+          } else {
+            const prevQty = variant.quantity;
+            const newQty = Math.max(0, prevQty - item.qty);
+            await supabase
+              .from("product_variants")
+              .update({ quantity: newQty })
+              .eq("id", item.variant_id);
+
+            await supabase.from("inventory_adjustments").insert({
+              product_id: variant.product_id,
+              quantity_change: -item.qty,
+              reason: "sold_online",
+              previous_quantity: prevQty,
+              new_quantity: newQty,
+              notes: `Variant ${item.variant_id} — Stripe order ${orderNumber} (${paymentIntent.id})`,
+              adjusted_by: null,
+              source: "web_order",
+            });
+          }
+        }
+
+        // Decrement product-level quantity
+        const { data: product, error: productError } = await supabase
+          .from("products")
+          .select("id, quantity, name")
+          .eq("id", item.id)
           .single();
 
-        if (variantError || !variant) {
-          console.error(`Variant ${item.variant_id} not found for inventory update`);
-        } else {
-          const prevQty = variant.quantity;
-          const newQty = Math.max(0, prevQty - item.qty);
-          await supabase
-            .from("product_variants")
-            .update({ quantity: newQty })
-            .eq("id", item.variant_id);
+        if (productError || !product) {
+          console.error(`Product ${item.id} not found for inventory update`);
+          continue;
+        }
 
-          // Log adjustment against the parent product
+        // Only decrement product stock if there's no variant_id (avoid double-decrement)
+        if (!item.variant_id) {
+          const previousQuantity = product.quantity;
+          const newQuantity = Math.max(0, previousQuantity - item.qty);
+
+          const { error: updateError } = await supabase
+            .from("products")
+            .update({
+              quantity: newQuantity,
+              updated_at: now,
+            })
+            .eq("id", item.id);
+
+          if (updateError) {
+            console.error(`Failed to update stock for product ${item.id}:`, updateError.message);
+            continue;
+          }
+
           await supabase.from("inventory_adjustments").insert({
-            product_id: variant.product_id,
+            product_id: item.id,
             quantity_change: -item.qty,
             reason: "sold_online",
-            previous_quantity: prevQty,
-            new_quantity: newQty,
-            notes: `Variant ${item.variant_id} — Stripe order ${orderNumber} (${paymentIntent.id})`,
+            previous_quantity: previousQuantity,
+            new_quantity: newQuantity,
+            notes: `Stripe order ${orderNumber} (${paymentIntent.id})`,
             adjusted_by: null,
             source: "web_order",
           });
         }
-      }
 
-      // Also decrement product-level quantity (for backward compat / non-variant items)
-      const { data: product, error: productError } = await supabase
-        .from("products")
-        .select("id, quantity, name")
-        .eq("id", item.id)
-        .single();
-
-      if (productError || !product) {
-        console.error(`Product ${item.id} not found for inventory update`);
-        continue;
-      }
-
-      // Only decrement product stock if there's no variant_id (avoid double-decrement)
-      if (!item.variant_id) {
-        const previousQuantity = product.quantity;
-        const newQuantity = Math.max(0, previousQuantity - item.qty);
-
-        const { error: updateError } = await supabase
+        // Increment drop_sold_count for drop products
+        const productData = await supabase
           .from("products")
-          .update({ 
-            quantity: newQuantity, 
-            updated_at: now 
-          })
-          .eq("id", item.id);
+          .select("is_drop, drop_sold_count")
+          .eq("id", item.id)
+          .single();
 
-        if (updateError) {
-          console.error(`Failed to update stock for product ${item.id}:`, updateError.message);
-          continue;
+        if (productData.data?.is_drop) {
+          await supabase
+            .from("products")
+            .update({
+              drop_sold_count: (productData.data.drop_sold_count || 0) + item.qty,
+            })
+            .eq("id", item.id);
         }
 
-        await supabase.from("inventory_adjustments").insert({
-          product_id: item.id,
-          quantity_change: -item.qty,
-          reason: "sold_online",
-          previous_quantity: previousQuantity,
-          new_quantity: newQuantity,
-          notes: `Stripe order ${orderNumber} (${paymentIntent.id})`,
-          adjusted_by: null,
-          source: "web_order",
+        // Sync stock to Clover (fire-and-forget)
+        handleWebsiteSale(item.id, item.qty).catch((err) => {
+          console.error(`Clover sync failed for product ${item.id}:`, err);
         });
+      } catch (err) {
+        console.error(`Inventory update failed for item ${item.id}:`, err);
       }
-
-      // Increment drop_sold_count for drop products
-      const productData = await supabase
-        .from("products")
-        .select("is_drop, drop_sold_count")
-        .eq("id", item.id)
-        .single();
-
-      if (productData.data?.is_drop) {
-        await supabase
-          .from("products")
-          .update({
-            drop_sold_count: (productData.data.drop_sold_count || 0) + item.qty,
-          })
-          .eq("id", item.id);
-      }
-
-      // Sync stock to Clover (fire-and-forget)
-      handleWebsiteSale(item.id, item.qty).catch((err) => {
-        console.error(`Clover sync failed for product ${item.id}:`, err);
-      });
     }
 
-    // Send order confirmation email via Resend
+    // Send order confirmation email via Resend (non-critical)
     if (email) {
-      await sendOrderConfirmationEmail({
-        email,
-        orderNumber,
-        items: formattedItems.map((i) => ({
-          name: i.name,
-          price: i.price,
-          quantity: i.quantity,
-          size: i.size,
-        })),
-        subtotal,
-        tax,
-        shippingCost,
-        total,
-        fulfillmentType: fulfillmentType || "ship",
-        shippingAddress: shipping,
-        pickupCode,
-      });
+      try {
+        await sendOrderConfirmationEmail({
+          email,
+          orderNumber,
+          items: formattedItems.map((i) => ({
+            name: i.name,
+            price: i.price,
+            quantity: i.quantity,
+            size: i.size,
+          })),
+          subtotal,
+          tax,
+          shippingCost,
+          total,
+          fulfillmentType: fulfillmentType || "ship",
+          shippingAddress: shipping,
+          pickupCode,
+        });
+      } catch (err) {
+        console.error("Email send failed:", err);
+      }
     }
   }
 
