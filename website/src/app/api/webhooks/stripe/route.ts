@@ -281,6 +281,10 @@ export async function POST(request: Request) {
 
     if (orderError) {
       console.error("Failed to create order:", orderError.message);
+      return NextResponse.json(
+        { error: "Order creation failed", detail: orderError.message },
+        { status: 500 }
+      );
     }
 
     // Increment discount code uses
