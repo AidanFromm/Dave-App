@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getCloverClientFromEnv } from "@/lib/clover";
+import { generateOrderNumber } from "@/lib/constants";
 
 /**
  * Clover webhook receiver.
@@ -29,7 +30,7 @@ export async function POST(request: NextRequest) {
     }
 
     const payload = JSON.parse(rawBody);
-    const { type, objectId, merchants } = payload as {
+    const { type, objectId } = payload as {
       type?: string;
       objectId?: string;
       merchants?: Record<string, string>;
@@ -43,104 +44,129 @@ export async function POST(request: NextRequest) {
     }
 
     // Handle item/inventory updates
-    if (type === "UPDATE" || type === "CREATE") {
-      if (objectId) {
-        try {
-          const cloverItem = await client.getItem(objectId);
-          if (cloverItem) {
-            const cloverQty = cloverItem.itemStock?.quantity ?? cloverItem.stockCount ?? 0;
+    if ((type === "UPDATE" || type === "CREATE") && objectId) {
+      try {
+        const cloverItem = await client.getItem(objectId);
+        if (cloverItem) {
+          const cloverQty = cloverItem.itemStock?.quantity ?? cloverItem.stockCount ?? 0;
 
-            // Find matching product
-            const { data: product } = await supabase
+          // Find matching product by name
+          const { data: product } = await supabase
+            .from("products")
+            .select("id, quantity, name")
+            .ilike("name", cloverItem.name || "")
+            .single();
+
+          if (product && product.quantity !== cloverQty) {
+            const now = new Date().toISOString();
+            const previousQuantity = product.quantity;
+
+            await supabase
               .from("products")
-              .select("id, quantity")
-              .eq("clover_item_id", objectId)
-              .single();
+              .update({ quantity: cloverQty, updated_at: now })
+              .eq("id", product.id);
 
-            if (product && product.quantity !== cloverQty) {
-              const now = new Date().toISOString();
-              await supabase
-                .from("products")
-                .update({ quantity: cloverQty, updated_at: now })
-                .eq("id", product.id);
-
-              await supabase.from("inventory_adjustments").insert({
-                product_id: product.id,
-                quantity_change: cloverQty - product.quantity,
-                reason: "sold_instore",
-                previous_quantity: product.quantity,
-                new_quantity: cloverQty,
-                notes: `Clover webhook - ${type} ${objectId}`,
-                adjusted_by: "clover_webhook",
-                source: "clover_webhook",
-              });
-            }
+            await supabase.from("inventory_adjustments").insert({
+              product_id: product.id,
+              quantity_change: cloverQty - previousQuantity,
+              reason: "sold_instore",
+              previous_quantity: previousQuantity,
+              new_quantity: cloverQty,
+              notes: `Clover webhook - ${type} ${objectId}`,
+              adjusted_by: "clover_webhook",
+              source: "clover_webhook",
+            });
           }
-        } catch (err) {
-          console.error(`Webhook item sync error for ${objectId}:`, err);
         }
+      } catch (err) {
+        console.error(`Webhook item sync error for ${objectId}:`, err);
       }
     }
 
     // Handle order events
-    if (type === "order" || (objectId && payload.type?.toLowerCase().includes("order"))) {
+    if (objectId && (type === "order" || type?.toLowerCase().includes("order"))) {
       try {
-        const order = objectId ? await client.getOrder(objectId) : null;
+        const order = await client.getOrder(objectId);
         if (order && (order.state === "locked" || order.state === "paid")) {
-          // Check for duplicate
+          // Idempotency check via stripe_payment_id
+          const cloverPaymentId = `clover-${objectId}`;
           const { data: existing } = await supabase
             .from("orders")
             .select("id")
-            .eq("clover_order_id", objectId)
+            .eq("stripe_payment_id", cloverPaymentId)
             .single();
 
           if (!existing) {
             const lineItems = order.lineItems?.elements ?? [];
             const total = order.total / 100;
-            const items = lineItems.map((li) => ({
+            const items = lineItems.map((li: any) => ({
+              product_id: li.item?.id ?? null,
               name: li.name,
               price: li.price / 100,
               quantity: li.unitQty || 1,
-              clover_item_id: li.item?.id ?? null,
+              size: null,
             }));
 
-            const subtotal = items.reduce((sum, i) => sum + i.price * i.quantity, 0);
-            const tax = Math.round((total - subtotal) * 100) / 100;
+            const subtotal = items.reduce((sum: number, i: any) => sum + i.price * i.quantity, 0);
+            const tax = Math.max(0, Math.round((total - subtotal) * 100) / 100);
+            const now = new Date().toISOString();
+            const orderNumber = generateOrderNumber();
 
-            const now = new Date();
-            const dateStr = now.toISOString().slice(2, 10).replace(/-/g, "");
-            const suffix = Math.floor(Math.random() * 10000).toString().padStart(4, "0");
-
-            await supabase.from("orders").insert({
-              order_number: `SEC-${dateStr}-${suffix}`,
+            const { error: orderError } = await supabase.from("orders").insert({
+              order_number: orderNumber,
+              customer_email: "in-store@securedtampa.com",
               status: "delivered",
               channel: "in_store",
               items,
               subtotal,
               tax,
-              shipping: 0,
+              shipping_cost: 0,
+              discount: 0,
               total,
-              clover_order_id: objectId,
+              fulfillment_type: "pickup",
+              delivery_method: "pickup",
+              pickup_status: "picked_up",
+              stripe_payment_id: cloverPaymentId,
+              stripe_payment_status: "succeeded",
               created_at: new Date(order.createdTime).toISOString(),
-              updated_at: now.toISOString(),
+              updated_at: now,
             });
+
+            if (orderError) {
+              console.error(`CRITICAL: Failed to insert Clover order ${objectId}:`, orderError.message);
+            }
 
             // Decrement stock for each line item
             for (const li of lineItems) {
               if (!li.item?.id) continue;
-              const { data: product } = await supabase
-                .from("products")
-                .select("id, quantity")
-                .eq("clover_item_id", li.item.id)
-                .single();
-
-              if (product) {
-                const qty = li.unitQty || 1;
-                const newQty = Math.max(0, product.quantity - qty);
-                await supabase
+              try {
+                const { data: product } = await supabase
                   .from("products")
-                  .update({ quantity: newQty, updated_at: now.toISOString() })
-                  .eq("id", product.id);
+                  .select("id, quantity")
+                  .ilike("name", li.name)
+                  .single();
+
+                if (product) {
+                  const qty = li.unitQty || 1;
+                  const newQty = Math.max(0, product.quantity - qty);
+                  await supabase
+                    .from("products")
+                    .update({ quantity: newQty, updated_at: now })
+                    .eq("id", product.id);
+
+                  await supabase.from("inventory_adjustments").insert({
+                    product_id: product.id,
+                    quantity_change: -qty,
+                    reason: "sold_instore",
+                    previous_quantity: product.quantity,
+                    new_quantity: newQty,
+                    notes: `Clover order ${objectId} — ${orderNumber}`,
+                    adjusted_by: "clover_webhook",
+                    source: "clover_webhook",
+                  });
+                }
+              } catch (err) {
+                console.error(`Stock decrement failed for ${li.name}:`, err);
               }
             }
           }
