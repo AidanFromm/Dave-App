@@ -145,10 +145,24 @@ export class CloverClient {
   // --- Inventory ---
 
   async getInventory(): Promise<CloverItem[]> {
-    const data = await this.request<CloverApiResponse<CloverItem>>(
-      "/items?expand=itemStock&limit=500"
-    );
-    return data.elements ?? [];
+    const allItems: CloverItem[] = [];
+    const limit = 500;
+    let offset = 0;
+
+    while (true) {
+      const data = await this.request<CloverApiResponse<CloverItem>>(
+        `/items?expand=itemStock&limit=${limit}&offset=${offset}`
+      );
+      const items = data.elements ?? [];
+      allItems.push(...items);
+
+      if (items.length < limit) break; // Last page
+      offset += limit;
+
+      // Small delay to be nice to rate limits
+      await new Promise((r) => setTimeout(r, 100));
+    }
+    return allItems;
   }
 
   async getItem(itemId: string): Promise<CloverItem> {

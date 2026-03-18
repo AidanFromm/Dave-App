@@ -49,6 +49,72 @@ export async function GET(request: NextRequest) {
     }
   }
 
+  if (action === "initial-push-all") {
+    try {
+      const supabase = createAdminClient();
+      const client = await getCloverClient();
+      if (!client) {
+        return NextResponse.json({
+          success: false,
+          error: "Clover not configured. Add API keys or connect via OAuth.",
+        }, { status: 500 });
+      }
+
+      // Fetch all active products with quantity > 0 from Supabase
+      const { data: products, error } = await supabase
+        .from("products")
+        .select("id, name, is_active, quantity")
+        .eq("is_active", true)
+        .gt("quantity", 0);
+
+      if (error) {
+        throw new Error(`Failed to fetch products from Supabase: ${error.message}`);
+      }
+      if (!products || products.length === 0) {
+        return NextResponse.json({ success: true, message: "No active products with quantity > 0 to push." });
+      }
+
+      console.log(`Starting initial push of ${products.length} products to Clover...`);
+      const pushResults = { total: products.length, success: 0, skipped: 0, errors: [] };
+
+      for (let i = 0; i < products.length; i++) {
+        const p = products[i];
+        try {
+          // Implement rate limiting: 16 requests/sec. Delay for ~60ms between requests.
+          if (i > 0) {
+            await new Promise(resolve => setTimeout(resolve, 60)); // ~16.6 requests per second
+          }
+
+          const syncResult = await syncToClover(p.id);
+          if (syncResult.success) {
+            pushResults.success++;
+            console.log(`Pushed product ${p.name} (${p.id}) to Clover.`);
+          } else {
+            pushResults.errors.push(`Failed to push ${p.name} (${p.id}): ${syncResult.error}`);
+            console.error(`Failed to push product ${p.name} (${p.id}): ${syncResult.error}`);
+          }
+        } catch (innerError) {
+          pushResults.errors.push(`Error processing ${p.name} (${p.id}): ${innerError instanceof Error ? innerError.message : "Unknown error"}`);
+          console.error(`Error processing product ${p.name} (${p.id}):`, innerError);
+        }
+      }
+
+      console.log("Initial Clover product push complete.", pushResults);
+      return NextResponse.json({
+        success: pushResults.errors.length === 0,
+        message: "Initial product push to Clover completed.",
+        details: pushResults,
+      });
+
+    } catch (err) {
+      console.error("Initial Clover product push failed:", err);
+      return NextResponse.json({
+        success: false,
+        error: err instanceof Error ? err.message : "Unknown error during initial push",
+      }, { status: 500 });
+    }
+  }
+
   return NextResponse.json({ error: "Invalid action" }, { status: 400 });
 }
 

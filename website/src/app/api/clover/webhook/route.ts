@@ -35,11 +35,27 @@ export async function POST(request: NextRequest) {
     }
 
     const payload = JSON.parse(body);
-    const { type, merchantId, objectId } = payload as {
-      type: string;
-      merchantId: string;
-      objectId: string;
-    };
+
+    // Handle verification handshake
+    if (payload.verificationCode) {
+      console.log(`Clover webhook verification: ${payload.verificationCode}`);
+      return NextResponse.json({ verificationCode: payload.verificationCode }, { status: 200 });
+    }
+    const merchantIds = Object.keys(payload.merchants);
+    if (merchantIds.length === 0) {
+      console.warn("Clover webhook received with no merchant data.");
+      return NextResponse.json({ received: true }, { status: 200 });
+    }
+    const merchantId = merchantIds[0]; // Assuming one merchant per webhook for now
+    const events = payload.merchants[merchantId];
+
+    if (!events || events.length === 0) {
+      console.warn(`No events for merchant ${merchantId} in Clover webhook.`);
+      return NextResponse.json({ received: true }, { status: 200 });
+    }
+
+    const firstEvent = events[0]; // Process the first event for simplicity, can extend to loop if needed
+    const { objectId, type } = firstEvent;
 
     // Fetch Clover settings to get the access token
     const { data: cloverSettings } = await supabase
@@ -56,9 +72,23 @@ export async function POST(request: NextRequest) {
 
     const clover = new CloverClient(merchantId, cloverSettings.access_token);
 
-    // Handle different webhook types
-    if (type === "order" || type === "CREATE" || type === "UPDATE") {
-      await handleOrderWebhook(supabase, clover, objectId);
+    // Parse objectId prefix: O: = Order, I: = Item, P: = Payment
+    const objPrefix = objectId?.split(":")[0];
+    const objId = objectId?.includes(":") ? objectId.split(":").slice(1).join(":") : objectId;
+
+    // Handle different webhook types based on objectId prefix
+    if (objPrefix === "O") {
+      await handleOrderWebhook(supabase, clover, objId);
+    } else if (objPrefix === "I") {
+      await handleInventoryWebhook(supabase, clover, objId, type);
+    } else if (objPrefix === "P") {
+      // Payment webhook — order webhook handles the stock sync
+      console.log(`Clover payment webhook: ${type} ${objId}`);
+    } else {
+      // Legacy flat format fallback
+      if (type === "order" || type === "CREATE" || type === "UPDATE") {
+        await handleOrderWebhook(supabase, clover, objectId);
+      }
     }
 
     return NextResponse.json({ received: true }, { status: 200 });
@@ -147,12 +177,23 @@ async function handleOrderWebhook(
     if (!item.item?.id) continue;
 
     try {
-      // Find matching product by name (clover_item_id column doesn't exist yet)
-      const { data: product } = await supabase
+      // Find matching product by clover_item_id first, fallback to name
+      let product: { id: string; quantity: number } | null = null;
+      const { data: byClover } = await supabase
         .from("products")
         .select("id, quantity")
-        .ilike("name", item.name)
+        .eq("clover_item_id", item.item.id)
         .single();
+      if (byClover) {
+        product = byClover;
+      } else {
+        const { data: byName } = await supabase
+          .from("products")
+          .select("id, quantity")
+          .ilike("name", item.name)
+          .single();
+        product = byName;
+      }
 
       if (product) {
         const qty = item.unitQty || 1;
@@ -198,5 +239,76 @@ async function handleOrderWebhook(
     } catch (err) {
       console.error(`Clover stock decrement failed for ${item.name}:`, err);
     }
+  }
+}
+
+async function handleInventoryWebhook(
+  supabase: ReturnType<typeof createAdminClient>,
+  clover: CloverClient,
+  itemId: string,
+  type: string
+) {
+  if (type === "DELETE") {
+    // Item deleted from Clover — mark inactive in Supabase
+    const { data: product } = await supabase
+      .from("products")
+      .select("id")
+      .eq("clover_item_id", itemId)
+      .single();
+    if (product) {
+      await supabase
+        .from("products")
+        .update({ is_active: false, updated_at: new Date().toISOString() })
+        .eq("id", product.id);
+      console.log(`Clover item ${itemId} deleted — deactivated product ${product.id}`);
+    }
+    return;
+  }
+
+  // CREATE or UPDATE — fetch item from Clover and sync to Supabase
+  try {
+    const cloverItem = await clover.getItem(itemId);
+    if (!cloverItem) {
+      console.error(`Failed to fetch Clover item ${itemId}`);
+      return;
+    }
+
+    // Find matching product
+    const { data: product } = await supabase
+      .from("products")
+      .select("id, quantity")
+      .eq("clover_item_id", itemId)
+      .single();
+
+    if (!product) {
+      console.log(`Clover item ${itemId} (${cloverItem.name}) has no matching Supabase product — skipping`);
+      return;
+    }
+
+    const cloverStock = cloverItem.itemStock?.quantity ?? cloverItem.stockCount ?? 0;
+    const now = new Date().toISOString();
+
+    if (cloverStock !== product.quantity) {
+      const previousQuantity = product.quantity;
+      await supabase
+        .from("products")
+        .update({ quantity: cloverStock, updated_at: now })
+        .eq("id", product.id);
+
+      await supabase.from("inventory_adjustments").insert({
+        product_id: product.id,
+        quantity_change: cloverStock - previousQuantity,
+        reason: "clover_sync",
+        previous_quantity: previousQuantity,
+        new_quantity: cloverStock,
+        notes: `Clover inventory webhook — item ${itemId}`,
+        adjusted_by: "clover_webhook",
+        source: "clover_webhook",
+      });
+
+      console.log(`Synced Clover item ${itemId}: ${previousQuantity} → ${cloverStock}`);
+    }
+  } catch (err) {
+    console.error(`Clover inventory webhook failed for item ${itemId}:`, err);
   }
 }

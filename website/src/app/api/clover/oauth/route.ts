@@ -25,7 +25,11 @@ export async function GET(request: NextRequest) {
 
   try {
     // Exchange code for access token
-    const tokenUrl = `https://sandbox.dev.clover.com/oauth/token`;
+    const cloverEnv = process.env.CLOVER_ENVIRONMENT ?? "sandbox";
+    const tokenUrl =
+      cloverEnv === "production"
+        ? `https://api.clover.com/oauth/token`
+        : `https://sandbox.dev.clover.com/oauth/token`;
     const tokenResponse = await fetch(tokenUrl, {
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
