@@ -44,7 +44,7 @@ export async function POST(request: Request) {
       email?: string;
       items?: CartItem[];
       fulfillmentType?: string;
-      shippingAddress?: object;
+      shippingAddress?: { firstName?: string; lastName?: string; line1?: string; line2?: string; city?: string; state?: string; zip?: string; country?: string; [key: string]: any };
       discountCode?: string;
       giftCardCode?: string;
       phone?: string;
