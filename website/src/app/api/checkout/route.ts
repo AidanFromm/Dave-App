@@ -271,6 +271,7 @@ export async function POST(request: Request) {
       const { data: order, error: orderError } = await supabase.from("orders").insert({
         order_number: orderNumber,
         customer_email: sanitizedEmail || "unknown@checkout.com",
+        customer_name: shippingAddress ? `${shippingAddress.firstName || ""} ${shippingAddress.lastName || ""}`.trim() || null : null,
         channel: "web",
         subtotal,
         tax,

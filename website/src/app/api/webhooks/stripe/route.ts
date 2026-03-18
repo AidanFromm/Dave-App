@@ -476,6 +476,7 @@ export async function POST(request: Request) {
       order_number: orderNumber,
       customer_id: customerId,
       customer_email: email || "unknown@checkout.com",
+      customer_name: shipping ? `${shipping.firstName || ""} ${shipping.lastName || ""}`.trim() || null : null,
       channel: "web",
       subtotal,
       tax,

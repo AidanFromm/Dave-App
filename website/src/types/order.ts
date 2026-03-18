@@ -10,7 +10,7 @@ export type OrderStatus =
 
 export type PickupStatus = "pending" | "ready" | "picked_up";
 
-export type SalesChannel = "pos" | "ios" | "web" | "ebay" | "whatnot";
+export type SalesChannel = "in_store" | "ios" | "web" | "ebay" | "whatnot";
 
 export type FulfillmentType = "ship" | "pickup";
 
@@ -43,7 +43,7 @@ export const PICKUP_STATUS_LABELS: Record<PickupStatus, string> = {
 };
 
 export const SALES_CHANNEL_LABELS: Record<SalesChannel, string> = {
-  pos: "In-Store",
+  in_store: "In-Store",
   ios: "iOS App",
   web: "Website",
   ebay: "eBay",
@@ -84,6 +84,7 @@ export interface Order {
   order_number: string;
   customer_id: string | null;
   customer_email: string;
+  customer_name: string | null;
   channel: SalesChannel;
   items: OrderItem[];
   subtotal: number;
