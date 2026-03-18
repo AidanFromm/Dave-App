@@ -75,7 +75,7 @@ export async function GET(request: NextRequest) {
       }
 
       console.log(`Starting initial push of ${products.length} products to Clover...`);
-      const pushResults = { total: products.length, success: 0, skipped: 0, errors: [] };
+      const pushResults = { total: products.length, success: 0, skipped: 0, errors: [] as string[] };
 
       for (let i = 0; i < products.length; i++) {
         const p = products[i];
