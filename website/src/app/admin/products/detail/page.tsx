@@ -32,7 +32,7 @@ import {
 import { formatCurrency }  from "@/lib/utils";
 import { CONDITION_LABELS, type ProductCondition } from "@/types/product";
 import { toast } from "sonner";
-import { ArrowLeft, Plus, Pencil, Package } from "lucide-react";
+import { ArrowLeft, Plus, Pencil, Package, Printer } from "lucide-react";
 import { ImageUpload } from "@/components/admin/image-upload";
 
 interface EditForm {
@@ -167,6 +167,15 @@ function ProductDetailPage() {
     }
   };
 
+  const printLabel = (productId: string, copies: number = 1) => {
+    window.open(`/api/admin/labels?productId=${productId}&copies=${copies}`, "_blank");
+  };
+
+  const printAllLabels = () => {
+    const ids = variants.map((v) => v.id).join(",");
+    if (ids) window.open(`/api/admin/labels?productIds=${ids}`, "_blank");
+  };
+
   if (loading) {
     return (
       <div className="space-y-6">
@@ -236,9 +245,14 @@ function ProductDetailPage() {
       {/* Variants Table */}
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-semibold">Size Variants</h2>
-        <Button onClick={() => setShowAdd(true)} size="sm">
-          <Plus className="mr-2 h-4 w-4" /> Add Variant
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={printAllLabels} disabled={variants.length === 0}>
+            <Printer className="mr-2 h-4 w-4" /> Print All Labels
+          </Button>
+          <Button onClick={() => setShowAdd(true)} size="sm">
+            <Plus className="mr-2 h-4 w-4" /> Add Variant
+          </Button>
+        </div>
       </div>
 
       {/* Desktop Table */}
@@ -289,9 +303,14 @@ function ProductDetailPage() {
                       {v.sku ?? "--"}
                     </td>
                     <td className="px-4 py-3">
-                      <Button variant="ghost" size="icon" onClick={() => openEdit(v)}>
-                        <Pencil className="h-4 w-4" />
-                      </Button>
+                      <div className="flex items-center gap-1">
+                        <Button variant="ghost" size="icon" onClick={() => printLabel(v.id)} title="Print Label">
+                          <Printer className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon" onClick={() => openEdit(v)}>
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </td>
                   </tr>
                 ))
@@ -326,9 +345,14 @@ function ProductDetailPage() {
                   {v.sku && <span className="text-[10px] text-muted-foreground font-mono">{v.sku}</span>}
                 </div>
               </div>
-              <Button variant="ghost" size="icon" onClick={() => openEdit(v)} className="min-h-[44px] min-w-[44px]">
-                <Pencil className="h-4 w-4" />
-              </Button>
+              <div className="flex flex-col gap-1">
+                <Button variant="ghost" size="icon" onClick={() => printLabel(v.id)} className="min-h-[44px] min-w-[44px]" title="Print Label">
+                  <Printer className="h-4 w-4" />
+                </Button>
+                <Button variant="ghost" size="icon" onClick={() => openEdit(v)} className="min-h-[44px] min-w-[44px]">
+                  <Pencil className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
           ))
         )}

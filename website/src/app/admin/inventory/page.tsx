@@ -33,6 +33,7 @@ import {
   ArrowDown,
   Pencil,
   Trash2,
+  Printer,
 } from "lucide-react";
 
 type CategoryFilter = "all" | "sneaker" | "pokemon";
@@ -446,6 +447,16 @@ export default function InventoryPage() {
                         <td className="px-5 py-4 align-middle font-medium">{formatCurrency(row.totalValue)}</td>
                         <td className="px-5 py-4 align-middle">
                           <div className="flex items-center justify-end gap-1">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
+                              onClick={() => window.open(`/api/admin/labels?name=${encodeURIComponent(row.name)}`, "_blank")}
+                              title="Print Labels"
+                            >
+                              <Printer className="h-4 w-4" />
+                              <span className="sr-only">Print labels for {row.name}</span>
+                            </Button>
                             <Button variant="ghost" size="icon" className="h-8 w-8" asChild>
                               <Link href={editHref(row.name)}>
                                 <Pencil className="h-4 w-4" />
