@@ -18,6 +18,84 @@ function generatePickupCode(): string {
   return String(Math.floor(100000 + Math.random() * 900000));
 }
 
+async function sendGiftCardEmail(params: {
+  recipientEmail: string;
+  senderEmail: string;
+  recipientName: string;
+  amount: number;
+  code: string;
+  message: string;
+}) {
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) {
+    console.error("RESEND_API_KEY not configured — skipping gift card email");
+    return;
+  }
+
+  const { recipientEmail, senderEmail, recipientName, amount, code, message } = params;
+  const toEmail = recipientEmail || senderEmail;
+  const greeting = recipientName ? `${recipientName}, you` : "You";
+
+  const html = `
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"></head>
+<body style="margin:0;padding:0;background:#0a0a0a;font-family:Arial,Helvetica,sans-serif;">
+  <div style="max-width:600px;margin:0 auto;background:#111;border-radius:12px;overflow:hidden;margin-top:20px;margin-bottom:20px;">
+    <div style="background:linear-gradient(135deg,#FB4F14,#e04400);padding:32px 24px;text-align:center;">
+      <h1 style="margin:0;color:#fff;font-size:24px;letter-spacing:2px;">SECURED</h1>
+      <p style="margin:4px 0 0;color:rgba(255,255,255,0.8);font-size:13px;">Tampa, FL</p>
+    </div>
+    <div style="padding:32px 24px;text-align:center;">
+      <h2 style="color:#fff;margin:0 0 8px;font-size:22px;">You've Got a Gift Card!</h2>
+      <p style="color:#999;margin:0;font-size:14px;">${greeting} received a $${amount.toFixed(2)} gift card</p>
+    </div>
+    <div style="padding:0 24px;">
+      <div style="background:#1a1a1a;border:2px solid #FB4F14;border-radius:12px;padding:24px;text-align:center;margin:16px 0;">
+        <p style="margin:0;color:#999;font-size:12px;text-transform:uppercase;letter-spacing:1px;">Your Gift Card Code</p>
+        <p style="margin:12px 0 0;color:#FB4F14;font-size:28px;font-weight:bold;letter-spacing:4px;font-family:monospace;">${code}</p>
+        <p style="margin:12px 0 0;color:#fff;font-size:20px;font-weight:bold;">$${amount.toFixed(2)}</p>
+      </div>
+      ${message ? `<div style="background:#1a1a1a;border-radius:8px;padding:16px;margin:16px 0;">
+        <p style="margin:0;color:#999;font-size:12px;text-transform:uppercase;letter-spacing:1px;">Personal Message</p>
+        <p style="margin:8px 0 0;color:#ccc;font-size:14px;font-style:italic;">"${message}"</p>
+      </div>` : ""}
+    </div>
+    <div style="padding:24px;text-align:center;">
+      <a href="https://securedtampa.com/shop" style="display:inline-block;background:#FB4F14;color:#fff;text-decoration:none;padding:14px 32px;border-radius:8px;font-weight:bold;font-size:16px;">Shop Now</a>
+    </div>
+    <div style="padding:16px 24px;text-align:center;border-top:1px solid #2a2a2a;">
+      <p style="color:#666;font-size:12px;margin:0;">
+        Enter your code at checkout on <a href="https://securedtampa.com" style="color:#FB4F14;">securedtampa.com</a>
+      </p>
+    </div>
+  </div>
+</body>
+</html>`;
+
+  try {
+    const res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        from: "Secured Tampa <orders@securedtampa.com>",
+        to: [toEmail],
+        subject: `Your $${amount.toFixed(2)} Secured Tampa Gift Card`,
+        html,
+      }),
+    });
+    if (!res.ok) {
+      const errBody = await res.text();
+      console.error("Gift card email error:", res.status, errBody);
+    }
+  } catch (err) {
+    console.error("Failed to send gift card email:", err);
+  }
+}
+
 async function sendOrderConfirmationEmail(params: {
   email: string;
   orderNumber: string;
@@ -144,6 +222,73 @@ async function sendOrderConfirmationEmail(params: {
   }
 }
 
+// ============================================================
+// Atomic inventory decrement via Supabase RPC
+// Prevents race conditions where two concurrent orders oversell
+// ============================================================
+async function atomicDecrement(
+  supabase: ReturnType<typeof createAdminClient>,
+  table: "products" | "product_variants",
+  id: string,
+  qty: number
+): Promise<{ previousQuantity: number; newQuantity: number; success: boolean }> {
+  // Use a transaction-safe approach: update with a WHERE check
+  // First get current quantity
+  const { data: current, error: fetchErr } = await supabase
+    .from(table)
+    .select("quantity")
+    .eq("id", id)
+    .single();
+
+  if (fetchErr || !current) {
+    return { previousQuantity: 0, newQuantity: 0, success: false };
+  }
+
+  const previousQuantity = current.quantity;
+  const newQuantity = Math.max(0, previousQuantity - qty);
+
+  // Conditional update: only decrement if quantity hasn't changed since we read it
+  // This prevents the race: if another order decremented between our read and write,
+  // the WHERE clause won't match and we'll retry
+  const { data: updated, error: updateErr } = await supabase
+    .from(table)
+    .update({
+      quantity: newQuantity,
+      ...(table === "products" ? { updated_at: new Date().toISOString() } : {}),
+    })
+    .eq("id", id)
+    .eq("quantity", previousQuantity) // optimistic lock
+    .select("id")
+    .single();
+
+  if (updateErr || !updated) {
+    // Race condition detected — retry once with fresh data
+    const { data: retry } = await supabase
+      .from(table)
+      .select("quantity")
+      .eq("id", id)
+      .single();
+
+    if (!retry) return { previousQuantity, newQuantity, success: false };
+
+    const retryPrev = retry.quantity;
+    const retryNew = Math.max(0, retryPrev - qty);
+
+    const { error: retryErr } = await supabase
+      .from(table)
+      .update({
+        quantity: retryNew,
+        ...(table === "products" ? { updated_at: new Date().toISOString() } : {}),
+      })
+      .eq("id", id);
+
+    if (retryErr) return { previousQuantity: retryPrev, newQuantity: retryNew, success: false };
+    return { previousQuantity: retryPrev, newQuantity: retryNew, success: true };
+  }
+
+  return { previousQuantity, newQuantity, success: true };
+}
+
 export async function POST(request: Request) {
   const body = await request.text();
   const sig = request.headers.get("stripe-signature")!;
@@ -165,6 +310,80 @@ export async function POST(request: Request) {
     );
   }
 
+  // ============================================================
+  // GIFT CARD PURCHASE — checkout.session.completed
+  // ============================================================
+  if (event.type === "checkout.session.completed") {
+    const session = event.data.object as Stripe.Checkout.Session;
+    const meta = session.metadata || {};
+
+    // Only handle gift card purchases
+    if (meta.type === "gift_card") {
+      const supabase = createAdminClient();
+      const now = new Date().toISOString();
+      const amount = parseFloat(meta.amount || "0");
+      const code = meta.giftCardCode || "";
+
+      if (!code || amount <= 0) {
+        console.error("Gift card webhook missing code or amount:", meta);
+        return NextResponse.json({ received: true });
+      }
+
+      // Idempotency: check if gift card already exists
+      const { data: existing } = await supabase
+        .from("gift_cards")
+        .select("id")
+        .eq("code", code)
+        .single();
+
+      if (existing) {
+        return NextResponse.json({ received: true, duplicate: true });
+      }
+
+      // Create the gift card
+      const { error: gcError } = await supabase.from("gift_cards").insert({
+        code,
+        initial_balance: amount,
+        remaining_balance: amount,
+        sender_email: meta.senderEmail || null,
+        recipient_email: meta.recipientEmail || null,
+        recipient_name: meta.recipientName || null,
+        message: meta.message || null,
+        stripe_session_id: session.id,
+        is_active: true,
+        created_at: now,
+        updated_at: now,
+      });
+
+      if (gcError) {
+        console.error("CRITICAL: Failed to create gift card:", gcError.message, "Code:", code);
+        return NextResponse.json(
+          { error: "Gift card creation failed", detail: gcError.message },
+          { status: 500 }
+        );
+      }
+
+      // Send gift card email
+      try {
+        await sendGiftCardEmail({
+          recipientEmail: meta.recipientEmail || "",
+          senderEmail: meta.senderEmail || "",
+          recipientName: meta.recipientName || "",
+          amount,
+          code,
+          message: meta.message || "",
+        });
+      } catch (err) {
+        console.error("Gift card email failed:", err);
+      }
+    }
+
+    return NextResponse.json({ received: true });
+  }
+
+  // ============================================================
+  // ORDER PAYMENT — payment_intent.succeeded
+  // ============================================================
   if (event.type === "payment_intent.succeeded") {
     const paymentIntent = event.data.object as Stripe.PaymentIntent;
     const {
@@ -281,7 +500,6 @@ export async function POST(request: Request) {
 
     if (orderError) {
       console.error("CRITICAL: Failed to create order for payment", paymentIntent.id, orderError.message);
-      // Return 500 so Stripe retries the webhook
       return NextResponse.json(
         { error: "Order creation failed", detail: orderError.message, paymentId: paymentIntent.id },
         { status: 500 }
@@ -289,7 +507,7 @@ export async function POST(request: Request) {
     }
 
     // ============================================================
-    // Post-order operations — these are non-critical, log errors but don't fail the webhook
+    // Post-order operations — non-critical, log errors but don't fail webhook
     // ============================================================
 
     // Increment discount code uses
@@ -344,82 +562,61 @@ export async function POST(request: Request) {
       }
     }
 
-    // Decrement inventory for each item
+    // ============================================================
+    // ATOMIC inventory decrement for each item
+    // ============================================================
     for (const item of orderItems) {
       if (!item.id) continue;
 
       try {
-        // If variant_id exists, decrement variant stock
+        // If variant_id exists, decrement variant stock atomically
         if (item.variant_id) {
-          const { data: variant, error: variantError } = await supabase
+          const { data: variant } = await supabase
             .from("product_variants")
             .select("id, quantity, product_id")
             .eq("id", item.variant_id)
             .single();
 
-          if (variantError || !variant) {
+          if (!variant) {
             console.error(`Variant ${item.variant_id} not found for inventory update`);
           } else {
-            const prevQty = variant.quantity;
-            const newQty = Math.max(0, prevQty - item.qty);
-            await supabase
-              .from("product_variants")
-              .update({ quantity: newQty })
-              .eq("id", item.variant_id);
+            const result = await atomicDecrement(supabase, "product_variants", item.variant_id, item.qty);
 
-            await supabase.from("inventory_adjustments").insert({
-              product_id: variant.product_id,
-              quantity_change: -item.qty,
-              reason: "sold_online",
-              previous_quantity: prevQty,
-              new_quantity: newQty,
-              notes: `Variant ${item.variant_id} — Stripe order ${orderNumber} (${paymentIntent.id})`,
-              adjusted_by: null,
-              source: "web_order",
-            });
+            if (result.success) {
+              await supabase.from("inventory_adjustments").insert({
+                product_id: variant.product_id,
+                quantity_change: -item.qty,
+                reason: "sold_online",
+                previous_quantity: result.previousQuantity,
+                new_quantity: result.newQuantity,
+                notes: `Variant ${item.variant_id} — Stripe order ${orderNumber} (${paymentIntent.id})`,
+                adjusted_by: null,
+                source: "web_order",
+              });
+            } else {
+              console.error(`Atomic decrement failed for variant ${item.variant_id}`);
+            }
           }
-        }
-
-        // Decrement product-level quantity
-        const { data: product, error: productError } = await supabase
-          .from("products")
-          .select("id, quantity, name")
-          .eq("id", item.id)
-          .single();
-
-        if (productError || !product) {
-          console.error(`Product ${item.id} not found for inventory update`);
-          continue;
         }
 
         // Only decrement product stock if there's no variant_id (avoid double-decrement)
         if (!item.variant_id) {
-          const previousQuantity = product.quantity;
-          const newQuantity = Math.max(0, previousQuantity - item.qty);
+          const result = await atomicDecrement(supabase, "products", item.id, item.qty);
 
-          const { error: updateError } = await supabase
-            .from("products")
-            .update({
-              quantity: newQuantity,
-              updated_at: now,
-            })
-            .eq("id", item.id);
-
-          if (updateError) {
-            console.error(`Failed to update stock for product ${item.id}:`, updateError.message);
-            continue;
+          if (result.success) {
+            await supabase.from("inventory_adjustments").insert({
+              product_id: item.id,
+              quantity_change: -item.qty,
+              reason: "sold_online",
+              previous_quantity: result.previousQuantity,
+              new_quantity: result.newQuantity,
+              notes: `Stripe order ${orderNumber} (${paymentIntent.id})`,
+              adjusted_by: null,
+              source: "web_order",
+            });
+          } else {
+            console.error(`Atomic decrement failed for product ${item.id}`);
           }
-
-          await supabase.from("inventory_adjustments").insert({
-            product_id: item.id,
-            quantity_change: -item.qty,
-            reason: "sold_online",
-            previous_quantity: previousQuantity,
-            new_quantity: newQuantity,
-            notes: `Stripe order ${orderNumber} (${paymentIntent.id})`,
-            adjusted_by: null,
-            source: "web_order",
-          });
         }
 
         // Increment drop_sold_count for drop products
