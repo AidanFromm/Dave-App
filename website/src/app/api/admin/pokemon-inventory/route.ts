@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireAdmin } from "@/lib/admin-auth";
+import { syncProductToClover } from "@/lib/clover-auto-sync";
 
 export async function GET() {
   try {
@@ -95,6 +96,11 @@ export async function POST(request: Request) {
       await supabase.from("products").delete().eq("id", product.id);
       return NextResponse.json({ error: "Failed to create pokemon detail" }, { status: 500 });
     }
+
+    // Auto-sync to Clover POS
+    syncProductToClover(product.id).catch((err) =>
+      console.error(`Clover auto-sync failed for pokemon product ${product.id}:`, err)
+    );
 
     return NextResponse.json({ product, detail }, { status: 201 });
   } catch (error) {

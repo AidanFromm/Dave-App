@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireAdmin } from "@/lib/admin-auth";
 import type { AdjustmentReason, AdjustmentSource } from "@/types/admin";
+import { syncProductToClover } from "@/lib/clover-auto-sync";
 
 interface AdjustBody {
   productId: string;
@@ -94,6 +95,11 @@ export async function POST(request: NextRequest) {
       console.error("Adjustment log error:", logError.message);
       // Don't fail the request since the stock was already updated
     }
+
+    // Auto-sync stock to Clover POS
+    syncProductToClover(productId).catch((err) =>
+      console.error(`Clover auto-sync failed for inventory adjust ${productId}:`, err)
+    );
 
     return NextResponse.json({
       success: true,
