@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import type { Product, ProductCondition } from "@/types/product";
+import { syncProductToClover } from "@/lib/clover-auto-sync";
 
 export interface GroupedProduct {
   name: string;
@@ -274,8 +275,15 @@ export async function addProductVariant(data: {
     low_stock_threshold: existing?.low_stock_threshold ?? 2,
   };
 
-  const { error } = await supabase.from("products").insert(insertData);
+  const { data: inserted, error } = await supabase.from("products").insert(insertData).select("id").single();
   if (error) throw new Error(error.message);
+
+  // Auto-sync to Clover POS
+  if (inserted?.id) {
+    syncProductToClover(inserted.id).catch((err) =>
+      console.error(`Clover auto-sync failed for new product ${inserted.id}:`, err)
+    );
+  }
 }
 
 export async function updateProductVariant(
@@ -308,6 +316,14 @@ export async function createProduct(product: Partial<Product>) {
     .select()
     .single();
   if (error) return { data: null, error: error.message };
+
+  // Auto-sync to Clover POS
+  if (data?.id) {
+    syncProductToClover(data.id).catch((err) =>
+      console.error(`Clover auto-sync failed for new product ${data.id}:`, err)
+    );
+  }
+
   return { data, error: null };
 }
 
@@ -318,6 +334,12 @@ export async function updateProduct(id: string, updates: Partial<Product>) {
     .update({ ...updates, updated_at: new Date().toISOString() })
     .eq("id", id);
   if (error) return { error: error.message };
+
+  // Auto-sync to Clover POS
+  syncProductToClover(id).catch((err) =>
+    console.error(`Clover auto-sync failed for product ${id}:`, err)
+  );
+
   return { error: null };
 }
 
@@ -332,6 +354,12 @@ export async function updateProductQuantity(
     .update({ quantity: newQuantity, updated_at: new Date().toISOString() })
     .eq("id", productId);
   if (error) return { error: error.message };
+
+  // Auto-sync stock to Clover POS
+  syncProductToClover(productId).catch((err) =>
+    console.error(`Clover auto-sync failed for product ${productId}:`, err)
+  );
+
   return { error: null };
 }
 
