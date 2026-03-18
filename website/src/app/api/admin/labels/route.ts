@@ -124,6 +124,8 @@ export async function GET(request: NextRequest) {
   const productIds = request.nextUrl.searchParams.get("productIds");
   const productName = request.nextUrl.searchParams.get("name");
   const copies = parseInt(request.nextUrl.searchParams.get("copies") ?? "1", 10);
+  // Label size: "small" = 2.25x1.25, "medium" = 3x2, "large" = 4x2 (ZD421 max width 4.25")
+  const labelSize = request.nextUrl.searchParams.get("size") ?? "medium";
 
   if (!productId && !productIds && !productName) {
     return NextResponse.json({ error: "productId, productIds, or name required" }, { status: 400 });
@@ -153,6 +155,14 @@ export async function GET(request: NextRequest) {
   );
   const labels = await Promise.all(labelPromises);
 
+  // ZD421 compatible label sizes
+  const sizes: Record<string, { w: string; h: string; pricePt: string; namePt: string; detailPt: string; headerPt: string; barcodeH: string; pad: string; nameMax: number }> = {
+    small:  { w: "2.25in", h: "1.25in", pricePt: "18pt", namePt: "6.5pt", detailPt: "6pt", headerPt: "9pt", barcodeH: "0.32in", pad: "0.06in 0.08in", nameMax: 40 },
+    medium: { w: "3in",    h: "2in",    pricePt: "28pt", namePt: "9pt",   detailPt: "7.5pt", headerPt: "11pt", barcodeH: "0.5in",  pad: "0.08in 0.12in", nameMax: 50 },
+    large:  { w: "4in",    h: "2in",    pricePt: "32pt", namePt: "11pt",  detailPt: "9pt", headerPt: "13pt", barcodeH: "0.6in",  pad: "0.1in 0.15in", nameMax: 60 },
+  };
+  const sz = sizes[labelSize] ?? sizes.medium;
+
   const html = `<!DOCTYPE html>
 <html>
 <head>
@@ -160,7 +170,7 @@ export async function GET(request: NextRequest) {
   <title>Print Labels — SecuredTampa</title>
   <style>
     @page {
-      size: 2.25in 1.25in;
+      size: ${sz.w} ${sz.h};
       margin: 0;
     }
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -170,9 +180,9 @@ export async function GET(request: NextRequest) {
       print-color-adjust: exact;
     }
     .label {
-      width: 2.25in;
-      height: 1.25in;
-      padding: 0.06in 0.08in;
+      width: ${sz.w};
+      height: ${sz.h};
+      padding: ${sz.pad};
       page-break-after: always;
       display: flex;
       flex-direction: column;
@@ -185,30 +195,29 @@ export async function GET(request: NextRequest) {
       background: #000;
       color: #fff;
       text-align: center;
-      font-size: 9pt;
+      font-size: ${sz.headerPt};
       font-weight: 900;
       letter-spacing: 2px;
-      padding: 1px 0;
+      padding: 2px 0;
       text-transform: uppercase;
     }
     .price {
-      font-size: 18pt;
+      font-size: ${sz.pricePt};
       font-weight: 900;
       letter-spacing: -0.5px;
       line-height: 1.1;
-      margin: 1px 0;
+      margin: 2px 0;
     }
     .product-name {
-      font-size: 6.5pt;
+      font-size: ${sz.namePt};
       font-weight: 600;
       text-align: center;
       line-height: 1.2;
-      max-height: 0.28in;
       overflow: hidden;
       width: 100%;
     }
     .details {
-      font-size: 6pt;
+      font-size: ${sz.detailPt};
       color: #444;
       text-align: center;
       letter-spacing: 0.5px;
@@ -219,12 +228,12 @@ export async function GET(request: NextRequest) {
       display: flex;
       justify-content: center;
       align-items: center;
-      max-height: 0.32in;
+      max-height: ${sz.barcodeH};
       overflow: hidden;
     }
     .barcode svg {
-      max-width: 1.9in;
-      max-height: 0.32in;
+      max-width: calc(${sz.w} - 0.3in);
+      max-height: ${sz.barcodeH};
       height: auto;
     }
     
@@ -249,6 +258,9 @@ export async function GET(request: NextRequest) {
         top: 16px;
         right: 16px;
         z-index: 100;
+        display: flex;
+        gap: 8px;
+        align-items: center;
       }
       .print-btn {
         background: #000;
@@ -262,6 +274,14 @@ export async function GET(request: NextRequest) {
         letter-spacing: 0.5px;
       }
       .print-btn:hover { background: #333; }
+      .size-select {
+        padding: 10px 16px;
+        font-size: 14px;
+        border: 2px solid #d1d5db;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+      }
     }
     @media print {
       .no-print { display: none !important; }
@@ -271,6 +291,11 @@ export async function GET(request: NextRequest) {
 </head>
 <body>
   <div class="no-print">
+    <select class="size-select" onchange="window.location.href=window.location.href.replace(/[&?]size=[^&]*/,'')+(window.location.href.includes('?')?'&':'?')+'size='+this.value">
+      <option value="small" ${labelSize === "small" ? "selected" : ""}>Small (2.25×1.25")</option>
+      <option value="medium" ${labelSize === "medium" ? "selected" : ""}>Medium (3×2") — ZD421</option>
+      <option value="large" ${labelSize === "large" ? "selected" : ""}>Large (4×2") — ZD421 Max</option>
+    </select>
     <button class="print-btn" onclick="window.print()">🖨️ Print Labels</button>
   </div>
   ${labels.join("\n")}
